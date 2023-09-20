@@ -5,12 +5,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 
-#include "Spell\RuneCast.h"
-
 #include "WizardCharacter.generated.h"
 
 class UInputMappingContext;
 class UInputAction;
+
+class ASpellCast;
+class URuneCast;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneAdded, URuneCast*, RuneCast);
 
@@ -18,7 +19,7 @@ UCLASS()
 class PROCDUNGEONCRAWLER_API AWizardCharacter : public ACharacter
 {
 	GENERATED_BODY()
-
+	
 public:
 	FOnRuneAdded OnRuneAdded;
 	
@@ -40,19 +41,29 @@ private:
 
 	// Magic
 	void CastRune(const FInputActionValue& Value);
+	bool IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass);
+
+	bool IsSpellPreparationStateValid();
+
+	void PrepareSpell();
 	void CastSpell();
+	void CastSpell(TArray<TSoftObjectPtr<URuneCast>> SpellRunes);
 
 	void ClearCastedRunes();
 	
 	// Interaction
 	void PrimaryAction(const FInputActionValue& Value);
-	
+
+	void SetSpellDataFromDataTable();
 public:
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* CameraComponent;
 	UPROPERTY(EditAnywhere)
 	USkeletalMeshComponent* ArmsMeshComponent;
 
+	UPROPERTY(EditAnywhere, Category= "Spells")
+	TSoftObjectPtr<class UDataTable> SpellBookDataTable;
+	
 	UPROPERTY(EditAnywhere, Category= "Input")
 	TSoftObjectPtr<UInputMappingContext> InputMappingContext;
 	
@@ -83,10 +94,17 @@ public:
 private:
 	TArray<FHitResult> LookingAt_HitActors;
 
-	TArray<URuneCast*> RuneCasts;
-	
-	TArray<URuneCast*> CastedRunes;
+	// Obtained Runes
+	TArray<TSoftObjectPtr<URuneCast>> Runes;
+
+	// Runes casted
+	TArray<TSoftObjectPtr<URuneCast>> CastedRunes;
 	FTimerHandle ClearCastedRunesTimerHandle;
+
+	TArray< TArray<TSoftObjectPtr<URuneCast>> > RuneChains;
+	TArray<TSubclassOf<ASpellCast>> SpellCastClasses;
+
+	TWeakObjectPtr<ASpellCast> CastedSpell;
 	
 	bool bIsCastingSpell = false;
 	bool bIsSprinting = false;

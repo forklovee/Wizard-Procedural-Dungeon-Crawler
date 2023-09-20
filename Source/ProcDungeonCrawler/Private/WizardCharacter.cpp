@@ -8,14 +8,18 @@
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Engine/DataTable.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Gamemodes/DungeonCrawlerGamemode.h"
 #include "Interface/PropPickupInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Player/WizardPlayerController.h"
 #include "Spell/RunePickup.h"
+#include "Spell/RuneCast.h"
 #include "UI/Wizard/WizardHUD.h"
+
+#include "Engine/DataTable.h"
+#include "Spell/SpellCast.h"
 
 AWizardCharacter::AWizardCharacter()
 {
@@ -55,6 +59,8 @@ void AWizardCharacter::BeginPlay()
 			UE_LOG(LogTemp, Warning, TEXT("Fucking shit!"))
 		}
 	}
+
+	SetSpellDataFromDataTable();
 }
 
 void AWizardCharacter::Tick(float DeltaTime)
@@ -128,13 +134,12 @@ bool AWizardCharacter::AddRune(TSoftObjectPtr<URuneCast> NewRuneCast)
 	UE_LOG(LogTemp, Warning, TEXT("b4, broadcast"))
 	if (NewRuneCast.IsNull()) return false;
 	UE_LOG(LogTemp, Warning, TEXT("not null!!!"))
-	if (RuneCasts.Contains(NewRuneCast)) return false;
-
-	URuneCast* NewRuneCastPtr = NewRuneCast.LoadSynchronous();
-	RuneCasts.Add(NewRuneCastPtr);
+	if (Runes.Contains(NewRuneCast)) return false;
+	
+	Runes.Add(NewRuneCast);
 
 	UE_LOG(LogTemp, Warning, TEXT("broadcast"))
-	OnRuneAdded.Broadcast(NewRuneCast.Get());
+	OnRuneAdded.Broadcast(NewRuneCast.LoadSynchronous());
 	
 	return true;
 }
@@ -195,42 +200,102 @@ void AWizardCharacter::CastRune(const FInputActionValue& Value)
 	
 	const int RuneId = static_cast<int>(Value.Get<float>() - 1.0);
 
-	if (RuneId < 0 || RuneId >= RuneCasts.Num()) return;
+	if (RuneId < 0 || RuneId >= Runes.Num()) return;
 
-	URuneCast* RuneToCast = RuneCasts[RuneId];
+	TSoftObjectPtr<URuneCast> RuneToCast = Runes[RuneId];
 	if (RuneToCast == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Rune of id %i is null"), RuneId);
 		return;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("Cast Rune: %s"), *RuneToCast->GetName());
 
 	// Set auto clear timer
 	GetWorld()->GetTimerManager().SetTimer(ClearCastedRunesTimerHandle, this, &AWizardCharacter::ClearCastedRunes, 2.0, false);
-
+	
 	CastedRunes.Push(RuneToCast);
+	
+	if (IsRuneSequenceValid(CastedRunes))
+	{
+		
+	}
+	else
+	{
+		if (CastedRunes.Num() == 4)
+		{
+			ClearCastedRunes();
+			GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
+		}
+	}
+}
+
+bool AWizardCharacter::IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass)
+{
+	const int RuneChainId = RuneChains.Find(SpellRunes);
+	UE_LOG(LogTemp, Warning, TEXT("Found spell id: %i"), RuneChainId);
+
+	if (RuneChainId != INDEX_NONE && RuneChainId < SpellCastClasses.Num()) //Spell found
+	{
+		OutSpellCastClass = SpellCastClasses[RuneChainId];
+
+		ClearCastedRunes();
+		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
+		return true;
+	}
 	
 	if (CastedRunes.Num() == 4)
 	{
-		CastSpell();
+		ClearCastedRunes();
+		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
 	}
+	return false;
+}
+
+bool AWizardCharacter::IsSpellPreparationStateValid()
+{
+	
+}
+
+void AWizardCharacter::PrepareSpell()
+{
+	
 }
 
 void AWizardCharacter::CastSpell()
 {
-	// Check rune sequence
-	int CastedRuneId = 0;
-	for (const URuneCast* CastedRune : CastedRunes)
-	{
-		if (CastedRune == nullptr)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%i Rune is null"), CastedRuneId);
-			CastedRuneId++;
-			continue;
-		}
-		UE_LOG(LogTemp, Warning, TEXT("%i Rune is %s"), CastedRuneId, *CastedRune->GetName());
-		CastedRuneId++;
-	}
+	CastSpell(CastedRunes);
+}
 
+void AWizardCharacter::CastSpell(TArray<TSoftObjectPtr<URuneCast>> SpellRunes)
+{
+	const int RuneChainId = RuneChains.Find(SpellRunes);
+	UE_LOG(LogTemp, Warning, TEXT("Found spell id: %i"), RuneChainId);
+
+	if (RuneChainId != INDEX_NONE && RuneChainId < SpellCastClasses.Num()) //Spell found
+	{
+		const TSubclassOf<ASpellCast> SpellCastClass = SpellCastClasses[RuneChainId];
+		const FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 100;
+		if (ASpellCast* SpellToCast = Cast<ASpellCast>(GetWorld()->SpawnActor(SpellCastClass, &SpawnLocation)))
+		{
+			CastedSpell = SpellToCast;
+			if (CastedSpell.IsValid())
+			{
+				if (CastedSpell->bRequireTarget)
+				{
+					CastedSpell->CastSpell(this);
+				}
+			}
+			else
+			{
+				CastedSpell = nullptr;
+			}
+		}
+
+		ClearCastedRunes();
+		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
+		return;
+	}
+	
 	if (CastedRunes.Num() == 4)
 	{
 		ClearCastedRunes();
@@ -238,10 +303,9 @@ void AWizardCharacter::CastSpell()
 	}
 }
 
-
 void AWizardCharacter::ClearCastedRunes()
 {
-	CastedRunes = TArray<URuneCast*>();
+	CastedRunes = TArray<TSoftObjectPtr<URuneCast>>();
 }
 
 void AWizardCharacter::PrimaryAction(const FInputActionValue& Value)
@@ -252,7 +316,16 @@ void AWizardCharacter::PrimaryAction(const FInputActionValue& Value)
 		return;
 	}
 
-	if (LookingAt_HitActors.Num() == 0) return;
+	if (LookingAt_HitActors.Num() == 0)
+	{
+		if (CastedSpell.IsValid())
+		{
+			CastedSpell->Destroy();
+		}
+		CastedSpell = nullptr;
+		return;
+	}
+	
 	AActor* FirstActor = LookingAt_HitActors[0].GetActor();
 
 	if (!FirstActor->Implements<UPropPickupInterface>())
@@ -272,4 +345,19 @@ void AWizardCharacter::PrimaryAction(const FInputActionValue& Value)
 	PickedUpActor->Destroy();
 }
 
+void AWizardCharacter::SetSpellDataFromDataTable()
+{
+	if (SpellBookDataTable.IsNull()) return;
+	
+	const UDataTable* SpellBookLoaded = SpellBookDataTable.LoadSynchronous();
+	
+	TArray<FSpellCastRuneChain*> SpellBookRows;
+	SpellBookLoaded->GetAllRows<FSpellCastRuneChain>(TEXT("Spell"), SpellBookRows);
+	
+	for (const FSpellCastRuneChain* Row : SpellBookRows)
+	{
+		SpellCastClasses.Add(Row->SpellCast);
+		RuneChains.Add(Row->RuneChain);
+	}
+}
 

@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class PROCDUNGEONCRAWLER_API UIgniteSpell : public USpellCast
+class PROCDUNGEONCRAWLER_API AIgniteSpell : public ASpellCast
 {
 	GENERATED_BODY()
 

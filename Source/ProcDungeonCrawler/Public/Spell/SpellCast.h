@@ -15,23 +15,29 @@ struct FSpellCastRuneChain: public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSoftObjectPtr<USpellCast> SpellCastClass;
+	TSubclassOf<ASpellCast> SpellCast;
 
 	UPROPERTY(EditAnywhere)
 	TArray<TSoftObjectPtr<URuneCast>> RuneChain;
 };
 
 UCLASS(BlueprintType, Blueprintable)
-class PROCDUNGEONCRAWLER_API USpellCast: public UObject
+class PROCDUNGEONCRAWLER_API ASpellCast: public AActor
 {
 GENERATED_BODY()
 	
 public:
-	USpellCast();
+	ASpellCast();
+	~ASpellCast();
 	
 	virtual void CastSpell(AWizardCharacter* WizardCharacter);
-	
+	virtual void CastSpell(AWizardCharacter* WizardCharacter, AActor* TargetActor);
+
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Particle System")
-	TSoftObjectPtr<UParticleSystem> SpellCastParticleSystem;
+	UPROPERTY(EditAnywhere, Category="Spell")
+	bool bRequireTarget = true;
+	
+protected:
+	UPROPERTY(EditAnywhere, Category="Particles", meta=(AllowPrivateAccess="true"))
+	class UNiagaraComponent* SpellCastParticleSystemComponent;
 };

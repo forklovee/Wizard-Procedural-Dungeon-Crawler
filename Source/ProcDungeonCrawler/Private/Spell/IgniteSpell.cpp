@@ -2,10 +2,10 @@
 
 
 #include "Spell/IgniteSpell.h"
+#include "NiagaraFunctionLibrary.h"
 
-void UIgniteSpell::CastSpell(AWizardCharacter* WizardCharacter)
+void AIgniteSpell::CastSpell(AWizardCharacter* WizardCharacter)
 {
 	Super::CastSpell(WizardCharacter);
 
-	
 }
