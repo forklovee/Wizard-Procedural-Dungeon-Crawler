@@ -7,6 +7,7 @@
 
 #include "WizardCharacter.generated.h"
 
+class UBagComponent;
 class UInputMappingContext;
 class UInputAction;
 
@@ -45,7 +46,7 @@ private:
 
 	bool IsSpellPreparationStateValid();
 
-	void PrepareSpell();
+	void PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass);
 	void CastSpell();
 	void CastSpell(TArray<TSoftObjectPtr<URuneCast>> SpellRunes);
 
@@ -53,14 +54,22 @@ private:
 	
 	// Interaction
 	void PrimaryAction(const FInputActionValue& Value);
-
+	void Interact(const FInputActionValue& Value);
+	
 	void SetSpellDataFromDataTable();
 public:
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* CameraComponent;
 	UPROPERTY(EditAnywhere)
 	USkeletalMeshComponent* ArmsMeshComponent;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightHandSocketComponent;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftHandSocketComponent;
 
+	UPROPERTY(EditAnywhere)
+	UBagComponent* Bag;
+	
 	UPROPERTY(EditAnywhere, Category= "Spells")
 	TSoftObjectPtr<class UDataTable> SpellBookDataTable;
 	
@@ -78,6 +87,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
 	TSoftObjectPtr<UInputAction> Sprint_InputAction;
+	
+	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
+	TSoftObjectPtr<UInputAction> Crouch_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
 	TSoftObjectPtr<UInputAction> Interaction_InputAction;
@@ -90,10 +102,22 @@ public:
 
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Magic")
 	TSoftObjectPtr<UInputAction> ChangeSpellSlot_InputAction;
-	
-private:
-	TArray<FHitResult> LookingAt_HitActors;
 
+	UPROPERTY(EditAnywhere, Category= "Input|UI")
+	TSoftObjectPtr<UInputAction> OpenBag_InputAction;
+
+	UPROPERTY(EditAnywhere, Category= "Input|UI")
+	TSoftObjectPtr<UInputAction> OpenMap_InputAction;
+
+	UPROPERTY(EditAnywhere, Category= "Input|UI")
+	TSoftObjectPtr<UInputAction> OpenSpellBook_InputAction;
+private:
+	FHitResult InteractionTarget;
+
+	// Spell oriented variables
+	TWeakObjectPtr<ASpellCast> PreparedSpell;
+	TArray<FHitResult> SpellTargets;
+	
 	// Obtained Runes
 	TArray<TSoftObjectPtr<URuneCast>> Runes;
 
@@ -101,10 +125,10 @@ private:
 	TArray<TSoftObjectPtr<URuneCast>> CastedRunes;
 	FTimerHandle ClearCastedRunesTimerHandle;
 
-	TArray< TArray<TSoftObjectPtr<URuneCast>> > RuneChains;
+	// Spell data RuneChain id == SpellCastClass id
+	// Correct SpellCast for RuneChain is get from IsRuneSequenceValid function
+	TArray<TArray<TSoftObjectPtr<URuneCast>>> RuneChains;
 	TArray<TSubclassOf<ASpellCast>> SpellCastClasses;
-
-	TWeakObjectPtr<ASpellCast> CastedSpell;
 	
 	bool bIsCastingSpell = false;
 	bool bIsSprinting = false;

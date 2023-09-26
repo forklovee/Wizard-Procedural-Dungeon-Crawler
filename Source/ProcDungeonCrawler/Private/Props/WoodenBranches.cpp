@@ -5,15 +5,13 @@
 
 #include "Components/CapsuleComponent.h"
 #include "NiagaraComponent.h"
+#include "Spell/FireBallSpell.h"
 
 #include "Spell/IgniteSpell.h"
 #include "Spell/SpellCast.h"
 
 AWoodenBranches::AWoodenBranches()
 {
-	WoodenBranchesStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("BranchesMesh"));
-	RootComponent = WoodenBranchesStaticMesh;
-	
 	FireDamageCollision = CreateDefaultSubobject<UCapsuleComponent>(FName("FireDamageCollision"));
 	FireDamageCollision->SetCollisionProfileName(FName("OverlapAll"));
 	FireDamageCollision->SetupAttachment(RootComponent);
@@ -35,13 +33,15 @@ void AWoodenBranches::HandleSpellCast_Implementation(AWizardCharacter* WizardCha
 {
 	Super::HandleSpellCast_Implementation(WizardCharacter, SpellCast);
 
-	if (!bIsLit && SpellCast->GetClass() == AIgniteSpell::StaticClass())
+	if (!bIsLit && (SpellCast->IsA(AIgniteSpell::StaticClass()) || SpellCast->IsA(AFireBallSpell::StaticClass())))
 	{
 		UE_LOG(LogTemp, Display, TEXT("WoodenBranches::HandleSpellCast_Implementation - IgniteSpell"));
 		bIsLit = true;
 
 		FireDamageCollision->OnComponentBeginOverlap.AddDynamic(this, &AWoodenBranches::OnFireAffectRangeBeginOverlap);
 		FireDamageCollision->OnComponentEndOverlap.AddDynamic(this, &AWoodenBranches::OnFireAffectRangeEndOverlap);
+
+		SpellCastParticleSystemComponent->Activate();
 	}
 }
 

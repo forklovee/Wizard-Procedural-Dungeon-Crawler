@@ -20,6 +20,14 @@ public:
 	void HandleSpellCast(class AWizardCharacter* WizardCharacter, class ASpellCast* SpellCast);
 	virtual void HandleSpellCast_Implementation(class AWizardCharacter* WizardCharacter, class ASpellCast* SpellCast) override;
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Spell")
+	void ChangeCollisionProfileToSpellInteractive();
+	virtual void ChangeCollisionProfileToSpellInteractive_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Spell")
+	void AddSpellHandleTag();
+	virtual void AddSpellHandleTag_Implementation() override;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -28,4 +36,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spell", meta=(AllowPrivateAccess="true"))
+	class UStaticMeshComponent* PropStaticMesh;
 };

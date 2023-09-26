@@ -29,15 +29,33 @@ GENERATED_BODY()
 public:
 	ASpellCast();
 	~ASpellCast();
-	
-	virtual void CastSpell(AWizardCharacter* WizardCharacter);
-	virtual void CastSpell(AWizardCharacter* WizardCharacter, AActor* TargetActor);
 
+	// Spell casting
+	virtual void CastSpell(AWizardCharacter* WizardCharacter);
+	virtual void ApplyEffectsOnTarget(AActor* TargetActor);
+	
+	// Actor targetting
+	virtual bool CanActorBeTargeted(AActor* Actor) const;
+	UFUNCTION(BlueprintCallable)
+	virtual TSet<AActor*>& GetTargetedActors();
+	virtual void TargetActor(AActor* Actor);
+	virtual void UnTargetActor(AActor* Actor);
+	
+	bool IsImplementingSpellHandle(AActor* Actor) const;
+	AActor* GetFirstValidHitResultActor(TArray<FHitResult>& TargetedHitResults) const;
+	
 public:
-	UPROPERTY(EditAnywhere, Category="Spell")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Spell")
 	bool bRequireTarget = true;
 	
 protected:
 	UPROPERTY(EditAnywhere, Category="Particles", meta=(AllowPrivateAccess="true"))
 	class UNiagaraComponent* SpellCastParticleSystemComponent;
+
+	UPROPERTY()
+	TWeakObjectPtr<AWizardCharacter> SpellCaster;
+	
+private:
+	UPROPERTY()
+	TSet<AActor*> TargetedActors;
 };

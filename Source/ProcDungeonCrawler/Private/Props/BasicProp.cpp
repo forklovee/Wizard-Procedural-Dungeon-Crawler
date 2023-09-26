@@ -6,21 +6,42 @@
 // Sets default values
 ABasicProp::ABasicProp()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
+	PropStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("MainStaticMesh"));
+	RootComponent = PropStaticMesh;
 }
+
+// SETUP SPELL INTERACTION
+void ABasicProp::ChangeCollisionProfileToSpellInteractive_Implementation()
+{
+	ISpellHandleInterface::ChangeCollisionProfileToSpellInteractive_Implementation();
+
+	PropStaticMesh->SetCollisionProfileName(FName("SpellInteractive"));
+}
+
+void ABasicProp::AddSpellHandleTag_Implementation()
+{
+	ISpellHandleInterface::AddSpellHandleTag_Implementation();
+
+	Tags.Add(FName("SpellHandle"));
+}
+// SETUP SPELL INTERACTION
 
 void ABasicProp::HandleSpellCast_Implementation(AWizardCharacter* WizardCharacter, ASpellCast* SpellCast)
 {
 	ISpellHandleInterface::HandleSpellCast_Implementation(WizardCharacter, SpellCast);
 }
 
-// Called when the game starts or when spawned
+
+
 void ABasicProp::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// Setup basic spell interaction for prop
+	ChangeCollisionProfileToSpellInteractive_Implementation();
+	AddSpellHandleTag_Implementation();
 }
 
 // Called every frame

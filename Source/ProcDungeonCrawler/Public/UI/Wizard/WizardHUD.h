@@ -8,6 +8,7 @@
 
 class URuneCast;
 class URuneCastSlotsContainer;
+struct FInputActionValue;
 /**
  * 
  */
@@ -20,6 +21,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddRuneToUI(URuneCast* RuneCast);
 
+	void OpenBag(const FInputActionValue& Value);
+	void OpenMap(const FInputActionValue& Value);
+	void OpenSpellbook(const FInputActionValue& Value);
+	
 	void SetupRuneCastSlotsContainer();
 	
 	UPROPERTY(EditAnywhere, meta=(BindWidget))

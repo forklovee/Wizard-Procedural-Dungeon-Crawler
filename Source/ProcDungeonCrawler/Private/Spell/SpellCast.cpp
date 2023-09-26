@@ -5,12 +5,16 @@
 
 #include "WizardCharacter.h"
 #include "NiagaraComponent.h"
+#include "Interface/SpellHandleInterface.h"
 
 ASpellCast::ASpellCast()
 {
 	SpellCastParticleSystemComponent = CreateDefaultSubobject<UNiagaraComponent>(FName("SpellParticles"));
-	SpellCastParticleSystemComponent->SetupAttachment(RootComponent);
 	SpellCastParticleSystemComponent->bAutoActivate = false;
+
+	RootComponent = SpellCastParticleSystemComponent;
+	
+	UE_LOG(LogTemp, Display, TEXT("%s SpellCast created!"), *GetName())
 }
 
 ASpellCast::~ASpellCast()
@@ -20,16 +24,60 @@ ASpellCast::~ASpellCast()
 
 void ASpellCast::CastSpell(AWizardCharacter* WizardCharacter)
 {
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	
+	SpellCaster = WizardCharacter;
+	
 	if (SpellCastParticleSystemComponent->GetAsset() != nullptr)
 	{
 		SpellCastParticleSystemComponent->Activate();
 	}
 }
 
-void ASpellCast::CastSpell(AWizardCharacter* WizardCharacter, AActor* TargetActor)
+void ASpellCast::ApplyEffectsOnTarget(AActor* TargetActor)
 {
-	if (TargetActor)
+	UE_LOG(LogTemp, Warning, TEXT("ASpellCast::ApplyEffectsOnTarget - %s"), *TargetActor->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("Is spellcaster valid? %i"), SpellCaster.IsValid());
+	
+	if (SpellCaster.IsValid() && IsImplementingSpellHandle(TargetActor))
 	{
-		UE_LOG(LogTemp, Display, TEXT("Casting spell on a target of %s!"), *TargetActor->GetName());
+		ISpellHandleInterface::Execute_HandleSpellCast(TargetActor, SpellCaster.Get(), this);
 	}
+}
+
+bool ASpellCast::CanActorBeTargeted(AActor* Actor) const
+{
+	return true;
+}
+
+TSet<AActor*>& ASpellCast::GetTargetedActors()
+{
+	return TargetedActors;
+}
+
+void ASpellCast::TargetActor(AActor* Actor)
+{
+	TargetedActors.Add(Actor);
+}
+
+void ASpellCast::UnTargetActor(AActor* Actor)
+{
+	TargetedActors.Remove(Actor);
+}
+
+bool ASpellCast::IsImplementingSpellHandle(AActor* Actor) const
+{
+	return Cast<ISpellHandleInterface>(Actor) != nullptr;
+}
+
+AActor* ASpellCast::GetFirstValidHitResultActor(TArray<FHitResult>& TargetedHitResults) const
+{
+	for (FHitResult HitResult : TargetedHitResults)
+	{
+		if (IsImplementingSpellHandle(HitResult.GetActor()))
+		{
+			return HitResult.GetActor();
+		}
+	}
+	return nullptr;
 }

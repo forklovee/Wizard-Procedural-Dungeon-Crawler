@@ -22,5 +22,11 @@ class PROCDUNGEONCRAWLER_API ISpellHandleInterface
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Spell")
+	void ChangeCollisionProfileToSpellInteractive();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Spell")
+	void AddSpellHandleTag();
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Spell")
 	void HandleSpellCast(class AWizardCharacter* WizardCharacter, class ASpellCast* SpellCast);
 };

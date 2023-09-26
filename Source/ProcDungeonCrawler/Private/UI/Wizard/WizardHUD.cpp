@@ -17,6 +17,21 @@ void UWizardHUD::AddRuneToUI(URuneCast* RuneCast)
 	}
 }
 
+void UWizardHUD::OpenBag(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Display, TEXT("Open Bag!"));
+}
+
+void UWizardHUD::OpenMap(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Display, TEXT("Open Map!"));
+}
+
+void UWizardHUD::OpenSpellbook(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Display, TEXT("Open Spellbook!"));
+}
+
 void UWizardHUD::SetupRuneCastSlotsContainer()
 {
 	if (RuneCastSlotsContainer)

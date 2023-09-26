@@ -26,10 +26,11 @@ public:
 	virtual void HandleSpellCast_Implementation(class AWizardCharacter* WizardCharacter, class ASpellCast* SpellCast) override;
 
 protected:
+	UFUNCTION()
 	void OnFireAffectRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 	                                   const FHitResult& SweepResult);
-
+	UFUNCTION()
 	void OnFireAffectRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
@@ -50,7 +51,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Damage", meta=(AllowPrivateAccess="true"))
 	UCapsuleComponent* FireWarmthRangeCollision;
 	
-	UPROPERTY(EditAnywhere, Category="Mesh", meta=(AllowPrivateAccess="true"))
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Mesh", meta=(AllowPrivateAccess="true"))
 	UStaticMeshComponent* WoodenBranchesStaticMesh;
 
 	bool bIsLit = false;

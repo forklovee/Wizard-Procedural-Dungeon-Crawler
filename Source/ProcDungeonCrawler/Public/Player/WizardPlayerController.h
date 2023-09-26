@@ -20,6 +20,7 @@ public:
 	virtual void BeginPlay() override;
 
 	UWizardHUD* SetupWizardHud();
+	UWizardHUD* GetWizardHud() const { return WizardHUD; }
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
 	TSubclassOf<UWizardHUD> WizardHUDClass;

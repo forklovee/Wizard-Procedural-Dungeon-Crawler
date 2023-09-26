@@ -1,5 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#define ECC_SpellInteractive ECC_GameTraceChannel1
+
 #include "WizardCharacter.h"
 
 #include "InputMappingContext.h"
@@ -8,6 +10,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/Character/BagComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interface/PropPickupInterface.h"
@@ -18,7 +21,6 @@
 #include "Spell/RuneCast.h"
 #include "UI/Wizard/WizardHUD.h"
 
-#include "Engine/DataTable.h"
 #include "Spell/SpellCast.h"
 
 AWizardCharacter::AWizardCharacter()
@@ -37,7 +39,14 @@ AWizardCharacter::AWizardCharacter()
 	ArmsMeshComponent->bCastDynamicShadow = false;
 	ArmsMeshComponent->CastShadow = false;
 	ArmsMeshComponent->SetOnlyOwnerSee(true);
-	
+
+	// Hand sockets
+	LeftHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("LeftHandSocket"));
+	LeftHandSocketComponent->SetupAttachment(CameraComponent, FName("LeftHand"));
+	RightHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("RightHandSocket"));
+	RightHandSocketComponent->SetupAttachment(CameraComponent, FName("RightHand"));
+
+	Bag = CreateDefaultSubobject<UBagComponent>(FName("Bag"));
 }
 
 void AWizardCharacter::BeginPlay()
@@ -45,46 +54,43 @@ void AWizardCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	MovementSpeed = WalkingSpeed;
-
-	UE_LOG(LogTemp, Warning, TEXT("Adding Dynamic shit!"))
-
-	if (AWizardPlayerController* WizardPlayerController = Cast<AWizardPlayerController>(GetController()))
-	{
-		if (UWizardHUD* WizardHUD = WizardPlayerController->SetupWizardHud())
-		{
-			OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::AddRuneToUI);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Fucking shit!"))
-		}
-	}
-
+	
 	SetSpellDataFromDataTable();
+	// Bag->OnBagUpdated.AddDynamic(this, &AWizardCharacter::OnBagUpdated);
 }
 
 void AWizardCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	UKismetSystemLibrary::SphereTraceMulti(
+
+	UKismetSystemLibrary::SphereTraceSingle(
 		GetWorld(),
 		CameraComponent->GetComponentLocation(),
-		CameraComponent->GetComponentLocation() + CameraComponent->GetForwardVector() * 1000,
-		100,
+		CameraComponent->GetComponentLocation() + CameraComponent->GetForwardVector() * 250.f,
+		20,
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,
 		{},
-		EDrawDebugTrace::ForOneFrame,
-		LookingAt_HitActors,
+		EDrawDebugTrace::None,
+		InteractionTarget,
 		true
 	);
 
-	// UE_LOG(LogTemp, Warning, TEXT("Looking at %i actors."), LookingAt_HitActors.Num());
-	// if (LookingAt_HitActors.Num() > 0)
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("First actor %s"), *LookingAt_HitActors[0].GetActor()->GetName());
-	// }
+	if (PreparedSpell != nullptr)
+	{
+		UKismetSystemLibrary::SphereTraceMulti(
+			GetWorld(),
+			CameraComponent->GetComponentLocation(),
+			CameraComponent->GetComponentLocation() + CameraComponent->GetForwardVector() * 1000,
+			100,
+			UEngineTypes::ConvertToTraceType(ECC_SpellInteractive),
+			false,
+			{},
+			EDrawDebugTrace::ForOneFrame,
+			SpellTargets,
+			true
+		);
+	}
 	
 }
 
@@ -94,11 +100,30 @@ void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	
+	UWizardHUD* WizardHUD = nullptr;
+	if (AWizardPlayerController* PlayerController = Cast<AWizardPlayerController>(GetController()))
+	{
+		WizardHUD = PlayerController->SetupWizardHud();
+		if (WizardHUD != nullptr)
+		{
+			OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::AddRuneToUI);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("WizardHUD not created!"))
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Couldn't get player controller!"))
+	}
+	
 	// Set action inputs
 	Input->BindAction(LookAround_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::LookAround);
 	Input->BindAction(Movement_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::MoveAround);
 	Input->BindAction(Sprint_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::ToggleSprint);
 	Input->BindAction(Jump_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Jump);
+	// Input->BindAction(Crouch_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Crouch);
 
 	// set magic inputs
 	Input->BindAction(RuneCast_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::CastRune);
@@ -106,7 +131,15 @@ void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	
 	// set interaction inputs
 	Input->BindAction(PrimaryAction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::PrimaryAction);
-	// Input->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::PrimaryAction);
+	Input->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Interact);
+
+	// set ui inputs
+	if (IsValid(WizardHUD))
+	{
+		Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenBag);
+		Input->BindAction(OpenMap_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenMap);
+		Input->BindAction(OpenSpellBook_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenSpellbook);
+	}
 	
 	// Set action context
 	const ULocalPlayer* LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetLocalPlayer();
@@ -214,10 +247,10 @@ void AWizardCharacter::CastRune(const FInputActionValue& Value)
 	GetWorld()->GetTimerManager().SetTimer(ClearCastedRunesTimerHandle, this, &AWizardCharacter::ClearCastedRunes, 2.0, false);
 	
 	CastedRunes.Push(RuneToCast);
-	
-	if (IsRuneSequenceValid(CastedRunes))
+	TSubclassOf<ASpellCast> OutSpellCastClass;
+	if (IsRuneSequenceValid(CastedRunes, OutSpellCastClass))
 	{
-		
+		PrepareSpell(OutSpellCastClass);
 	}
 	else
 	{
@@ -232,7 +265,6 @@ void AWizardCharacter::CastRune(const FInputActionValue& Value)
 bool AWizardCharacter::IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass)
 {
 	const int RuneChainId = RuneChains.Find(SpellRunes);
-	UE_LOG(LogTemp, Warning, TEXT("Found spell id: %i"), RuneChainId);
 
 	if (RuneChainId != INDEX_NONE && RuneChainId < SpellCastClasses.Num()) //Spell found
 	{
@@ -251,55 +283,17 @@ bool AWizardCharacter::IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> Spe
 	return false;
 }
 
-bool AWizardCharacter::IsSpellPreparationStateValid()
-{
-	
-}
 
-void AWizardCharacter::PrepareSpell()
+void AWizardCharacter::PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass)
 {
-	
-}
+	UE_LOG(LogTemp, Warning, TEXT("Spell prepared: %s"), *SpellCastClass->GetName());
 
-void AWizardCharacter::CastSpell()
-{
-	CastSpell(CastedRunes);
-}
-
-void AWizardCharacter::CastSpell(TArray<TSoftObjectPtr<URuneCast>> SpellRunes)
-{
-	const int RuneChainId = RuneChains.Find(SpellRunes);
-	UE_LOG(LogTemp, Warning, TEXT("Found spell id: %i"), RuneChainId);
-
-	if (RuneChainId != INDEX_NONE && RuneChainId < SpellCastClasses.Num()) //Spell found
+	const FVector SpawnLocation = RightHandSocketComponent->GetComponentLocation();
+	if (ASpellCast* SpellToCast = Cast<ASpellCast>(GetWorld()->SpawnActor(SpellCastClass, &SpawnLocation)))
 	{
-		const TSubclassOf<ASpellCast> SpellCastClass = SpellCastClasses[RuneChainId];
-		const FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 100;
-		if (ASpellCast* SpellToCast = Cast<ASpellCast>(GetWorld()->SpawnActor(SpellCastClass, &SpawnLocation)))
-		{
-			CastedSpell = SpellToCast;
-			if (CastedSpell.IsValid())
-			{
-				if (CastedSpell->bRequireTarget)
-				{
-					CastedSpell->CastSpell(this);
-				}
-			}
-			else
-			{
-				CastedSpell = nullptr;
-			}
-		}
-
-		ClearCastedRunes();
-		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
-		return;
-	}
-	
-	if (CastedRunes.Num() == 4)
-	{
-		ClearCastedRunes();
-		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
+		// Spell spawned successfully
+		PreparedSpell = SpellToCast;
+		PreparedSpell->AttachToComponent(RightHandSocketComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	}
 }
 
@@ -315,28 +309,40 @@ void AWizardCharacter::PrimaryAction(const FInputActionValue& Value)
 		UE_LOG(LogTemp, Error, TEXT("Invalid input value in %s"), *FString(__FUNCTION__));
 		return;
 	}
+	
+	// No prepared spell.
+	if (!PreparedSpell.IsValid()) return;
 
-	if (LookingAt_HitActors.Num() == 0)
+	// Detach from actor, set spell caster, activate particle system
+	// if doesn't require target projectile movement
+	PreparedSpell->CastSpell(this);
+	if (PreparedSpell->bRequireTarget)
 	{
-		if (CastedSpell.IsValid())
+		// GetFirstValidHitResultActor already checks if the actor implements ISpellHandleInterface
+		if (AActor* TargetActor = PreparedSpell->GetFirstValidHitResultActor(SpellTargets))
 		{
-			CastedSpell->Destroy();
+			// Needs spell caster to be set
+			PreparedSpell->ApplyEffectsOnTarget(TargetActor);
 		}
-		CastedSpell = nullptr;
-		return;
 	}
 	
-	AActor* FirstActor = LookingAt_HitActors[0].GetActor();
+	PreparedSpell = nullptr;
+}
 
-	if (!FirstActor->Implements<UPropPickupInterface>())
+void AWizardCharacter::Interact(const FInputActionValue& Value)
+{
+	AActor* TargetActor = InteractionTarget.GetActor();
+	if (TargetActor == nullptr) return;
+
+	if (!TargetActor->Implements<UPropPickupInterface>())
 	{
 		return;
 	}
 
-	AActor* PickedUpActor = IPropPickupInterface::Execute_Pickup(FirstActor, this);
+	AActor* PickedUpActor = IPropPickupInterface::Execute_Pickup(TargetActor, this);
 
 	// Add rune if rune pickup
-	if (ARunePickup* RunePickup = Cast<ARunePickup>(PickedUpActor))
+	if (const ARunePickup* RunePickup = Cast<ARunePickup>(PickedUpActor))
 	{
 		AddRune(RunePickup->RuneCast);
 	}
