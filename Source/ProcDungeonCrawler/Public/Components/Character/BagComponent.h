@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "BagComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnBagUpdated, TSet<TSubclassOf<AActor>>, Items);
+DECLARE_MULTICAST_DELEGATE(FOnBagUpdated);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UBagComponent : public UActorComponent

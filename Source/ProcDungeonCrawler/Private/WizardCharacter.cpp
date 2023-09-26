@@ -10,12 +10,14 @@
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/WidgetInteractionComponent.h"
 #include "Components/Character/BagComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interface/PropPickupInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Player/BagActor.h"
 #include "Player/WizardPlayerController.h"
 #include "Spell/RunePickup.h"
 #include "Spell/RuneCast.h"
@@ -46,6 +48,11 @@ AWizardCharacter::AWizardCharacter()
 	RightHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("RightHandSocket"));
 	RightHandSocketComponent->SetupAttachment(CameraComponent, FName("RightHand"));
 
+	// Widget interaction
+	WidgetInteractionComponent = CreateDefaultSubobject<UWidgetInteractionComponent>(FName("WidgetInteractionComponent"));
+	WidgetInteractionComponent->SetupAttachment(CameraComponent);
+
+	// Bag with items and runes
 	Bag = CreateDefaultSubobject<UBagComponent>(FName("Bag"));
 }
 
@@ -133,10 +140,12 @@ void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Input->BindAction(PrimaryAction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::PrimaryAction);
 	Input->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Interact);
 
+	Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::ToggleBag);
+
+	
 	// set ui inputs
 	if (IsValid(WizardHUD))
 	{
-		Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenBag);
 		Input->BindAction(OpenMap_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenMap);
 		Input->BindAction(OpenSpellBook_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenSpellbook);
 	}
@@ -349,6 +358,22 @@ void AWizardCharacter::Interact(const FInputActionValue& Value)
 
 	// Remove actor
 	PickedUpActor->Destroy();
+}
+
+void AWizardCharacter::ToggleBag(const FInputActionValue& Value)
+{
+	if (BagActor.IsValid())
+	{
+		BagActor.Get()->Destroy();
+		BagActor = nullptr;
+	}
+	else
+	{
+		const FVector BagLocation = GetActorLocation() + GetActorForwardVector() * 100.0;
+		const FRotator BagRotation = (GetActorLocation() - BagLocation).Rotation();
+		ABagActor* SpawnedBag = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
+		BagActor = SpawnedBag;
+	}
 }
 
 void AWizardCharacter::SetSpellDataFromDataTable()

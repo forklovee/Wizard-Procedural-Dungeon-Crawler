@@ -21,7 +21,7 @@ void UBagComponent::AddItem(TSubclassOf<AActor> ItemClass, int32 Amount)
 
 	if (OnBagUpdated.IsBound())
 	{
-		OnBagUpdated.Broadcast(GetItemClasses());
+		OnBagUpdated.Broadcast();
 	}
 }
 
@@ -41,7 +41,7 @@ void UBagComponent::RemoveItem(TSubclassOf<AActor> ItemClass, int32 Amount)
 
 	if (OnBagUpdated.IsBound())
 	{
-		OnBagUpdated.Broadcast(GetItemClasses());
+		OnBagUpdated.Broadcast();
 	}
 }
 

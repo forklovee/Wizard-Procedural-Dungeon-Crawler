@@ -7,6 +7,8 @@
 
 #include "WizardCharacter.generated.h"
 
+class ABagActor;
+class UWidgetInteractionComponent;
 class UBagComponent;
 class UInputMappingContext;
 class UInputAction;
@@ -43,21 +45,24 @@ private:
 	// Magic
 	void CastRune(const FInputActionValue& Value);
 	bool IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass);
-
-	bool IsSpellPreparationStateValid();
-
+	
 	void PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass);
-	void CastSpell();
-	void CastSpell(TArray<TSoftObjectPtr<URuneCast>> SpellRunes);
 
 	void ClearCastedRunes();
 	
 	// Interaction
 	void PrimaryAction(const FInputActionValue& Value);
 	void Interact(const FInputActionValue& Value);
+
+	void ToggleBag(const FInputActionValue& Value);
 	
 	void SetSpellDataFromDataTable();
 public:
+	// Bag class
+	UPROPERTY(EditAnywhere, Category= "Bag")
+	TSubclassOf<ABagActor> BagActorClass;
+	
+	// Components
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* CameraComponent;
 	UPROPERTY(EditAnywhere)
@@ -68,8 +73,12 @@ public:
 	USceneComponent* LeftHandSocketComponent;
 
 	UPROPERTY(EditAnywhere)
-	UBagComponent* Bag;
+	UWidgetInteractionComponent* WidgetInteractionComponent;
 	
+	UPROPERTY(EditAnywhere)
+	UBagComponent* Bag;
+
+	// Input
 	UPROPERTY(EditAnywhere, Category= "Spells")
 	TSoftObjectPtr<class UDataTable> SpellBookDataTable;
 	
@@ -111,9 +120,13 @@ public:
 
 	UPROPERTY(EditAnywhere, Category= "Input|UI")
 	TSoftObjectPtr<UInputAction> OpenSpellBook_InputAction;
+
 private:
 	FHitResult InteractionTarget;
 
+	// 3D UI Actors
+	TWeakObjectPtr<ABagActor> BagActor;
+	
 	// Spell oriented variables
 	TWeakObjectPtr<ASpellCast> PreparedSpell;
 	TArray<FHitResult> SpellTargets;
@@ -139,4 +152,5 @@ private:
 	float RunningSpeed = 14.0f;
 
 	float MovementSpeed = 0.0f;
+	
 };
