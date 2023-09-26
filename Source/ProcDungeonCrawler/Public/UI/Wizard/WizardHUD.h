@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "WizardHUD.generated.h"
 
+class UInteractionUI;
 class URuneCast;
 class URuneCastSlotsContainer;
 struct FInputActionValue;
@@ -30,4 +31,6 @@ public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	URuneCastSlotsContainer* RuneCastSlotsContainer;
 
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UInteractionUI* InteractionUI;
 };

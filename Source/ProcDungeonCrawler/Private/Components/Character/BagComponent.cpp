@@ -3,9 +3,34 @@
 
 #include "Components/Character/BagComponent.h"
 
+#include "Player/BagActor.h"
+
 UBagComponent::UBagComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+bool UBagComponent::IsOpen() const
+{
+	return BagActor.IsValid();
+}
+
+void UBagComponent::ToggleBag(const FInputActionValue& Value)
+{
+	if (BagActor.IsValid())
+	{
+		BagActor.Get()->Destroy();
+		BagActor = nullptr;
+	}
+	else
+	{
+		const FVector BagLocation = GetComponentLocation();
+		FRotator BagRotation = GetComponentRotation();
+		BagRotation.Yaw += 180.0f;
+		
+		ABagActor* SpawnedBag = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
+		BagActor = SpawnedBag;
+	}
 }
 
 void UBagComponent::AddItem(TSubclassOf<AActor> ItemClass, int32 Amount)

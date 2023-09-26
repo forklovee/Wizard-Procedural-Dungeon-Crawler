@@ -6,10 +6,12 @@
 #include "Components/ActorComponent.h"
 #include "BagComponent.generated.h"
 
+class ABagActor;
+struct FInputActionValue;
 DECLARE_MULTICAST_DELEGATE(FOnBagUpdated);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class PROCDUNGEONCRAWLER_API UBagComponent : public UActorComponent
+class PROCDUNGEONCRAWLER_API UBagComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
@@ -18,6 +20,9 @@ public:
 	
 	UBagComponent();
 
+	bool IsOpen() const;
+	void ToggleBag(const FInputActionValue& Value);
+	
 	TMap<TSubclassOf<AActor>, int32>& GetItems() { return Items; }
 	
 	void AddItem(TSubclassOf<AActor> ItemClass, int32 Amount = 1);
@@ -28,8 +33,15 @@ public:
 
 	TSet<TSubclassOf<AActor>> GetItemClasses() const;
 
+public:
+	// Bag class
+	UPROPERTY(EditAnywhere, Category= "Bag")
+	TSubclassOf<ABagActor> BagActorClass;
+	
 private:
 	UPROPERTY()
 	TMap<TSubclassOf<AActor>, int32> Items;
-		
+
+	// 3D UI Actor
+	TWeakObjectPtr<ABagActor> BagActor;
 };

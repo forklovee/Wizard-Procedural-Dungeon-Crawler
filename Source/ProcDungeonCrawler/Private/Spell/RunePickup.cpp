@@ -5,6 +5,7 @@
 
 #include "WizardCharacter.h"
 #include "Components/CapsuleComponent.h"
+#include "Spell/RuneCast.h"
 
 // Sets default values
 ARunePickup::ARunePickup()
@@ -36,6 +37,21 @@ AActor* ARunePickup::Pickup_Implementation(APawn* Pawn)
 	RuneSkeletalMesh->SetVisibility(false);
 	
 	return this;
+}
+
+FName ARunePickup::GetItemName_Implementation()
+{
+	FName RuneName = "Rune";
+	if (RuneCast.IsValid())
+	{
+		RuneName = RuneCast->RuneName;
+	}
+	return RuneName;
+}
+
+FName ARunePickup::GetInteractionName_Implementation()
+{
+	return FName("Pick up");
 }
 
 // Called when the game starts or when spawned

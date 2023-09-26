@@ -20,6 +20,14 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
 	AActor* Pickup(APawn* Pawn);
 	virtual AActor* Pickup_Implementation(APawn* Pawn) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
+	FName GetItemName();
+	virtual FName GetItemName_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
+	FName GetInteractionName();
+	virtual FName GetInteractionName_Implementation() override;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -41,5 +49,4 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class UCapsuleComponent* PickupCollision;
-
 };

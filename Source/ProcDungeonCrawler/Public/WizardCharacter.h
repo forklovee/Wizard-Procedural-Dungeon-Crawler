@@ -7,6 +7,7 @@
 
 #include "WizardCharacter.generated.h"
 
+class USpellbookComponent;
 class ABagActor;
 class UWidgetInteractionComponent;
 class UBagComponent;
@@ -16,7 +17,7 @@ class UInputAction;
 class ASpellCast;
 class URuneCast;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneAdded, URuneCast*, RuneCast);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTarget, FName, ItemName, FName, InteractionName);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API AWizardCharacter : public ACharacter
@@ -24,44 +25,31 @@ class PROCDUNGEONCRAWLER_API AWizardCharacter : public ACharacter
 	GENERATED_BODY()
 	
 public:
-	FOnRuneAdded OnRuneAdded;
+	FOnNewInteractionTarget OnNewInteractionTarget;
 	
 	AWizardCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-
-	bool AddRune(TSoftObjectPtr<URuneCast> NewRuneCast);
 	
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
 private:
+	// Input
+	void UpdateInputContexts(const struct FInputActionValue& Value);
+	void SetInteractionInput(bool bState) const;
+	void SetCharacterMovementInput(bool bState) const;
+	
 	// Movement and Looking around
-	void MoveAround(const struct FInputActionValue& Value);
+	void MoveAround(const FInputActionValue& Value);
 	void LookAround(const FInputActionValue& Value);
 	void ToggleSprint(const FInputActionValue& Value);
-
-	// Magic
-	void CastRune(const FInputActionValue& Value);
-	bool IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass);
-	
-	void PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass);
-
-	void ClearCastedRunes();
 	
 	// Interaction
 	void PrimaryAction(const FInputActionValue& Value);
 	void Interact(const FInputActionValue& Value);
-
-	void ToggleBag(const FInputActionValue& Value);
 	
-	void SetSpellDataFromDataTable();
 public:
-	// Bag class
-	UPROPERTY(EditAnywhere, Category= "Bag")
-	TSubclassOf<ABagActor> BagActorClass;
-	
 	// Components
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* CameraComponent;
@@ -75,15 +63,20 @@ public:
 	UPROPERTY(EditAnywhere)
 	UWidgetInteractionComponent* WidgetInteractionComponent;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	UBagComponent* Bag;
 
-	// Input
-	UPROPERTY(EditAnywhere, Category= "Spells")
-	TSoftObjectPtr<class UDataTable> SpellBookDataTable;
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	USpellbookComponent* Spellbook;
 	
+	// Input
 	UPROPERTY(EditAnywhere, Category= "Input")
-	TSoftObjectPtr<UInputMappingContext> InputMappingContext;
+	TSoftObjectPtr<UInputMappingContext> MouseMoveAndUI_Context;
+	UPROPERTY(EditAnywhere, Category= "Input")
+	TSoftObjectPtr<UInputMappingContext> CharacterMovement_InputContext;
+	UPROPERTY(EditAnywhere, Category= "Input")
+	TSoftObjectPtr<UInputMappingContext> Interaction_InputContext;
+
 	
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
 	TSoftObjectPtr<UInputAction> LookAround_InputAction;
@@ -124,26 +117,7 @@ public:
 private:
 	FHitResult InteractionTarget;
 
-	// 3D UI Actors
-	TWeakObjectPtr<ABagActor> BagActor;
-	
-	// Spell oriented variables
-	TWeakObjectPtr<ASpellCast> PreparedSpell;
-	TArray<FHitResult> SpellTargets;
-	
-	// Obtained Runes
-	TArray<TSoftObjectPtr<URuneCast>> Runes;
-
-	// Runes casted
-	TArray<TSoftObjectPtr<URuneCast>> CastedRunes;
-	FTimerHandle ClearCastedRunesTimerHandle;
-
-	// Spell data RuneChain id == SpellCastClass id
-	// Correct SpellCast for RuneChain is get from IsRuneSequenceValid function
-	TArray<TArray<TSoftObjectPtr<URuneCast>>> RuneChains;
-	TArray<TSubclassOf<ASpellCast>> SpellCastClasses;
-	
-	bool bIsCastingSpell = false;
+	bool bBlockMovement = false;
 	bool bIsSprinting = false;
 
 	UPROPERTY(EditAnywhere, Category= "Movement", meta = (AllowPrivateAccess = "true"))
@@ -152,5 +126,4 @@ private:
 	float RunningSpeed = 14.0f;
 
 	float MovementSpeed = 0.0f;
-	
 };
