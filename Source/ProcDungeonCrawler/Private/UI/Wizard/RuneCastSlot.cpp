@@ -1,53 +1,54 @@
 
 #include "..\..\..\Public\UI\Wizard\RuneCastSlot.h"
 
-#include "WizardCharacter.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Spell/RuneCast.h"
 
-void URuneCastSlot::SetRuneData(int _RuneIndex, URuneCast* _RuneCast)
+void URuneCastSlot::SetRuneData(URuneCast* NewRuneCast)
 {
-	RuneCast = _RuneCast;
-	
-	RuneIndex = _RuneIndex;
-
+	RuneCast = NewRuneCast;
 	RuneIcon = RuneCast->RuneIcon;
-	RuneName = RuneCast->RuneName;
-
-	if (RuneIconImage)
-	{
-		FSlateBrush Brush =  RuneIconImage->GetBrush();
-		Brush.SetResourceObject(RuneIcon.Get());
-
-		RuneIconImage->SetBrush(Brush);
-	}
-
-	SetRuneCastSlotIndex(RuneIndex);
+	RuneName = FText::FromName(RuneCast->RuneName);
 	
-	RuneCast->OnRuneCasted.AddDynamic(this, &URuneCastSlot::TriggerUseAnimation);
+	RuneNameTextBlock->SetText(RuneName);
+	
+	FSlateBrush Brush = RuneIconImage->GetBrush();
+	Brush.SetResourceObject(RuneIcon.LoadSynchronous());
+	RuneIconImage->SetBrush(Brush);
 }
 
-void URuneCastSlot::SetRuneCastSlotIndex(int Index)
+void URuneCastSlot::ClearRuneData()
+{
+	RuneCast = nullptr;
+	
+	FSlateBrush Brush = RuneIconImage->GetBrush();
+	Brush.SetResourceObject(nullptr);
+	RuneIconImage->SetBrush(Brush);
+	RuneName = FText::FromString("Empty");
+
+	RuneNameTextBlock->SetText(RuneName);
+}
+
+void URuneCastSlot::SetSlotIndex(int Index)
 {
 	RuneIndex = Index;
-	if (RuneIdTextBlock)
-	{
-		RuneIdTextBlock->SetText(FText::FromString(FString::FromInt(RuneIndex + 1)));
-	}
 	
-	if (RuneNameTextBlock)
-	{
-		RuneNameTextBlock->SetText(FText::FromName(RuneName));
-	}
+	RuneIdTextBlock->SetText(FText::FromString(FString::FromInt(RuneIndex + 1)));
+	RuneNameTextBlock->SetText(RuneName);
 }
 
-void URuneCastSlot::TriggerUseAnimation(AWizardCharacter* WizardCharacter, URuneCast* _RuneCast)
+URuneCast* URuneCastSlot::UseRune()
 {
-	if (!IsValid(WizardCharacter) || !IsValid(_RuneCast)) return;
+	if (IsEmpty()) return nullptr;
+
+	if (OnRuneUsed.IsBound()) {
+		OnRuneUsed.Broadcast(RuneIndex);
+	}
+	return RuneCast;
 }
 
 bool URuneCastSlot::IsEmpty()
 {
-	return !RuneCast.IsNull();
+	return RuneCast == nullptr;
 }

@@ -16,17 +16,18 @@
 #include "Components/Character/SpellbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-#include "Spell/RunePickup.h"
-#include "Spell/SpellCast.h"
-
 #include "UI/Wizard/WizardHUD.h"
 #include "UI/InteractionUI.h"
 
 #include "Interface/PropPickupInterface.h"
+#include "Items/Rune.h"
+#include "Spell/RuneCast.h"
+#include "UI/Wizard/RuneCastsHistory.h"
 
 AWizardCharacter::AWizardCharacter()
 {
 	AutoPossessPlayer = EAutoReceiveInput::Disabled;
+	bUseControllerRotationYaw = true;
 	
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -54,8 +55,8 @@ AWizardCharacter::AWizardCharacter()
 	// Bag with items and runes
 	Bag = CreateDefaultSubobject<UBagComponent>(FName("Bag"));
 	Bag->SetupAttachment(RootComponent);
-	Spellbook = CreateDefaultSubobject<USpellbookComponent>(FName("Spellbook"));
-	Spellbook->SetupAttachment(RightHandSocketComponent);
+	SpellBook = CreateDefaultSubobject<USpellbookComponent>(FName("Spellbook"));
+	SpellBook->SetupAttachment(RightHandSocketComponent);
 }
 
 void AWizardCharacter::BeginPlay()
@@ -67,9 +68,14 @@ void AWizardCharacter::BeginPlay()
 	if (AWizardPlayerController* PlayerController = Cast<AWizardPlayerController>(GetController()))
 	{
 		UWizardHUD* WizardHUD = PlayerController->SetupWizardHud();
-		
-		Spellbook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::AddRuneToUI);
+
 		OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
+		
+		OnRuneSlotSelected.AddDynamic(WizardHUD, &UWizardHUD::UseRuneOfIdx);
+		OnRuneSlotSelected.AddDynamic(SpellBook, &USpellbookComponent::CastRuneOfIdx);
+		SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
+		SpellBook->OnCastedRunesCleared.AddDynamic(WizardHUD->CastedRuneHistory, &URuneCastsHistory::ClearCastHistory);
+
 		OnNewInteractionTarget.Broadcast(NAME_None, NAME_None);
 	}
 }
@@ -90,7 +96,7 @@ void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	// Input->BindAction(Crouch_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Crouch);
 
 	// set magic inputs
-	Input->BindAction(RuneCast_InputAction.Get(), ETriggerEvent::Triggered, Spellbook, &USpellbookComponent::CastRune);
+	Input->BindAction(RuneCast_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::OnRuneSlotKeyPressed);
 	// Input->BindAction(ChangeSpellSlot_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::ChangeSpellSlot);
 	
 	// set interaction inputs
@@ -105,10 +111,10 @@ void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	if (const AWizardPlayerController* PlayerController = Cast<AWizardPlayerController>(GetController()))
 	if (UWizardHUD* WizardHUD = PlayerController->GetWizardHud())
 	{
-		Input->BindAction(OpenMap_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenMap);
+		// Input->BindAction(OpenMap_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenMap);
 		Input->BindAction(OpenMap_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::UpdateInputContexts);
 		
-		Input->BindAction(OpenSpellBook_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenSpellbook);
+		// Input->BindAction(OpenSpellBook_InputAction.Get(), ETriggerEvent::Triggered, WizardHUD, &UWizardHUD::OpenSpellbook);
 		Input->BindAction(OpenSpellBook_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::UpdateInputContexts);
 	}
 
@@ -173,6 +179,20 @@ void AWizardCharacter::UpdateInputContexts(const FInputActionValue& Value)
 	const bool bContextsState = Bag->IsOpen();
 	SetInteractionInput(!bContextsState);
 	SetCharacterMovementInput(!bContextsState);
+}
+
+void AWizardCharacter::OnRuneSlotKeyPressed(const FInputActionValue& Value)
+{
+	if (Value.GetValueType() != EInputActionValueType::Axis1D)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Invalid input value in %s"), *FString(__FUNCTION__));
+		return;
+	}
+
+	const int32 RuneSlotIdx = ((int32)Value.Get<float>()) - 1; // "1 key" is equal to scalar of 1 because 0 is ignored in input.
+	if (OnRuneSlotSelected.IsBound()) {
+		OnRuneSlotSelected.Broadcast(RuneSlotIdx);
+	}
 }
 
 // INPUT
@@ -265,29 +285,31 @@ void AWizardCharacter::PrimaryAction(const FInputActionValue& Value)
 	}
 	
 	// No prepared spell.
-	if (!Spellbook->IsSpellPrepared()) return;
-	Spellbook->CastPreparedSpell(this);
+	if (!SpellBook->IsSpellPrepared()) return;
+	SpellBook->CastPreparedSpell(this);
 }
 
 void AWizardCharacter::Interact(const FInputActionValue& Value)
 {
 	AActor* TargetActor = InteractionTarget.GetActor();
-	if (TargetActor == nullptr) return;
-
-	if (!TargetActor->Implements<UPropPickupInterface>())
+	if (TargetActor == nullptr || !TargetActor->Implements<UPropPickupInterface>())
 	{
 		return;
 	}
 
-	AActor* PickedUpActor = IPropPickupInterface::Execute_Pickup(TargetActor, this);
+	UDataAsset* AdditionalDataAsset = IPropPickupInterface::Execute_GetAdditionalDataAsset(TargetActor);
 
-	// Add rune if rune pickup
-	if (const ARunePickup* RunePickup = Cast<ARunePickup>(PickedUpActor))
+	// Add rune to Spell Book
+	if (URuneCast* RuneCast = Cast<URuneCast>(AdditionalDataAsset))
 	{
-		Spellbook->AddRune(RunePickup->RuneCast);
+		SpellBook->AddRune(RuneCast);
+	}
+	// Add bag
+	if (const APickupItem* PickupItem = Cast<APickupItem>(TargetActor))
+	{
+		Bag->AddItem(PickupItem->GetClass(), 1);
 	}
 
-	// Remove actor
-	PickedUpActor->Destroy();
+	IPropPickupInterface::Execute_Pickup(TargetActor, this);
 }
 

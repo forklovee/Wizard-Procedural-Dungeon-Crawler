@@ -4,7 +4,6 @@
 
 #include "Components/Character/SpellbookComponent.h"
 
-#include "InputActionValue.h"
 #include "Engine/DataTable.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Spell/RuneCast.h"
@@ -29,11 +28,16 @@ void USpellbookComponent::BeginPlay()
 	
 	for (const FSpellCastRuneChain* Row : SpellBookRows)
 	{
-		SpellCastClasses.Add(Row->SpellCast);
-		RuneChains.Add(Row->RuneChain);
+		TArray<URuneCast*> RuneChain;
+		for (const TSoftObjectPtr<URuneCast>& RuneCast : Row->RuneChain)
+		{
+			if (RuneCast.IsNull()) continue;
+			
+			RuneChain.Add(RuneCast.LoadSynchronous());
+		}
+		SpellBook.Add(RuneChain, Row->SpellCast);
 	}
 }
-
 
 void USpellbookComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
@@ -50,29 +54,33 @@ void USpellbookComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 			UEngineTypes::ConvertToTraceType(ECC_SpellInteractive),
 			false,
 			{},
-			EDrawDebugTrace::ForOneFrame,
+			EDrawDebugTrace::None,
 			SpellTargets,
 			true
 		);
 	}
 }
 
-bool USpellbookComponent::AddRune(TSoftObjectPtr<URuneCast> NewRuneCast)
+bool USpellbookComponent::AddRune(URuneCast* NewRuneCast)
 {
-	UE_LOG(LogTemp, Warning, TEXT("b4, broadcast"))
-	if (NewRuneCast.IsNull()) return false;
-	UE_LOG(LogTemp, Warning, TEXT("not null!!!"))
 	if (Runes.Contains(NewRuneCast)) return false;
 	
-	Runes.Add(NewRuneCast);
+	const int RuneIdx = Runes.Add(NewRuneCast);
 
-	UE_LOG(LogTemp, Warning, TEXT("broadcast"))
-	OnRuneAdded.Broadcast(NewRuneCast.LoadSynchronous());
+	OnRuneAdded.Broadcast(RuneIdx ,NewRuneCast);
 	
 	return true;
 }
 
-void USpellbookComponent::CastRune(const FInputActionValue& Value)
+URuneCast* USpellbookComponent::GetRuneOfIdx(int Idx)
+{
+	if (Idx < 0 || Idx > Runes.Num() - 1) {
+		return nullptr;
+	}
+	return Runes[Idx];
+}
+
+void USpellbookComponent::CastRune(URuneCast* RuneCast)
 {
 	if (CastedRunes.Num() >= 4)
 	{
@@ -80,22 +88,15 @@ void USpellbookComponent::CastRune(const FInputActionValue& Value)
 		return;
 	}
 	
-	const int RuneId = static_cast<int>(Value.Get<float>() - 1.0);
-
-	if (RuneId < 0 || RuneId >= Runes.Num()) return;
-
-	const TSoftObjectPtr<URuneCast> RuneToCast = Runes[RuneId];
-	if (RuneToCast == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Rune of id %i is null"), RuneId);
-		return;
-	}
-	UE_LOG(LogTemp, Warning, TEXT("Cast Rune: %s"), *RuneToCast->GetName());
-
 	// Set auto clear timer
 	GetWorld()->GetTimerManager().SetTimer(ClearCastedRunesTimerHandle, this, &USpellbookComponent::ClearCastedRunes, 2.0, false);
 	
-	CastedRunes.Push(RuneToCast);
+	CastedRunes.Push(RuneCast);
+	if (OnRuneCasted.IsBound())
+	{
+		OnRuneCasted.Broadcast(Runes.Find(RuneCast), RuneCast, CastedRunes);
+	}
+	
 	TSubclassOf<ASpellCast> OutSpellCastClass;
 	if (IsRuneSequenceValid(CastedRunes, OutSpellCastClass))
 	{
@@ -111,13 +112,28 @@ void USpellbookComponent::CastRune(const FInputActionValue& Value)
 	}
 }
 
-bool USpellbookComponent::IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass)
+void USpellbookComponent::CastRuneOfIdx(int Idx)
 {
+	if (URuneCast* RuneCast = GetRuneOfIdx(Idx))
+	{
+		CastRune(RuneCast);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Rune of index %d not found"), Idx);
+	}
+}
+
+bool USpellbookComponent::IsRuneSequenceValid(TArray<URuneCast*>& SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass)
+{
+	TArray< TArray<URuneCast*> > RuneChains;
+	SpellBook.GetKeys(RuneChains);
+	
 	const int RuneChainId = RuneChains.Find(SpellRunes);
 
-	if (RuneChainId != INDEX_NONE && RuneChainId < SpellCastClasses.Num()) //Spell found
+	if (RuneChainId != INDEX_NONE) //Spell found
 	{
-		OutSpellCastClass = SpellCastClasses[RuneChainId];
+		OutSpellCastClass = SpellBook[SpellRunes];
 
 		ClearCastedRunes();
 		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
@@ -175,5 +191,10 @@ void USpellbookComponent::CastPreparedSpell(AWizardCharacter* WizardCharacter)
 
 void USpellbookComponent::ClearCastedRunes()
 {
-	CastedRunes = TArray<TSoftObjectPtr<URuneCast>>();
+	CastedRunes = TArray<URuneCast*>();
+
+	if (OnCastedRunesCleared.IsBound())
+	{
+		OnCastedRunesCleared.Broadcast();
+	}
 }

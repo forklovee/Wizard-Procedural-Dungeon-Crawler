@@ -25,7 +25,6 @@ UWizardHUD* AWizardPlayerController::SetupWizardHud()
 		if (WizardHUD)
 		{
 			WizardHUD->AddToViewport();
-			WizardHUD->SetupRuneCastSlotsContainer();
 		}
 	}
 

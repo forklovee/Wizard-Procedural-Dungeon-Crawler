@@ -12,20 +12,25 @@ class UImage;
 class AWizardCharacter;
 class URuneCast;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneUsed, int, RuneIdx);
+
 UCLASS()
 class PROCDUNGEONCRAWLER_API URuneCastSlot : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintAssignable)
+	FOnRuneUsed OnRuneUsed;
+
 	UFUNCTION(BlueprintCallable)
-	void SetRuneData(int RuneIndex, URuneCast* RuneCast);
+	void SetRuneData(URuneCast* RuneCast);
+	void ClearRuneData();
+	void SetSlotIndex(int Index);
 
-	void SetRuneCastSlotIndex(int Index);
+	UFUNCTION(BlueprintCallable)
+	URuneCast* UseRune();
 	
-	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void TriggerUseAnimation(AWizardCharacter* WizardCharacter, URuneCast* RuneCast);
-
 	UFUNCTION(BlueprintCallable)
 	bool IsEmpty();
 
@@ -40,9 +45,10 @@ public:
 	UTextBlock* RuneIdTextBlock;
 
 private:
-	TSoftObjectPtr<URuneCast> RuneCast;
+	UPROPERTY()
+	URuneCast* RuneCast;
 	
 	TSoftObjectPtr<UTexture2D> RuneIcon;
-	FName RuneName = "Empty";
-	int RuneIndex = 0;
+	FText RuneName;
+	int RuneIndex;
 };

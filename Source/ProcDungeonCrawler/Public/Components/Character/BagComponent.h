@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "BagComponent.generated.h"
 
+class APickupItem;
 class ABagActor;
 struct FInputActionValue;
 DECLARE_MULTICAST_DELEGATE(FOnBagUpdated);
@@ -25,11 +26,11 @@ public:
 	
 	TMap<TSubclassOf<AActor>, int32>& GetItems() { return Items; }
 	
-	void AddItem(TSubclassOf<AActor> ItemClass, int32 Amount = 1);
-	void RemoveItem(TSubclassOf<AActor> ItemClass, int32 Amount = 1);
+	void AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
+	void RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
 	
-	bool HasItemClass(TSubclassOf<AActor> ItemClass) const;
-	int32 GetItemAmount(TSubclassOf<AActor> ItemClass) const;
+	bool HasItemClass(TSubclassOf<APickupItem> ItemClass) const;
+	int32 GetItemAmount(TSubclassOf<APickupItem> ItemClass) const;
 
 	TSet<TSubclassOf<AActor>> GetItemClasses() const;
 

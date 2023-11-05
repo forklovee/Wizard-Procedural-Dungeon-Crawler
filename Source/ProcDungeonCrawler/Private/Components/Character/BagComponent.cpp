@@ -3,6 +3,7 @@
 
 #include "Components/Character/BagComponent.h"
 
+#include "Items/PickupItem.h"
 #include "Player/BagActor.h"
 
 UBagComponent::UBagComponent()
@@ -33,7 +34,7 @@ void UBagComponent::ToggleBag(const FInputActionValue& Value)
 	}
 }
 
-void UBagComponent::AddItem(TSubclassOf<AActor> ItemClass, int32 Amount)
+void UBagComponent::AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 {
 	if (!HasItemClass(ItemClass))
 	{
@@ -50,7 +51,7 @@ void UBagComponent::AddItem(TSubclassOf<AActor> ItemClass, int32 Amount)
 	}
 }
 
-void UBagComponent::RemoveItem(TSubclassOf<AActor> ItemClass, int32 Amount)
+void UBagComponent::RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 {
 	if (!HasItemClass(ItemClass)) return;
 
@@ -70,12 +71,12 @@ void UBagComponent::RemoveItem(TSubclassOf<AActor> ItemClass, int32 Amount)
 	}
 }
 
-bool UBagComponent::HasItemClass(TSubclassOf<AActor> ItemClass) const
+bool UBagComponent::HasItemClass(TSubclassOf<APickupItem> ItemClass) const
 {
 	return Items.Contains(ItemClass);
 }
 
-int32 UBagComponent::GetItemAmount(TSubclassOf<AActor> ItemClass) const
+int32 UBagComponent::GetItemAmount(TSubclassOf<APickupItem> ItemClass) const
 {
 	if (HasItemClass(ItemClass))
 	{

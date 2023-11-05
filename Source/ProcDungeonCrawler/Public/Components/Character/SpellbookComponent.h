@@ -11,7 +11,11 @@ class URuneCast;
 struct FInputActionValue;
 class ASpellCast;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneAdded, URuneCast*, RuneCast);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRuneAdded, int, RuneIdx, URuneCast*, RuneCast);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRuneCasted, int, RuneIdx, URuneCast*, RuneCast, TArray<URuneCast*>&, CastedRunes);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastedRunesCleared);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpellCasted, URuneCast*, RuneCast);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API USpellbookComponent : public USceneComponent
@@ -20,14 +24,21 @@ class PROCDUNGEONCRAWLER_API USpellbookComponent : public USceneComponent
 
 public:
 	FOnRuneAdded OnRuneAdded;
+	FOnRuneCasted OnRuneCasted;
+	FOnCastedRunesCleared OnCastedRunesCleared;
+	
+	FOnSpellCasted OnSpellCasted;
 	
 	USpellbookComponent();
 
 	// Runes
-	bool AddRune(TSoftObjectPtr<URuneCast> NewRuneCast);
+	bool AddRune(URuneCast* NewRuneCast);
 
-	void CastRune(const FInputActionValue& Value);
-	bool IsRuneSequenceValid(TArray<TSoftObjectPtr<URuneCast>> SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass);
+	URuneCast* GetRuneOfIdx(int Idx);
+	void CastRune(URuneCast* RuneCast);
+	UFUNCTION()
+	void CastRuneOfIdx(int Idx);
+	bool IsRuneSequenceValid(TArray<URuneCast*>& SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass);
 
 	void ClearCastedRunes();
 	
@@ -52,17 +63,13 @@ private:
 	TArray<FHitResult> SpellTargets;
 	
 	// Obtained Runes
-	TArray<TSoftObjectPtr<URuneCast>> Runes;
+	TArray<URuneCast*> Runes;
 
 	// Runes casted
-	TArray<TSoftObjectPtr<URuneCast>> CastedRunes;
+	TArray<URuneCast*> CastedRunes;
 	FTimerHandle ClearCastedRunesTimerHandle;
 
-	// Spell data RuneChain id == SpellCastClass id
-	// Correct SpellCast for RuneChain is get from IsRuneSequenceValid function
-	TArray<TArray<TSoftObjectPtr<URuneCast>>> RuneChains;
-	TArray<TSubclassOf<ASpellCast>> SpellCastClasses;
+	TMap<TArray<URuneCast*>, TSubclassOf<ASpellCast>> SpellBook;
 	
 	bool bIsCastingSpell = false;
-	
 };

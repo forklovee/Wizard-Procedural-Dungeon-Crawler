@@ -18,6 +18,7 @@ class ASpellCast;
 class URuneCast;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTarget, FName, ItemName, FName, InteractionName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneSlotSelected, int, RuneIdx);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API AWizardCharacter : public ACharacter
@@ -25,8 +26,11 @@ class PROCDUNGEONCRAWLER_API AWizardCharacter : public ACharacter
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(BlueprintAssignable)
 	FOnNewInteractionTarget OnNewInteractionTarget;
-	
+	UPROPERTY(BlueprintAssignable)
+	FOnRuneSlotSelected OnRuneSlotSelected;
+
 	AWizardCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -37,6 +41,7 @@ protected:
 private:
 	// Input
 	void UpdateInputContexts(const struct FInputActionValue& Value);
+	void OnRuneSlotKeyPressed(const FInputActionValue& Value);
 	void SetInteractionInput(bool bState) const;
 	void SetCharacterMovementInput(bool bState) const;
 	
@@ -67,7 +72,7 @@ public:
 	UBagComponent* Bag;
 
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
-	USpellbookComponent* Spellbook;
+	USpellbookComponent* SpellBook;
 	
 	// Input
 	UPROPERTY(EditAnywhere, Category= "Input")

@@ -3,43 +3,60 @@
 
 #include "UI/Wizard/WizardHUD.h"
 
-#include "UI/Wizard/RuneCastSlotsContainer.h"
+#include "Blueprint/WidgetTree.h"
+#include "UI/Wizard/RuneCastSlot.h"
 
-void UWizardHUD::AddRuneToUI(URuneCast* RuneCast)
+#include "Components/HorizontalBox.h"
+#include "Components/Image.h"
+#include "UI/Wizard/RuneCastsHistory.h"
+
+void UWizardHUD::NativeConstruct()
 {
-	if (RuneCastSlotsContainer)
-	{
-		RuneCastSlotsContainer->AddNewRune(RuneCast);
+	Super::NativeConstruct();
+
+	if (RuneSlots != nullptr) {
+		int ChildIdx = 0;
+		for (UWidget* ChildWidget : RuneSlots->GetAllChildren()) {
+			if (URuneCastSlot* RuneCastSlot = Cast<URuneCastSlot>(ChildWidget)) {
+				RuneCastSlot->SetSlotIndex(ChildIdx);
+				RuneCastSlots.Add(RuneCastSlot);
+				ChildIdx++;
+			}
+		}
 	}
-	else
+}
+
+void UWizardHUD::UseRuneOfIdx(int Idx)
+{
+	if (RuneSlots == nullptr || Idx < 0 || Idx > RuneCastSlots.Num()-1) return;
+
+	URuneCastSlot* RuneCastSlot = RuneCastSlots[Idx];
+	if (URuneCast* RuneCast = RuneCastSlot->UseRune())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Rune cast slots container is null!"));
+		CastedRuneHistory->AddRuneToCastHistory(RuneCast);
 	}
 }
 
-void UWizardHUD::OpenBag(const FInputActionValue& Value)
+bool UWizardHUD::IsSlotEmpty(int SlotIdx) const
 {
-	UE_LOG(LogTemp, Display, TEXT("Open Bag!"));
+	if (SlotIdx < 0 || SlotIdx > RuneCastSlots.Num()-1) return false;
+	
+	URuneCastSlot* RuneCastSlot = RuneCastSlots[SlotIdx];
+	return RuneCastSlot->IsEmpty();
 }
 
-void UWizardHUD::OpenMap(const FInputActionValue& Value)
+void UWizardHUD::UnbindRuneToSlot(int SlotIdx)
 {
-	UE_LOG(LogTemp, Display, TEXT("Open Map!"));
+	if (SlotIdx < 0 || SlotIdx > RuneCastSlots.Num()-1) return;
+
+	RuneCastSlots[SlotIdx]->ClearRuneData();
 }
 
-void UWizardHUD::OpenSpellbook(const FInputActionValue& Value)
+void UWizardHUD::BindRuneToSlot(int SlotIdx, URuneCast* RuneCast)
 {
-	UE_LOG(LogTemp, Display, TEXT("Open Spellbook!"));
-}
-
-void UWizardHUD::SetupRuneCastSlotsContainer()
-{
-	if (RuneCastSlotsContainer)
-	{
-		RuneCastSlotsContainer->RegisterAllRunCastSlots();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("chuj"));
+	if (SlotIdx < 0 || SlotIdx > RuneCastSlots.Num()-1) return;
+	
+	if (URuneCastSlot* RuneCastSlot = RuneCastSlots[SlotIdx]) {
+		RuneCastSlot->SetRuneData(RuneCast);
 	}
 }

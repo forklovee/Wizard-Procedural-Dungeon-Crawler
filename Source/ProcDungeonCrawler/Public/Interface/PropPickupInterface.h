@@ -26,8 +26,11 @@ public:
 	FOnPickup OnPickup;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pickup")
-	AActor* Pickup(APawn* Pawn);
+	TSubclassOf<APickupItem> Pickup(APawn* Pawn);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pickup")
+	UDataAsset* GetAdditionalDataAsset();
+	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pickup")
 	FName GetItemName();
 

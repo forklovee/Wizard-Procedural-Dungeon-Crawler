@@ -22,7 +22,7 @@ void URuneCastSlotsContainer::AddNewRune(URuneCast* RuneCast)
 		return;
 	}
 	const int SlotId = RuneCastAvailableSlotIds.Pop();
-	RuneCastSlots[SlotId]->SetRuneData(SlotId, RuneCast);
+	// RuneCastSlots[SlotId]->SetRuneData(RuneCast);
 
 	UE_LOG(LogTemp, Warning, TEXT("Added rune ui to slot %i for %s"), SlotId, *RuneCast->GetName());
 }
@@ -40,7 +40,6 @@ void URuneCastSlotsContainer::RegisterAllRunCastSlots()
 	{
 		if (URuneCastSlot* RuneCastSlot = Cast<URuneCastSlot>(Widget))
 		{
-			RuneCastSlot->SetRuneCastSlotIndex(WidgetIndex);
 			WidgetIndex++;
 			
 			RuneCastSlots.Add(RuneCastSlot);
@@ -53,7 +52,6 @@ void URuneCastSlotsContainer::RegisterAllRunCastSlots()
 	{
 		if (URuneCastSlot* RuneCastSlot = Cast<URuneCastSlot>(Widget))
 		{
-			RuneCastSlot->SetRuneCastSlotIndex(WidgetIndex);
 			WidgetIndex++;
 			
 			RuneCastSlots.Add(RuneCastSlot);
@@ -66,7 +64,6 @@ void URuneCastSlotsContainer::RegisterAllRunCastSlots()
 	{
 		if (URuneCastSlot* RuneCastSlot = Cast<URuneCastSlot>(Widget))
 		{
-			RuneCastSlot->SetRuneCastSlotIndex(WidgetIndex);
 			WidgetIndex++;
 			
 			RuneCastSlots.Add(RuneCastSlot);

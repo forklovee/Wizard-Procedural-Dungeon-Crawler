@@ -6,10 +6,11 @@
 #include "Blueprint/UserWidget.h"
 #include "WizardHUD.generated.h"
 
+class URuneCastsHistory;
 class UInteractionUI;
 class URuneCast;
-class URuneCastSlotsContainer;
-struct FInputActionValue;
+class UHorizontalBox;
+class URuneCastSlot;
 /**
  * 
  */
@@ -19,18 +20,28 @@ class PROCDUNGEONCRAWLER_API UWizardHUD : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable)
-	void AddRuneToUI(URuneCast* RuneCast);
+	UFUNCTION()
+	void UseRuneOfIdx(int Idx);
 
-	void OpenBag(const FInputActionValue& Value);
-	void OpenMap(const FInputActionValue& Value);
-	void OpenSpellbook(const FInputActionValue& Value);
-	
-	void SetupRuneCastSlotsContainer();
-	
-	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	URuneCastSlotsContainer* RuneCastSlotsContainer;
+	bool IsSlotEmpty(int SlotIdx) const;
+	UFUNCTION()
+	void BindRuneToSlot(int SlotIdx, URuneCast* RuneCast);
+	UFUNCTION()
+	void UnbindRuneToSlot(int SlotIdx);
 
+protected:
+	virtual void NativeConstruct() override;
+
+public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UHorizontalBox* RuneSlots;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	URuneCastsHistory* CastedRuneHistory;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UInteractionUI* InteractionUI;
+
+protected:
+	TArray<URuneCastSlot*> RuneCastSlots;
 };
