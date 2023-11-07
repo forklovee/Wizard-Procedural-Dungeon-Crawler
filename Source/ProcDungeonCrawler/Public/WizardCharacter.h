@@ -18,6 +18,7 @@ class ASpellCast;
 class URuneCast;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTarget, FName, ItemName, FName, InteractionName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToggleBagRequest, bool, bIsOpen);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneSlotSelected, int, RuneIdx);
 
 UCLASS()
@@ -28,6 +29,8 @@ class PROCDUNGEONCRAWLER_API AWizardCharacter : public ACharacter
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnNewInteractionTarget OnNewInteractionTarget;
+	UPROPERTY(BlueprintAssignable)
+	FOnToggleBagRequest OnToggleBagRequest;
 	UPROPERTY(BlueprintAssignable)
 	FOnRuneSlotSelected OnRuneSlotSelected;
 
@@ -53,6 +56,9 @@ private:
 	// Interaction
 	void PrimaryAction(const FInputActionValue& Value);
 	void Interact(const FInputActionValue& Value);
+
+	// Bag
+	void ToggleBagAction(const FInputActionValue& Value);
 	
 public:
 	// Components
@@ -67,10 +73,12 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	UWidgetInteractionComponent* WidgetInteractionComponent;
-	
+
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	USceneComponent* BagSocket;
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	UBagComponent* Bag;
-
+	
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	USpellbookComponent* SpellBook;
 	

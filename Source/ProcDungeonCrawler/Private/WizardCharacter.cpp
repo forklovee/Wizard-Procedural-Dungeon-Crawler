@@ -29,7 +29,6 @@ AWizardCharacter::AWizardCharacter()
 	AutoPossessPlayer = EAutoReceiveInput::Disabled;
 	bUseControllerRotationYaw = true;
 	
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
@@ -53,8 +52,11 @@ AWizardCharacter::AWizardCharacter()
 	WidgetInteractionComponent->SetupAttachment(CameraComponent);
 
 	// Bag with items and runes
+	BagSocket = CreateDefaultSubobject<USceneComponent>(FName("BagSocket"));
+	BagSocket->SetupAttachment(RootComponent);
+	
 	Bag = CreateDefaultSubobject<UBagComponent>(FName("Bag"));
-	Bag->SetupAttachment(RootComponent);
+	Bag->SetupAttachment(BagSocket);
 	SpellBook = CreateDefaultSubobject<USpellbookComponent>(FName("Spellbook"));
 	SpellBook->SetupAttachment(RightHandSocketComponent);
 }
@@ -104,7 +106,7 @@ void AWizardCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Input->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Interact);
 
 	// set bag inputs
-	Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, Bag, &UBagComponent::ToggleBag);
+	Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::ToggleBagAction);
 	Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::UpdateInputContexts);
 	
 	// set ui inputs
@@ -311,5 +313,12 @@ void AWizardCharacter::Interact(const FInputActionValue& Value)
 	}
 
 	IPropPickupInterface::Execute_Pickup(TargetActor, this);
+}
+
+void AWizardCharacter::ToggleBagAction(const FInputActionValue& Value)
+{
+	Bag->ToggleBag();
+
+	OnToggleBagRequest.Broadcast(Bag->IsOpen());
 }
 

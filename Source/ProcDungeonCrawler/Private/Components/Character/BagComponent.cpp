@@ -16,7 +16,7 @@ bool UBagComponent::IsOpen() const
 	return BagActor.IsValid();
 }
 
-void UBagComponent::ToggleBag(const FInputActionValue& Value)
+void UBagComponent::ToggleBag()
 {
 	if (BagActor.IsValid())
 	{
@@ -29,8 +29,10 @@ void UBagComponent::ToggleBag(const FInputActionValue& Value)
 		FRotator BagRotation = GetComponentRotation();
 		BagRotation.Yaw += 180.0f;
 		
-		ABagActor* SpawnedBag = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
-		BagActor = SpawnedBag;
+		BagActor = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
+		BagActor->SetPawnItems(Items);
+
+		BagActor->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform, NAME_None);
 	}
 }
 
@@ -83,11 +85,4 @@ int32 UBagComponent::GetItemAmount(TSubclassOf<APickupItem> ItemClass) const
 		return Items[ItemClass];
 	}
 	return 0;
-}
-
-TSet<TSubclassOf<AActor>> UBagComponent::GetItemClasses() const
-{
-	TSet<TSubclassOf<AActor>> ItemClasses;
-	Items.GetKeys(ItemClasses);
-	return ItemClasses;
 }

@@ -22,17 +22,15 @@ public:
 	UBagComponent();
 
 	bool IsOpen() const;
-	void ToggleBag(const FInputActionValue& Value);
-	
-	TMap<TSubclassOf<AActor>, int32>& GetItems() { return Items; }
+
+	UFUNCTION()
+	void ToggleBag();
 	
 	void AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
 	void RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
 	
 	bool HasItemClass(TSubclassOf<APickupItem> ItemClass) const;
 	int32 GetItemAmount(TSubclassOf<APickupItem> ItemClass) const;
-
-	TSet<TSubclassOf<AActor>> GetItemClasses() const;
 
 public:
 	// Bag class
@@ -41,7 +39,7 @@ public:
 	
 private:
 	UPROPERTY()
-	TMap<TSubclassOf<AActor>, int32> Items;
+	TMap<TSubclassOf<APickupItem>, int32> Items;
 
 	// 3D UI Actor
 	TWeakObjectPtr<ABagActor> BagActor;
