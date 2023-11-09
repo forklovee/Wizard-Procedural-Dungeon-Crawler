@@ -3,30 +3,41 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "Characters/Wizard/WizardCharacter.h"
+#include "WizardPlayer.generated.h"
 
-#include "WizardCharacter.generated.h"
+class UPhysicsHandleComponent;
 
-class USpellbookComponent;
-class ABagActor;
-class UWidgetInteractionComponent;
-class UBagComponent;
+UENUM()
+enum class EHandsVisibility
+{
+	E_Hidden,
+	E_Transition,
+	E_Visible
+};
+
 class UInputMappingContext;
+class UBagComponent;
+class UWidgetInteractionComponent;
 class UInputAction;
+struct FInputActionValue;
 
-class ASpellCast;
-class URuneCast;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHandsVisibilityChanged, bool, bHandsVisible);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTarget, FName, ItemName, FName, InteractionName);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToggleBagRequest, bool, bIsOpen);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneSlotSelected, int, RuneIdx);
 
-UCLASS()
-class PROCDUNGEONCRAWLER_API AWizardCharacter : public ACharacter
+UCLASS(Blueprintable, BlueprintType)
+class AWizardPlayer : public AWizardCharacter
 {
 	GENERATED_BODY()
 	
 public:
+	AWizardPlayer();
+	virtual void Tick(float DeltaSeconds) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnNewInteractionTarget OnNewInteractionTarget;
 	UPROPERTY(BlueprintAssignable)
@@ -34,31 +45,49 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnRuneSlotSelected OnRuneSlotSelected;
 
-	AWizardCharacter();
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-	
 protected:
 	virtual void BeginPlay() override;
-	
+	virtual AActor* Interact(AActor* Actor) override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual void SetHandsVisibility(const bool bState);
+	UFUNCTION(BlueprintCallable)
+	bool AreHandsVisible() const;
 private:
 	// Input
-	void UpdateInputContexts(const struct FInputActionValue& Value);
-	void OnRuneSlotKeyPressed(const FInputActionValue& Value);
+	UFUNCTION()
+	void UpdateBagInputContext(bool IsBagOpen);
+	UFUNCTION()
+	void UpdateSpellBookInputContext(bool IsSpellBookOpen);
+	UFUNCTION()
+	void UpdateMapInputContext(bool IsMapOpenOpen);
+	
 	void SetInteractionInput(bool bState) const;
 	void SetCharacterMovementInput(bool bState) const;
-	
-	// Movement and Looking around
-	void MoveAround(const FInputActionValue& Value);
-	void LookAround(const FInputActionValue& Value);
-	void ToggleSprint(const FInputActionValue& Value);
-	
-	// Interaction
-	void PrimaryAction(const FInputActionValue& Value);
-	void Interact(const FInputActionValue& Value);
 
-	// Bag
-	void ToggleBagAction(const FInputActionValue& Value);
+	// Interaction Input
+	UFUNCTION()
+	void OnPrimaryHandAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnInteractAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnHoldItemAction(const FInputActionValue& Value);
+
+	// Movement Input
+	UFUNCTION()
+	void OnMoveAroundAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnLookAroundAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnSetSprintAction(const FInputActionValue& Value);
+	
+	// Bag Input
+	UFUNCTION()
+	void OnToggleBagAction(const FInputActionValue& Value);
+
+	// SpellBook Input
+	UFUNCTION()
+	void OnRuneSlotKeyPressed(const FInputActionValue& Value);
 	
 public:
 	// Components
@@ -67,20 +96,15 @@ public:
 	UPROPERTY(EditAnywhere)
 	USkeletalMeshComponent* ArmsMeshComponent;
 	UPROPERTY(EditAnywhere)
-	USceneComponent* RightHandSocketComponent;
-	UPROPERTY(EditAnywhere)
-	USceneComponent* LeftHandSocketComponent;
-
-	UPROPERTY(EditAnywhere)
+	UPhysicsHandleComponent* PhysicsHandleComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UWidgetInteractionComponent* WidgetInteractionComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	USceneComponent* BagSocket;
-	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	UBagComponent* Bag;
-	
-	UPROPERTY(EditAnywhere, Category = "Gameplay")
-	USpellbookComponent* SpellBook;
 	
 	// Input
 	UPROPERTY(EditAnywhere, Category= "Input")
@@ -89,7 +113,6 @@ public:
 	TSoftObjectPtr<UInputMappingContext> CharacterMovement_InputContext;
 	UPROPERTY(EditAnywhere, Category= "Input")
 	TSoftObjectPtr<UInputMappingContext> Interaction_InputContext;
-
 	
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
 	TSoftObjectPtr<UInputAction> LookAround_InputAction;
@@ -110,6 +133,9 @@ public:
 	TSoftObjectPtr<UInputAction> Interaction_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
+	TSoftObjectPtr<UInputAction> HoldItem_InputAction;
+	
+	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
 	TSoftObjectPtr<UInputAction> PrimaryAction_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Magic")
@@ -127,16 +153,9 @@ public:
 	UPROPERTY(EditAnywhere, Category= "Input|UI")
 	TSoftObjectPtr<UInputAction> OpenSpellBook_InputAction;
 
-private:
+protected:
 	FHitResult InteractionTarget;
+	EHandsVisibility HandsVisibility = EHandsVisibility::E_Hidden;
 
-	bool bBlockMovement = false;
-	bool bIsSprinting = false;
-
-	UPROPERTY(EditAnywhere, Category= "Movement", meta = (AllowPrivateAccess = "true"))
-	float WalkingSpeed = 8.0f;
-	UPROPERTY(EditAnywhere, Category= "Movement", meta = (AllowPrivateAccess = "true"))
-	float RunningSpeed = 14.0f;
-
-	float MovementSpeed = 0.0f;
+	bool bNewHoldingItem = false;
 };

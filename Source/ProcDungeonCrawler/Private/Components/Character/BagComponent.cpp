@@ -4,7 +4,7 @@
 #include "Components/Character/BagComponent.h"
 
 #include "Items/PickupItem.h"
-#include "Player/BagActor.h"
+#include "Characters/Player/BagActor.h"
 
 UBagComponent::UBagComponent()
 {
@@ -14,6 +14,24 @@ UBagComponent::UBagComponent()
 bool UBagComponent::IsOpen() const
 {
 	return BagActor.IsValid();
+}
+
+void UBagComponent::SetBagActorAttached(const bool bIsAttached)
+{
+	if (!BagActor.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Unable to set Bag Actor attachment (actor is null)!"));
+		return;
+	}
+	
+	if (bIsAttached)
+	{
+		BagActor->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform, NAME_None);
+	}
+	else
+	{
+		BagActor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	}
 }
 
 void UBagComponent::ToggleBag()
@@ -31,8 +49,12 @@ void UBagComponent::ToggleBag()
 		
 		BagActor = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
 		BagActor->SetPawnItems(Items);
+		SetBagActorAttached(true);
+	}
 
-		BagActor->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform, NAME_None);
+	if (OnBagStateChanged.IsBound())
+	{
+		OnBagStateChanged.Broadcast(IsOpen());
 	}
 }
 
@@ -47,9 +69,9 @@ void UBagComponent::AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 		Items[ItemClass] += Amount;
 	}
 
-	if (OnBagUpdated.IsBound())
+	if (OnBagContentsUpdated.IsBound())
 	{
-		OnBagUpdated.Broadcast();
+		OnBagContentsUpdated.Broadcast();
 	}
 }
 
@@ -67,9 +89,9 @@ void UBagComponent::RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 		Items[ItemClass] -= Amount;
 	}
 
-	if (OnBagUpdated.IsBound())
+	if (OnBagContentsUpdated.IsBound())
 	{
-		OnBagUpdated.Broadcast();
+		OnBagContentsUpdated.Broadcast();
 	}
 }
 

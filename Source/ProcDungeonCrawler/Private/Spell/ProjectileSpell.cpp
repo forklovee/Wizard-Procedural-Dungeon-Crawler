@@ -3,7 +3,7 @@
 
 #include "Spell/ProjectileSpell.h"
 
-#include "WizardCharacter.h"
+#include "Characters/Wizard/WizardCharacter.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
 AProjectileSpell::AProjectileSpell()

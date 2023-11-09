@@ -3,7 +3,7 @@
 
 #include "..\..\Public\Spell\SpellCast.h"
 
-#include "WizardCharacter.h"
+#include "Characters/Wizard/WizardCharacter.h"
 #include "NiagaraComponent.h"
 #include "Interface/SpellHandleInterface.h"
 

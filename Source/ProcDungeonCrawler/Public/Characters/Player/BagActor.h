@@ -28,6 +28,8 @@ public:
 	void SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items);
 	
 protected:
+	virtual void BeginPlay() override;
+	
 	FVector GetSlotLocation(int SlotIdx) const;
 
 	void ChangeSlotsPage(int PageOffset);
@@ -55,8 +57,9 @@ private:
 	
 	bool bIsOpen = false;
 
+	int ViewStartIdx = 0;
+	int LastViewStartIdx = 0;
 	UPROPERTY()
 	TArray<AActor*> SpawnedItems;
-	
 	TMap<TSubclassOf<APickupItem>, int32>* PawnItems;
 };

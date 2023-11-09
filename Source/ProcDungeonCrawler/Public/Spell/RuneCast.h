@@ -6,8 +6,8 @@
 #include "Engine/DataAsset.h"
 #include "RuneCast.generated.h"
 
-
 class AWizardCharacter;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRuneCastedSignature, AWizardCharacter*, WizardCharacter, URuneCast*, RuneCast);
 
 UCLASS()

@@ -9,7 +9,9 @@
 class APickupItem;
 class ABagActor;
 struct FInputActionValue;
-DECLARE_MULTICAST_DELEGATE(FOnBagUpdated);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBagContentsUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBagStateChanged, bool, bIsOpen);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UBagComponent : public USceneComponent
@@ -17,13 +19,18 @@ class PROCDUNGEONCRAWLER_API UBagComponent : public USceneComponent
 	GENERATED_BODY()
 
 public:
-	FOnBagUpdated OnBagUpdated;
+	FOnBagContentsUpdated OnBagContentsUpdated;
+	FOnBagStateChanged OnBagStateChanged;
 	
 	UBagComponent();
 
+	UFUNCTION(BlueprintCallable, Category= "Bag")
 	bool IsOpen() const;
-
-	UFUNCTION()
+	
+	UFUNCTION(BlueprintCallable, Category= "Bag")
+	void SetBagActorAttached(const bool bIsAttached);
+	
+	UFUNCTION(BlueprintCallable, Category= "Bag")
 	void ToggleBag();
 	
 	void AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
