@@ -23,7 +23,6 @@ protected:
 	// Interaction
 	void PrimaryHandAction();
 	virtual AActor* Interact(AActor* Actor); //Returns Valid interaction Actor
-	virtual AActor* HoldItem(AActor* Actor);
 
 	// Movement
 	void MoveAround(const FVector2D& MoveOffset);

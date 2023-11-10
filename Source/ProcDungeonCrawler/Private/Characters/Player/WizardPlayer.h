@@ -47,8 +47,14 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual AActor* Interact(AActor* Actor) override;
 
+	virtual AActor* Interact(AActor* Actor) override;
+	
+	virtual AActor* GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent);
+	virtual FTransform GetGrabTargetTransform();
+	virtual AActor* ReleaseItem();
+	virtual AActor* ThrowItem(float Force);
+	
 	UFUNCTION(BlueprintCallable)
 	virtual void SetHandsVisibility(const bool bState);
 	UFUNCTION(BlueprintCallable)

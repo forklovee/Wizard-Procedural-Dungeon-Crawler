@@ -58,10 +58,11 @@ void AWizardPlayer::Tick(float DeltaSeconds)
 	const FHitResult CurrentHitResult = InteractionTarget;
 	if (HoldingActor.IsValid())
 	{
-		FVector GrabLocation = CameraComponent->GetComponentLocation() +
-								CameraComponent->GetForwardVector() * 50.f;
-		FRotator LookAtRotator = FRotationMatrix::MakeFromX(CameraComponent->GetForwardVector()).Rotator(); 
-		PhysicsHandleComponent->SetTargetLocationAndRotation(GrabLocation, LookAtRotator);
+		const FTransform GrabTransform = GetGrabTargetTransform();
+		PhysicsHandleComponent->SetTargetLocationAndRotation(
+			GrabTransform.GetLocation(),
+			GrabTransform.GetRotation().Rotator()
+			);
 		
 		InteractionTarget = FHitResult();
 		if (OnNewInteractionTarget.IsBound())
@@ -193,6 +194,58 @@ AActor* AWizardPlayer::Interact(AActor* Actor)
 	return ValidInteractionActor;
 }
 
+AActor* AWizardPlayer::GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent)
+{
+	if (Actor == nullptr ||
+		!Actor->Implements<UPropPickupInterface>() //TODO: Add Interaction Interface Check
+		)
+	{
+		return nullptr;
+	}
+
+	const FTransform GrabTransform = GetGrabTargetTransform();
+	PhysicsHandleComponent->GrabComponentAtLocationWithRotation(
+		ActorComponent,
+		FName(""),
+		GrabTransform.GetLocation(),
+		GrabTransform.GetRotation().Rotator()
+		);
+	
+	return Actor;
+}
+
+FTransform AWizardPlayer::GetGrabTargetTransform()
+{
+	const FVector GrabLocation = CameraComponent->GetComponentLocation() +
+								CameraComponent->GetForwardVector() * 50.f;
+	const FRotator LookAtRotator = FRotationMatrix::MakeFromX(CameraComponent->GetForwardVector()).Rotator();
+	return FTransform(LookAtRotator, GrabLocation);
+}
+
+AActor* AWizardPlayer::ReleaseItem()
+{
+	AActor* LastHeldActor = HoldingActor.Get();
+	
+	PhysicsHandleComponent->ReleaseComponent();
+	HoldingActor = nullptr;
+	return LastHeldActor;
+}
+
+AActor* AWizardPlayer::ThrowItem(float Force)
+{
+	UPrimitiveComponent* Component = PhysicsHandleComponent->GetGrabbedComponent();
+	AActor* LastHeldActor = HoldingActor.Get();
+	
+	PhysicsHandleComponent->ReleaseComponent();
+	
+	HoldingActor = nullptr;
+	const FVector ThrowVector = CameraComponent->GetForwardVector()*Force*12000.f;
+	UE_LOG(LogTemp, Display, TEXT("Throw object with strenght of: %s"), *ThrowVector.ToString())
+	Component->AddImpulse(ThrowVector);
+	
+	return LastHeldActor;
+}
+
 void AWizardPlayer::SetHandsVisibility(const bool bState)
 {
 	if (HandsVisibility == EHandsVisibility::E_Transition ||
@@ -280,6 +333,7 @@ void AWizardPlayer::OnPrimaryHandAction(const FInputActionValue& Value)
 {
 	if (HoldingActor.IsValid())
 	{
+		ThrowItem(1.f);
 		return;
 	}
 	PrimaryHandAction();
@@ -294,16 +348,9 @@ void AWizardPlayer::OnInteractAction(const FInputActionValue& Value)
 	}
 	if (HoldingActor.IsValid()) // Drop the object
 	{
-		if (UStaticMeshComponent* GrabbedComponent = Cast<UStaticMeshComponent>(PhysicsHandleComponent->GetGrabbedComponent()))
-		{
-			GrabbedComponent->SetMassOverrideInKg(NAME_None, 1, false);
-		}
-		PhysicsHandleComponent->ReleaseComponent();
-		
-		HoldingActor = nullptr;
+		ReleaseItem();
 		return;
 	}
-	UE_LOG(LogTemp, Display, TEXT("Interaction!"))
 	
 	AActor* TargetActor = InteractionTarget.GetActor();
 	Interact(TargetActor);
@@ -317,24 +364,9 @@ void AWizardPlayer::OnHoldItemAction(const FInputActionValue& Value)
 	}
 	
 	AActor* TargetActor = InteractionTarget.GetActor();
-	HoldingActor = HoldItem(TargetActor);
+	HoldingActor = GrabItem(TargetActor, InteractionTarget.GetComponent());
 	
 	const bool bIsValid = HoldingActor.IsValid();
-	if (bIsValid)
-	{
-		if (UStaticMeshComponent* ActorMesh = Cast<UStaticMeshComponent>(InteractionTarget.GetComponent()))
-		{
-			FVector GrabLocation = CameraComponent->GetComponentLocation() +
-											 CameraComponent->GetForwardVector() * 100.f;
-			FRotator LookAtRotator = FRotationMatrix::MakeFromX(CameraComponent->GetForwardVector()).Rotator(); 
-			PhysicsHandleComponent->GrabComponentAtLocationWithRotation(ActorMesh,
-				FName(""),
-				GrabLocation,
-				LookAtRotator);
-			ActorMesh->SetMassOverrideInKg(NAME_None, 1, true);
-		}
-	}
-	
 	SetHandsVisibility(!bIsValid);
 	bNewHoldingItem = bIsValid;
 }

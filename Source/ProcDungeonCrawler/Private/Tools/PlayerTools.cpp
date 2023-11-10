@@ -3,3 +3,6 @@
 
 #include "Tools/PlayerTools.h"
 
+UPlayerTools::UPlayerTools(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+{
+}

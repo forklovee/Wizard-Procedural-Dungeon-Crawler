@@ -88,16 +88,3 @@ AActor* AWizardCharacter::Interact(AActor* Actor)
 	
 	return Actor;
 }
-
-AActor* AWizardCharacter::HoldItem(AActor* Actor)
-{
-	if (Actor == nullptr ||
-		!Actor->Implements<UPropPickupInterface>() //TODO: Add Interaction Interface Check
-		)
-	{
-		return nullptr;
-	}
-	
-	return Actor;
-}
-
