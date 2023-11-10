@@ -76,7 +76,7 @@ void AWizardPlayer::Tick(float DeltaSeconds)
 		GetWorld(),
 		CameraComponent->GetComponentLocation(),
 		CameraComponent->GetComponentLocation() + CameraComponent->GetForwardVector() * 300.f,
-		20,
+		5,
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,
 		{},
@@ -194,15 +194,22 @@ AActor* AWizardPlayer::Interact(AActor* Actor)
 	return ValidInteractionActor;
 }
 
-AActor* AWizardPlayer::GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent)
+APickupItem* AWizardPlayer::GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent)
 {
 	if (Actor == nullptr ||
-		!Actor->Implements<UPropPickupInterface>() //TODO: Add Interaction Interface Check
+		!Actor->Implements<UPropPickupInterface>()
 		)
 	{
 		return nullptr;
 	}
+	APickupItem* PickupItem = Cast<APickupItem>(Actor);
+	if (PickupItem == nullptr)
+	{
+		return nullptr;
+	}
 
+	PickupItem->SetSimulatePhysics(true);
+	
 	const FTransform GrabTransform = GetGrabTargetTransform();
 	PhysicsHandleComponent->GrabComponentAtLocationWithRotation(
 		ActorComponent,
@@ -211,7 +218,7 @@ AActor* AWizardPlayer::GrabItem(AActor* Actor, UPrimitiveComponent* ActorCompone
 		GrabTransform.GetRotation().Rotator()
 		);
 	
-	return Actor;
+	return PickupItem;
 }
 
 FTransform AWizardPlayer::GetGrabTargetTransform()
@@ -222,27 +229,12 @@ FTransform AWizardPlayer::GetGrabTargetTransform()
 	return FTransform(LookAtRotator, GrabLocation);
 }
 
-AActor* AWizardPlayer::ReleaseItem()
+APickupItem* AWizardPlayer::ReleaseItem()
 {
-	AActor* LastHeldActor = HoldingActor.Get();
+	APickupItem* LastHeldActor = HoldingActor.Get();
 	
 	PhysicsHandleComponent->ReleaseComponent();
 	HoldingActor = nullptr;
-	return LastHeldActor;
-}
-
-AActor* AWizardPlayer::ThrowItem(float Force)
-{
-	UPrimitiveComponent* Component = PhysicsHandleComponent->GetGrabbedComponent();
-	AActor* LastHeldActor = HoldingActor.Get();
-	
-	PhysicsHandleComponent->ReleaseComponent();
-	
-	HoldingActor = nullptr;
-	const FVector ThrowVector = CameraComponent->GetForwardVector()*Force*12000.f;
-	UE_LOG(LogTemp, Display, TEXT("Throw object with strenght of: %s"), *ThrowVector.ToString())
-	Component->AddImpulse(ThrowVector);
-	
 	return LastHeldActor;
 }
 
@@ -333,7 +325,7 @@ void AWizardPlayer::OnPrimaryHandAction(const FInputActionValue& Value)
 {
 	if (HoldingActor.IsValid())
 	{
-		ThrowItem(1.f);
+		ReleaseItem();
 		return;
 	}
 	PrimaryHandAction();
@@ -341,17 +333,10 @@ void AWizardPlayer::OnPrimaryHandAction(const FInputActionValue& Value)
 
 void AWizardPlayer::OnInteractAction(const FInputActionValue& Value)
 {
-	if (bNewHoldingItem) //Cancel Interaction if Player wants to hold an object
+	if (HoldingActor.IsValid())
 	{
-		bNewHoldingItem = false;
 		return;
 	}
-	if (HoldingActor.IsValid()) // Drop the object
-	{
-		ReleaseItem();
-		return;
-	}
-	
 	AActor* TargetActor = InteractionTarget.GetActor();
 	Interact(TargetActor);
 }
@@ -368,12 +353,17 @@ void AWizardPlayer::OnHoldItemAction(const FInputActionValue& Value)
 	
 	const bool bIsValid = HoldingActor.IsValid();
 	SetHandsVisibility(!bIsValid);
-	bNewHoldingItem = bIsValid;
 }
 
 void AWizardPlayer::OnMoveAroundAction(const FInputActionValue& Value)
 {
-	MoveAround(Value.Get<FVector2D>());
+	const FVector2D MoveDirection = Value.Get<FVector2D>();
+	MoveAround(MoveDirection);
+
+	if (OnUILeftRightInput.IsBound())
+	{
+		OnUILeftRightInput.Broadcast((int)MoveDirection.X);
+	}
 }
 
 void AWizardPlayer::OnLookAroundAction(const FInputActionValue& Value)
@@ -390,7 +380,12 @@ void AWizardPlayer::OnToggleBagAction(const FInputActionValue& Value)
 {
 	if (OnToggleBagRequest.IsBound())
 	{
-		OnToggleBagRequest.Broadcast(!Bag->IsOpen());
+		bool IsBagOpen = Bag->IsOpen();
+		if (IsBagOpen)
+		{
+			OnUILeftRightInput.AddDynamic(Bag, &UBagComponent::OnLeftRightInputAction);
+		}
+		OnToggleBagRequest.Broadcast(!IsBagOpen);
 	}
 }
 

@@ -38,23 +38,50 @@ void UBagComponent::ToggleBag()
 {
 	if (BagActor.IsValid())
 	{
+		OnPlayerLeftRightInput.RemoveDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
+		BagActor->ClearView();
 		BagActor.Get()->Destroy();
 		BagActor = nullptr;
 	}
 	else
 	{
+		if (BagActorClass == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Bag Actor Class is null!"));
+			return;
+		}
+		
 		const FVector BagLocation = GetComponentLocation();
 		FRotator BagRotation = GetComponentRotation();
 		BagRotation.Yaw += 180.0f;
 		
 		BagActor = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
 		BagActor->SetPawnItems(Items);
+		
+		OnPlayerLeftRightInput.AddDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
+		
 		SetBagActorAttached(true);
 	}
 
 	if (OnBagStateChanged.IsBound())
 	{
 		OnBagStateChanged.Broadcast(IsOpen());
+	}
+}
+
+void UBagComponent::SetupBagActor()
+{
+	if (BagActor.IsValid())
+	{
+		BagActor->SetupView();
+	}
+}
+
+void UBagComponent::OnLeftRightInputAction(int Direction)
+{
+	if (OnPlayerLeftRightInput.IsBound())
+	{
+		OnPlayerLeftRightInput.Broadcast(Direction);
 	}
 }
 

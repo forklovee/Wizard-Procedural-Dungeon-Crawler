@@ -4,7 +4,17 @@
 
 APickupItem::APickupItem()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
+
+	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("ItemMesh"));
+	RootComponent = ItemMesh;
+	ItemMesh->SetCollisionProfileName("Item");
+	ItemMesh->SetSimulatePhysics(true);
+}
+
+void APickupItem::SetSimulatePhysics(const bool bNewSimulatePhysics)
+{
+	ItemMesh->SetSimulatePhysics(bNewSimulatePhysics);
 }
 
 void APickupItem::BeginPlay()

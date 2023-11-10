@@ -22,6 +22,8 @@ class UWidgetInteractionComponent;
 class UInputAction;
 struct FInputActionValue;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUILeftRightInput, int, Direction);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHandsVisibilityChanged, bool, bHandsVisible);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTarget, FName, ItemName, FName, InteractionName);
@@ -34,9 +36,11 @@ class AWizardPlayer : public AWizardCharacter
 	GENERATED_BODY()
 	
 public:
-	AWizardPlayer();
-	virtual void Tick(float DeltaSeconds) override;
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	UPROPERTY(BlueprintAssignable)
+	FOnUILeftRightInput OnUILeftRightInput;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnHandsVisibilityChanged OnHandsVisibilityChanged;
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnNewInteractionTarget OnNewInteractionTarget;
@@ -44,16 +48,18 @@ public:
 	FOnToggleBagRequest OnToggleBagRequest;
 	UPROPERTY(BlueprintAssignable)
 	FOnRuneSlotSelected OnRuneSlotSelected;
-
+	
+	AWizardPlayer();
+	virtual void Tick(float DeltaSeconds) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 protected:
 	virtual void BeginPlay() override;
 
 	virtual AActor* Interact(AActor* Actor) override;
 	
-	virtual AActor* GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent);
+	virtual APickupItem* GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent);
 	virtual FTransform GetGrabTargetTransform();
-	virtual AActor* ReleaseItem();
-	virtual AActor* ThrowItem(float Force);
+	virtual APickupItem* ReleaseItem();
 	
 	UFUNCTION(BlueprintCallable)
 	virtual void SetHandsVisibility(const bool bState);
@@ -160,6 +166,8 @@ public:
 	TSoftObjectPtr<UInputAction> OpenSpellBook_InputAction;
 
 protected:
+	TWeakObjectPtr<APickupItem> HoldingActor = nullptr;
+	
 	FHitResult InteractionTarget;
 	EHandsVisibility HandsVisibility = EHandsVisibility::E_Hidden;
 

@@ -13,6 +13,8 @@ struct FInputActionValue;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBagContentsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBagStateChanged, bool, bIsOpen);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerLeftRightInput, int, Direction);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UBagComponent : public USceneComponent
 {
@@ -21,6 +23,8 @@ class PROCDUNGEONCRAWLER_API UBagComponent : public USceneComponent
 public:
 	FOnBagContentsUpdated OnBagContentsUpdated;
 	FOnBagStateChanged OnBagStateChanged;
+
+	FOnPlayerLeftRightInput OnPlayerLeftRightInput;
 	
 	UBagComponent();
 
@@ -32,6 +36,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category= "Bag")
 	void ToggleBag();
+
+	UFUNCTION(BlueprintCallable, Category= "Bag")
+	void SetupBagActor();
+	
+	UFUNCTION()
+	void OnLeftRightInputAction(int Direction);
 	
 	void AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
 	void RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);

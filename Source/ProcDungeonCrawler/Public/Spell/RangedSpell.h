@@ -20,6 +20,11 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void CastSpell(AWizardCharacter* WizardCharacter) override;
+
+	UFUNCTION()
+	virtual void OnStaticMeshHitboxOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+									UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+									const FHitResult& SweepResult);
 	
 	UFUNCTION()
 	virtual void OnSpellHitboxOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -32,4 +37,7 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, Category="Spell Hitbox", meta=(AllowPrivateAccess="true"))
 	USphereComponent* SpellHitBoxComponent;
+
+	UPROPERTY(EditAnywhere, Category="Spell Hitbox", meta=(AllowPrivateAccess="true"))
+	USphereComponent* StaticMeshHitBoxComponent;
 };

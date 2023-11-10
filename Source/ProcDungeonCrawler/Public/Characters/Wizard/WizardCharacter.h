@@ -7,6 +7,7 @@
 
 #include "WizardCharacter.generated.h"
 
+class APickupItem;
 class USpellbookComponent;
 
 UCLASS(Blueprintable, BlueprintType)
@@ -39,9 +40,6 @@ public:
 	USceneComponent* RightHandSocketComponent;
 	UPROPERTY(EditAnywhere)
 	USceneComponent* LeftHandSocketComponent;
-protected:
-	TWeakObjectPtr<AActor> HoldingActor = nullptr;
-	
 private:
 	bool bBlockMovement = false;
 	bool bIsSprinting = false;

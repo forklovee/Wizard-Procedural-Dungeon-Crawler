@@ -15,6 +15,8 @@ class APickupItem : public AActor, public IPropPickupInterface
 public:	
 	// Sets default values for this actor's properties
 	APickupItem();
+
+	void SetSimulatePhysics(const bool bNewSimulatePhysics);
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
 	TSubclassOf<APickupItem> Pickup(APawn* Pawn);
@@ -31,7 +33,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
 	FName GetInteractionName();
 	virtual FName GetInteractionName_Implementation() override;
-	
+
+	UPROPERTY(EditAnywhere, Category="Components")
+	UStaticMeshComponent* ItemMesh;
 	
 protected:
 	virtual void BeginPlay() override;

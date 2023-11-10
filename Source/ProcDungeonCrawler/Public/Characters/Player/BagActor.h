@@ -21,19 +21,23 @@ class PROCDUNGEONCRAWLER_API ABagActor : public AActor
 public:	
 	ABagActor();
 	
-	void ToggleBag();
 	bool IsOpen() const { return bIsOpen; }
 
 	UFUNCTION()
-	void SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items);
+	void SetupView();
+
+	UFUNCTION()
+	void ClearView();
 	
+	UFUNCTION()
+	void ChangeSlotsPage(int PageOffset);
+	
+	UFUNCTION()
+	void SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items);
 protected:
 	virtual void BeginPlay() override;
 	
 	FVector GetSlotLocation(int SlotIdx) const;
-
-	void ChangeSlotsPage(int PageOffset);
-	void SpawnActors();
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
@@ -60,6 +64,6 @@ private:
 	int ViewStartIdx = 0;
 	int LastViewStartIdx = 0;
 	UPROPERTY()
-	TArray<AActor*> SpawnedItems;
+	TArray<APickupItem*> SpawnedItems;
 	TMap<TSubclassOf<APickupItem>, int32>* PawnItems;
 };
