@@ -3,12 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/PropInteractionEnabler.h"
 #include "GameFramework/Actor.h"
+#include "Interface/PropGrabInterface.h"
 #include "Interface/PropPickupInterface.h"
 #include "PickupItem.generated.h"
 
 UCLASS()
-class APickupItem : public AActor, public IPropPickupInterface
+class APickupItem : public AActor,
+					public IPropInteractionEnabler, // Can be interaction target
+					public IPropPickupInterface, public IPropGrabInterface // Can be picked up and grabbed
 {
 	GENERATED_BODY()
 	
@@ -16,24 +20,42 @@ public:
 	// Sets default values for this actor's properties
 	APickupItem();
 
-	void SetSimulatePhysics(const bool bNewSimulatePhysics);
+	// Interaction Enabler interface
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interaction")
+	FText GetPropNameText();
+	virtual FText GetPropNameText_Implementation() override;
 	
+	//Pickup interface
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
-	TSubclassOf<APickupItem> Pickup(APawn* Pawn);
-	virtual TSubclassOf<APickupItem> Pickup_Implementation(APawn* Pawn) override;
+	TSubclassOf<AActor> Pickup(APawn* Pawn);
+	virtual TSubclassOf<AActor> Pickup_Implementation(APawn* Pawn) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
 	UDataAsset* GetAdditionalDataAsset();
 	virtual UDataAsset* GetAdditionalDataAsset_Implementation() override;
 	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
-	FName GetItemName();
-	virtual FName GetItemName_Implementation() override;
+	//Grab interface
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Grab")
+	void Grab();
+	virtual void Grab_Implementation() override;
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pickup")
-	FName GetInteractionName();
-	virtual FName GetInteractionName_Implementation() override;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Grab")
+	UPrimitiveComponent* GetGrabComponent();
+	virtual UPrimitiveComponent* GetGrabComponent_Implementation() override;
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Grab")
+	void Release();
+	virtual void Release_Implementation() override;
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Grab")
+	bool CanBeGrabbed();
+	virtual bool CanBeGrabbed_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Grab")
+	void SetSimulatePhysics(const bool bNewSimulatePhysics);
+	virtual void SetSimulatePhysics_Implementation(const bool bNewSimulatePhysics);
+
+public:
 	UPROPERTY(EditAnywhere, Category="Components")
 	UStaticMeshComponent* ItemMesh;
 	
@@ -41,4 +63,5 @@ protected:
 	virtual void BeginPlay() override;
 	
 	FTimerHandle DestroyTimerHandle;
+	bool bCanBeGrabbed = true;
 };

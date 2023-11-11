@@ -12,11 +12,10 @@
 #include "Camera/CameraComponent.h"
 #include "Components/WidgetInteractionComponent.h"
 #include "Components/Character/BagComponent.h"
+#include "Components/Character/PlayerInteractionRaycast.h"
 #include "Components/Character/SpellbookComponent.h"
-#include "Interface/PropPickupInterface.h"
-#include "Items/PickupItem.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "UI/InteractionUI.h"
 #include "UI/Wizard/RuneCastsHistory.h"
@@ -24,21 +23,26 @@
 
 AWizardPlayer::AWizardPlayer(): Super()
 {
+	CameraArmComponent = CreateDefaultSubobject<USpringArmComponent>("CameraArmComponent");
+	CameraArmComponent->SetupAttachment(RootComponent);
+	
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
-	CameraComponent->SetupAttachment(HeadSocketComponent);
-	CameraComponent->bUsePawnControlRotation = true;
+	CameraComponent->SetupAttachment(CameraArmComponent);
 
 	PhysicsHandleComponent = CreateDefaultSubobject<UPhysicsHandleComponent>("PhysicsHandle");
 	
 	ArmsMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>("HandsMeshComponent");
-	ArmsMeshComponent->SetupAttachment(HeadSocketComponent, NAME_None);
+	ArmsMeshComponent->SetupAttachment(CameraArmComponent, NAME_None);
 	ArmsMeshComponent->bCastDynamicShadow = false;
 	ArmsMeshComponent->CastShadow = false;
 	ArmsMeshComponent->SetOnlyOwnerSee(true);
+
+	PlayerInteraction = CreateDefaultSubobject<UPlayerInteractionRaycast>(FName("PlayerInteraction"));
+	PlayerInteraction->SetupAttachment(CameraArmComponent);
 	
 	// Widget interaction
 	WidgetInteractionComponent = CreateDefaultSubobject<UWidgetInteractionComponent>(FName("WidgetInteractionComponent"));
-	WidgetInteractionComponent->SetupAttachment(CameraComponent);
+	WidgetInteractionComponent->SetupAttachment(CameraArmComponent);
 
 	// Bag with items and runes
 	BagSocket = CreateDefaultSubobject<USceneComponent>(FName("BagSocket"));
@@ -54,50 +58,16 @@ AWizardPlayer::AWizardPlayer(): Super()
 void AWizardPlayer::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	PlayerInteraction->UpdateInteractionTarget(CameraComponent->GetForwardVector());
 	
-	const FHitResult CurrentHitResult = InteractionTarget;
-	if (HoldingActor.IsValid())
+	if (PlayerInteraction->IsGrabbingItem())
 	{
-		const FTransform GrabTransform = GetGrabTargetTransform();
+		const FTransform GrabTransform = PlayerInteraction->GetGrabTargetTransform();
 		PhysicsHandleComponent->SetTargetLocationAndRotation(
 			GrabTransform.GetLocation(),
 			GrabTransform.GetRotation().Rotator()
 			);
-		
-		InteractionTarget = FHitResult();
-		if (OnNewInteractionTarget.IsBound())
-		{
-			OnNewInteractionTarget.Broadcast(NAME_None, NAME_None);
-		}
-		return;
-	}
-	
-	UKismetSystemLibrary::SphereTraceSingle(
-		GetWorld(),
-		CameraComponent->GetComponentLocation(),
-		CameraComponent->GetComponentLocation() + CameraComponent->GetForwardVector() * 300.f,
-		5,
-		UEngineTypes::ConvertToTraceType(ECC_Visibility),
-		false,
-		{},
-		EDrawDebugTrace::None,
-		InteractionTarget,
-		true
-	);
-
-	if (OnNewInteractionTarget.IsBound() && CurrentHitResult.GetActor() != InteractionTarget.GetActor())
-	{
-		if (InteractionTarget.GetActor() != nullptr && InteractionTarget.GetActor()->Implements<UPropPickupInterface>())
-		{
-			OnNewInteractionTarget.Broadcast(
-				IPropPickupInterface::Execute_GetItemName(InteractionTarget.GetActor()),
-				IPropPickupInterface::Execute_GetInteractionName(InteractionTarget.GetActor())
-				);
-		}
-		else
-		{
-			OnNewInteractionTarget.Broadcast(NAME_None, NAME_None);
-		}
 	}
 }
 
@@ -112,7 +82,7 @@ void AWizardPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Input->BindAction(Movement_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnMoveAroundAction);
 	Input->BindAction(Sprint_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnSetSprintAction);
 	Input->BindAction(Jump_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Jump);
-	// Input->BindAction(Crouch_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardCharacter::Crouch);
+	Input->BindAction(Crouch_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnSetCrouchAction);
 
 	// set magic inputs
 	Input->BindAction(RuneCast_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnRuneSlotKeyPressed);
@@ -121,7 +91,7 @@ void AWizardPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	// set interaction inputs
 	Input->BindAction(PrimaryAction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnPrimaryHandAction);
 	Input->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnInteractAction);
-	Input->BindAction(HoldItem_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnHoldItemAction);
+	Input->BindAction(HoldItem_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnGrabItemAction);
 
 	// set bag inputs
 	Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnToggleBagAction);
@@ -163,79 +133,56 @@ void AWizardPlayer::BeginPlay()
 	{
 		UWizardHUD* WizardHUD = PlayerController->SetupWizardHud();
 
-		OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
-
+		PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
+		PlayerInteraction->OnItemPickedUp.AddDynamic(Bag, &UBagComponent::AddItem);
+		PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
+		
 		Bag->OnBagStateChanged.AddDynamic(this, &AWizardPlayer::UpdateBagInputContext);
 		
 		OnRuneSlotSelected.AddDynamic(WizardHUD, &UWizardHUD::UseRuneOfIdx);
 		OnRuneSlotSelected.AddDynamic(SpellBook, &USpellbookComponent::CastRuneOfIdx);
 		SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
 		SpellBook->OnCastedRunesCleared.AddDynamic(WizardHUD->CastedRuneHistory, &URuneCastsHistory::ClearCastHistory);
-
-		OnNewInteractionTarget.Broadcast(NAME_None, NAME_None);
+		
 	}
 }
 
-AActor* AWizardPlayer::Interact(AActor* Actor)
+void AWizardPlayer::OnGrabItemAction(const FInputActionValue& Value)
 {
-	AActor* ValidInteractionActor = Super::Interact(Actor); 
-	if (ValidInteractionActor == nullptr)
+	if (PlayerInteraction->IsGrabbingItem())
 	{
-		return nullptr;
-	}
-
-	// Add bag
-	if (const APickupItem* PickupItem = Cast<APickupItem>(Actor))
-	{
-		Bag->AddItem(PickupItem->GetClass(), 1);
-		IPropPickupInterface::Execute_Pickup(Actor, this);
+		return;
 	}
 	
-	return ValidInteractionActor;
+	if (UPrimitiveComponent* ActorComponent = PlayerInteraction->Grab())
+	{
+		const FTransform GrabTransform = PlayerInteraction->GetGrabTargetTransform();
+		PhysicsHandleComponent->GrabComponentAtLocationWithRotation(
+			ActorComponent,
+			FName(""),
+			GrabTransform.GetLocation(),
+			GrabTransform.GetRotation().Rotator()
+			);
+		SetHandsVisibility(false);
+	}
+	else
+	{
+		SetHandsVisibility(true);
+	}
 }
 
-APickupItem* AWizardPlayer::GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent)
+
+void AWizardPlayer::OnReleaseItemAction(const FInputActionValue& Value)
 {
-	if (Actor == nullptr ||
-		!Actor->Implements<UPropPickupInterface>()
-		)
+	if (!PlayerInteraction->IsGrabbingItem())
 	{
-		return nullptr;
-	}
-	APickupItem* PickupItem = Cast<APickupItem>(Actor);
-	if (PickupItem == nullptr)
-	{
-		return nullptr;
+		return;
 	}
 
-	PickupItem->SetSimulatePhysics(true);
-	
-	const FTransform GrabTransform = GetGrabTargetTransform();
-	PhysicsHandleComponent->GrabComponentAtLocationWithRotation(
-		ActorComponent,
-		FName(""),
-		GrabTransform.GetLocation(),
-		GrabTransform.GetRotation().Rotator()
-		);
-	
-	return PickupItem;
-}
-
-FTransform AWizardPlayer::GetGrabTargetTransform()
-{
-	const FVector GrabLocation = CameraComponent->GetComponentLocation() +
-								CameraComponent->GetForwardVector() * 50.f;
-	const FRotator LookAtRotator = FRotationMatrix::MakeFromX(CameraComponent->GetForwardVector()).Rotator();
-	return FTransform(LookAtRotator, GrabLocation);
-}
-
-APickupItem* AWizardPlayer::ReleaseItem()
-{
-	APickupItem* LastHeldActor = HoldingActor.Get();
-	
-	PhysicsHandleComponent->ReleaseComponent();
-	HoldingActor = nullptr;
-	return LastHeldActor;
+	if (PlayerInteraction->Release())
+	{
+		PhysicsHandleComponent->ReleaseComponent();
+	}
 }
 
 void AWizardPlayer::SetHandsVisibility(const bool bState)
@@ -259,9 +206,11 @@ bool AWizardPlayer::AreHandsVisible() const
 void AWizardPlayer::UpdateBagInputContext(bool IsBagOpen)
 {
 	//TODO: Add Bag specific actions
+
+	PlayerInteraction->bInteractionDisabled = IsBagOpen;
 	
-	SetInteractionInput(!IsBagOpen);
-	SetCharacterMovementInput(!IsBagOpen);
+	// SetInteractionInput(!IsBagOpen);
+	// SetCharacterMovementInput(!IsBagOpen);
 }
 
 void AWizardPlayer::UpdateSpellBookInputContext(bool IsSpellBookOpen)
@@ -323,9 +272,9 @@ void AWizardPlayer::SetCharacterMovementInput(bool bState) const
 
 void AWizardPlayer::OnPrimaryHandAction(const FInputActionValue& Value)
 {
-	if (HoldingActor.IsValid())
+	if (PlayerInteraction->IsGrabbingItem())
 	{
-		ReleaseItem();
+		OnReleaseItemAction(Value);
 		return;
 	}
 	PrimaryHandAction();
@@ -333,26 +282,12 @@ void AWizardPlayer::OnPrimaryHandAction(const FInputActionValue& Value)
 
 void AWizardPlayer::OnInteractAction(const FInputActionValue& Value)
 {
-	if (HoldingActor.IsValid())
-	{
-		return;
-	}
-	AActor* TargetActor = InteractionTarget.GetActor();
-	Interact(TargetActor);
-}
-
-void AWizardPlayer::OnHoldItemAction(const FInputActionValue& Value)
-{
-	if (HoldingActor.IsValid())
+	if (PlayerInteraction->IsGrabbingItem())
 	{
 		return;
 	}
 	
-	AActor* TargetActor = InteractionTarget.GetActor();
-	HoldingActor = GrabItem(TargetActor, InteractionTarget.GetComponent());
-	
-	const bool bIsValid = HoldingActor.IsValid();
-	SetHandsVisibility(!bIsValid);
+	bool bInteractionState = PlayerInteraction->Interact();
 }
 
 void AWizardPlayer::OnMoveAroundAction(const FInputActionValue& Value)
@@ -374,6 +309,11 @@ void AWizardPlayer::OnLookAroundAction(const FInputActionValue& Value)
 void AWizardPlayer::OnSetSprintAction(const FInputActionValue& Value)
 {
 	SetSprinting(Value.Get<bool>());
+}
+
+void AWizardPlayer::OnSetCrouchAction(const FInputActionValue& Value)
+{
+	SetCrouch(!IsCrouching());
 }
 
 void AWizardPlayer::OnToggleBagAction(const FInputActionValue& Value)

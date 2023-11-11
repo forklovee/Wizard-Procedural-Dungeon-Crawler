@@ -14,12 +14,10 @@ AWizardCharacter::AWizardCharacter()
 	bUseControllerRotationYaw = true;
 
 	// Hand sockets
-	HeadSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("HeadSocket"));
-	HeadSocketComponent->SetupAttachment(RootComponent, FName("Head"));
 	LeftHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("LeftHandSocket"));
-	LeftHandSocketComponent->SetupAttachment(HeadSocketComponent, FName("LeftHand"));
+	LeftHandSocketComponent->SetupAttachment(RootComponent, FName("LeftHand"));
 	RightHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("RightHandSocket"));
-	RightHandSocketComponent->SetupAttachment(HeadSocketComponent, FName("RightHand"));
+	RightHandSocketComponent->SetupAttachment(RootComponent, FName("RightHand"));
 	
 	SpellBook = CreateDefaultSubobject<USpellbookComponent>(FName("Spellbook"));
 	SpellBook->SetupAttachment(LeftHandSocketComponent);
@@ -59,6 +57,19 @@ void AWizardCharacter::SetSprinting(const bool bNewIsSprinting)
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
+void AWizardCharacter::SetCrouch(const bool bNewIsCrouching)
+{
+	bIsCrouching = bNewIsCrouching;
+	if (bNewIsCrouching)
+	{
+		Crouch();
+	}
+	else
+	{
+		UnCrouch();
+	}
+}
+
 // Hand action and Interaction
 void AWizardCharacter::PrimaryHandAction()
 {
@@ -66,25 +77,4 @@ void AWizardCharacter::PrimaryHandAction()
 	if (!SpellBook->IsSpellPrepared()) return;
 	
 	SpellBook->CastPreparedSpell(this);
-}
-
-AActor* AWizardCharacter::Interact(AActor* Actor)
-{
-	if (Actor == nullptr ||
-		!Actor->Implements<UPropPickupInterface>() //TODO: Add Interaction Interface Check
-		)
-	{
-		return nullptr;
-	}
-
-	UDataAsset* AdditionalDataAsset = IPropPickupInterface::Execute_GetAdditionalDataAsset(Actor);
-
-	// Add rune to Spell Book
-	if (URuneCast* RuneCast = Cast<URuneCast>(AdditionalDataAsset))
-	{
-		SpellBook->AddRune(RuneCast);
-		IPropPickupInterface::Execute_Pickup(Actor, this);
-	}
-	
-	return Actor;
 }

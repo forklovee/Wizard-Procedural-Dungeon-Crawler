@@ -61,15 +61,13 @@ void USpellbookComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	}
 }
 
-bool USpellbookComponent::AddRune(URuneCast* NewRuneCast)
+void USpellbookComponent::AddRune(URuneCast* NewRuneCast)
 {
-	if (Runes.Contains(NewRuneCast)) return false;
+	if (Runes.Contains(NewRuneCast)) return;
 	
 	const int RuneIdx = Runes.Add(NewRuneCast);
 
 	OnRuneAdded.Broadcast(RuneIdx ,NewRuneCast);
-	
-	return true;
 }
 
 URuneCast* USpellbookComponent::GetRuneOfIdx(int Idx)

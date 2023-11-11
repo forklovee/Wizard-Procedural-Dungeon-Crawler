@@ -12,22 +12,17 @@ APickupItem::APickupItem()
 	ItemMesh->SetSimulatePhysics(true);
 }
 
-void APickupItem::SetSimulatePhysics(const bool bNewSimulatePhysics)
-{
-	ItemMesh->SetSimulatePhysics(bNewSimulatePhysics);
-}
-
 void APickupItem::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-TSubclassOf<APickupItem> APickupItem::Pickup_Implementation(APawn* Pawn)
+TSubclassOf<AActor> APickupItem::Pickup_Implementation(APawn* Pawn)
 {
 	IPropPickupInterface::Pickup_Implementation(Pawn);
 
-	const TSubclassOf<APickupItem> ItemClass = GetClass();
+	const TSubclassOf<AActor> ItemClass = GetClass();
 	
 	Destroy();
 	
@@ -41,12 +36,42 @@ UDataAsset* APickupItem::GetAdditionalDataAsset_Implementation()
 	return nullptr;
 }
 
-FName APickupItem::GetItemName_Implementation()
+FText APickupItem::GetPropNameText_Implementation()
 {
-	return FName(GetName());
+	return FText::FromString( GetClass()->GetName() );
 }
 
-FName APickupItem::GetInteractionName_Implementation()
+void APickupItem::Grab_Implementation()
 {
-	return FName("Pick up");
+	IPropGrabInterface::Grab_Implementation();
+
+	SetSimulatePhysics(true);
+}
+
+UPrimitiveComponent* APickupItem::GetGrabComponent_Implementation()
+{
+	IPropGrabInterface::GetGrabComponent_Implementation();
+
+	return ItemMesh;
+}
+
+void APickupItem::Release_Implementation()
+{
+	IPropGrabInterface::Release_Implementation();
+}
+
+void APickupItem::SetSimulatePhysics_Implementation(const bool bNewSimulatePhysics)
+{
+	IPropGrabInterface::SetSimulatePhysics_Implementation(bNewSimulatePhysics);
+
+	if (ItemMesh == nullptr) return;
+
+	ItemMesh->SetSimulatePhysics(bNewSimulatePhysics);
+}
+
+bool APickupItem::CanBeGrabbed_Implementation()
+{
+	IPropGrabInterface::CanBeGrabbed_Implementation();
+
+	return bCanBeGrabbed;
 }

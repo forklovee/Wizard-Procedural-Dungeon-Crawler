@@ -6,10 +6,12 @@
 #include "Blueprint/UserWidget.h"
 #include "InteractionUI.generated.h"
 
+class UProgressBar;
+enum class EInteractionType;
 class UImage;
 class UTextBlock;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewInteractionItem);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionItem, FText, ActorNameText, bool, bCanBeGrabbed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractionItemLost);
 
 UCLASS()
@@ -24,18 +26,29 @@ public:
 	FOnInteractionItemLost OnInteractionItemLost;
 	
 	UFUNCTION(BlueprintCallable)
-	void UpdateInteractionPrompt(FName ItemName, FName InteractionName);
+	void ClearInteractionPrompt();
+
+	UFUNCTION()
+	void UpdateInteractionPrompt(FText ActorNameText, EInteractionType OnClickInteractionType, bool bCanBeGrabbed);
 
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	UTextBlock* InteractionPromptText;
+	UTextBlock* InteractionActorNameText;
+
+	// Interaction
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	UImage* InteractionKeyImage;
+	UPanelWidget* InteractionPromptPanel;
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UTextBlock* InteractionPromptText;
+
+	// Grab
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UPanelWidget* GrabPromptPanel;
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UProgressBar* GrabItemProgressBar;
 	
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UImage* CursorImage;
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UImage* InteractionImage;
-
-private:
-	FName LastItemName = FName("ItemName");
+	
 };

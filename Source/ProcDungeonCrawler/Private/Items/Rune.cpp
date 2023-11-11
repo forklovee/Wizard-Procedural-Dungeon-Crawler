@@ -4,14 +4,39 @@
 #include "Items/Rune.h"
 #include "Spell/RuneCast.h"
 
+ARune::ARune()
+{
+	PrimaryActorTick.bCanEverTick = false;
+}
+
 TSoftObjectPtr<URuneCast>& ARune::GetRuneCast()
 {
 	return RuneCast;
 }
 
+FText ARune::GetPropNameText_Implementation()
+{
+	if (RuneCast.IsValid())
+	{
+		return FText::FromName(RuneCast->RuneName);
+	}
+	return FText::FromString("NONE");
+}
+
+TSubclassOf<AActor> ARune::Pickup_Implementation(APawn* Pawn)
+{
+	IPropPickupInterface::Pickup_Implementation(Pawn);
+
+	const TSubclassOf<AActor> ItemClass = GetClass();
+	
+	Destroy();
+	
+	return ItemClass;
+}
+
 UDataAsset* ARune::GetAdditionalDataAsset_Implementation()
 {
-	Super::GetAdditionalDataAsset_Implementation();
+	IPropPickupInterface::GetAdditionalDataAsset_Implementation();
 
 	if (RuneCast.IsNull())
 	{
@@ -19,19 +44,4 @@ UDataAsset* ARune::GetAdditionalDataAsset_Implementation()
 	}
 	
 	return RuneCast.LoadSynchronous();
-}
-
-FName ARune::GetItemName_Implementation()
-{
-	FName RuneName = "Rune";
-	if (RuneCast.IsValid())
-	{
-		RuneName = RuneCast->RuneName;
-	}
-	return RuneName;
-}
-
-FName ARune::GetInteractionName_Implementation()
-{
-	return FName("Pick up");
 }

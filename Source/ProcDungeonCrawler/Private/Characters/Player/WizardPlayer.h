@@ -6,6 +6,8 @@
 #include "Characters/Wizard/WizardCharacter.h"
 #include "WizardPlayer.generated.h"
 
+class USpringArmComponent;
+class UPlayerInteractionRaycast;
 class UPhysicsHandleComponent;
 
 UENUM()
@@ -26,7 +28,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUILeftRightInput, int, Direction)
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHandsVisibilityChanged, bool, bHandsVisible);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTarget, FName, ItemName, FName, InteractionName);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToggleBagRequest, bool, bIsOpen);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneSlotSelected, int, RuneIdx);
 
@@ -41,9 +42,7 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnHandsVisibilityChanged OnHandsVisibilityChanged;
-	
-	UPROPERTY(BlueprintAssignable)
-	FOnNewInteractionTarget OnNewInteractionTarget;
+
 	UPROPERTY(BlueprintAssignable)
 	FOnToggleBagRequest OnToggleBagRequest;
 	UPROPERTY(BlueprintAssignable)
@@ -54,12 +53,6 @@ public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 protected:
 	virtual void BeginPlay() override;
-
-	virtual AActor* Interact(AActor* Actor) override;
-	
-	virtual APickupItem* GrabItem(AActor* Actor, UPrimitiveComponent* ActorComponent);
-	virtual FTransform GetGrabTargetTransform();
-	virtual APickupItem* ReleaseItem();
 	
 	UFUNCTION(BlueprintCallable)
 	virtual void SetHandsVisibility(const bool bState);
@@ -83,7 +76,9 @@ private:
 	UFUNCTION()
 	void OnInteractAction(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnHoldItemAction(const FInputActionValue& Value);
+	void OnGrabItemAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnReleaseItemAction(const FInputActionValue& Value);
 
 	// Movement Input
 	UFUNCTION()
@@ -92,6 +87,8 @@ private:
 	void OnLookAroundAction(const FInputActionValue& Value);
 	UFUNCTION()
 	void OnSetSprintAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnSetCrouchAction(const FInputActionValue& Value);
 	
 	// Bag Input
 	UFUNCTION()
@@ -106,7 +103,13 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* CameraComponent;
 	UPROPERTY(EditAnywhere)
+	USpringArmComponent* CameraArmComponent;
+	
+	UPROPERTY(EditAnywhere)
 	USkeletalMeshComponent* ArmsMeshComponent;
+	UPROPERTY(EditAnywhere)
+	UPlayerInteractionRaycast* PlayerInteraction;
+
 	UPROPERTY(EditAnywhere)
 	UPhysicsHandleComponent* PhysicsHandleComponent;
 	
@@ -168,7 +171,7 @@ public:
 protected:
 	TWeakObjectPtr<APickupItem> HoldingActor = nullptr;
 	
-	FHitResult InteractionTarget;
+	// FHitResult InteractionTarget;
 	EHandsVisibility HandsVisibility = EHandsVisibility::E_Hidden;
 
 	bool bNewHoldingItem = false;

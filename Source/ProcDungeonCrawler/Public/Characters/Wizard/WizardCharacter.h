@@ -23,24 +23,25 @@ protected:
 	
 	// Interaction
 	void PrimaryHandAction();
-	virtual AActor* Interact(AActor* Actor); //Returns Valid interaction Actor
 
 	// Movement
 	void MoveAround(const FVector2D& MoveOffset);
 	void LookAround(const FVector2D& LookOffset);
 	void SetSprinting(const bool bNewIsSprinting);
+
+	bool IsCrouching() const { return bIsCrouching; }
+	void SetCrouch(const bool bNewIsCrounching);
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USpellbookComponent* SpellBook;
-
-	UPROPERTY(EditAnywhere)
-	USceneComponent* HeadSocketComponent;
+	
 	UPROPERTY(EditAnywhere)
 	USceneComponent* RightHandSocketComponent;
 	UPROPERTY(EditAnywhere)
 	USceneComponent* LeftHandSocketComponent;
 private:
+	bool bIsCrouching = false;
 	bool bBlockMovement = false;
 	bool bIsSprinting = false;
 

@@ -6,7 +6,6 @@
 #include "UObject/Interface.h"
 #include "PropPickupInterface.generated.h"
 
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPickup, APawn*, Pawn);
 
 UINTERFACE(MinimalAPI)
@@ -26,14 +25,8 @@ public:
 	FOnPickup OnPickup;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pickup")
-	TSubclassOf<APickupItem> Pickup(APawn* Pawn);
+	TSubclassOf<AActor> Pickup(APawn* Pawn);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pickup")
 	UDataAsset* GetAdditionalDataAsset();
-	
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pickup")
-	FName GetItemName();
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pickup")
-	FName GetInteractionName();
 };

@@ -42,8 +42,10 @@ public:
 	
 	UFUNCTION()
 	void OnLeftRightInputAction(int Direction);
-	
+
+	UFUNCTION()
 	void AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
+	UFUNCTION()
 	void RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
 	
 	bool HasItemClass(TSubclassOf<APickupItem> ItemClass) const;

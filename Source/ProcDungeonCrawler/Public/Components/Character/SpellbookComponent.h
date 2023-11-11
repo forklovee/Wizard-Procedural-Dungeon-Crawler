@@ -32,7 +32,8 @@ public:
 	USpellbookComponent();
 
 	// Runes
-	bool AddRune(URuneCast* NewRuneCast);
+	UFUNCTION()
+	void AddRune(URuneCast* NewRuneCast);
 
 	URuneCast* GetRuneOfIdx(int Idx);
 	void CastRune(URuneCast* RuneCast);
