@@ -24,27 +24,37 @@ ABagActor::ABagActor()
 	BagWidget->SetupAttachment(BagMesh);
 	BagWidget->SetManuallyRedraw(true);
 }
-
-void ABagActor::OnPlayerCursorHoverChanged(bool bIsHovered)
+void ABagActor::BeginPlay()
 {
-	if (!bIsHovered && GrabbedItemTile != nullptr)
+	Super::BeginPlay();
+	
+	BagUI = Cast<UBagUI>(BagWidget->GetWidget());
+	BagUI->OnNewItemTileCreated.AddDynamic(this, &ABagActor::ItemTile_SpawnAndDestroyRequests);
+}
+
+// Setup
+void ABagActor::SetupView()
+{
+	if (!BagUI.IsValid())
 	{
-		const TSubclassOf<APickupItem> ItemClass = GrabbedItemTile->GetPickupItemClass();
-		if (int* ItemAmountPtr = PawnItems->Find(ItemClass))
-		{
-			*ItemAmountPtr -= 1;
-			if (*ItemAmountPtr <= 0)
-			{
-				PawnItems->Remove(ItemClass);
-				GrabbedItemTile->SetPickupItemClass(nullptr);
-			}
-			else
-			{
-				SpawnItemActor(GrabbedItemTile.Get());
-			}
-			return;
-		}
-		GrabbedItemTile->SetPickupItemClass(nullptr);
+		UE_LOG(LogTemp, Error, TEXT("Bag UI not valid!"))
+		return;
+	}
+	
+	BagItemTiles = BagUI->SetupBagUI(this, PawnItems);
+	BagUI->ChangePage(0);
+}
+
+void ABagActor::ClearView()
+{
+	if (!BagUI.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Bag UI not valid!"))
+		return;
+	}
+	for (APickupItem* PickupItem : BagUI->GetAllSpawnedActors())
+	{
+		PickupItem->Destroy();
 	}
 }
 
@@ -52,27 +62,37 @@ void ABagActor::SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items)
 {
 	PawnItems = &Items;
 }
+//Setup
 
-void ABagActor::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void ABagActor::SetGrabbedItemTile(UBagItemTile* Item, bool bIsGrabbed)
-{
-	GrabbedItemTile = bIsGrabbed ? Item : nullptr;
-}
-
+// Utility
 FVector ABagActor::GetSlotLocation(int SlotIdx) const
 {
-	const FVector RightVector = GetActorForwardVector().RotateAngleAxis(90.f, FVector::UpVector);
-	const FVector SlotsOrigin = GetActorForwardVector()*-25.f + FVector::UpVector*25.f + (RightVector * 25.f * (ViewSlots - 1) / 2.f);
-	return GetActorLocation() + SlotsOrigin - (RightVector * 25.f * SlotIdx);
+	const int ViewSlotIdx = SlotIdx % 3;
+	const FVector RightVector = GetActorForwardVector().RotateAngleAxis(-90.f, FVector::UpVector);
+	const FVector SlotsOrigin = BagWidget->GetComponentLocation() - (RightVector * SlotOffset);
+	return SlotsOrigin + (RightVector * SlotOffset * ViewSlotIdx);
+	// return BagWidget->GetComponentLocation() + RightVector;
+}
+
+void ABagActor::ItemTile_SpawnAndDestroyRequests(UBagItemTile* ItemTile)
+{
+	if (ItemTile == nullptr)
+	{
+		return;
+	}
+	
+	ItemTile->OnSpawnPickupItemRequest.AddDynamic(this, &ABagActor::SpawnItemActor);
+	ItemTile->OnDestroyPickupItemRequest.AddDynamic(this, &ABagActor::DestroyItemActor);
 }
 
 void ABagActor::SpawnItemActor(UBagItemTile* ItemTile)
 {
-	const int32 ItemIndex = ItemTile->GetIndex();
+	if (ItemTile == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SpawnItemActor: ItemTile is nullptr!"))
+		return;
+	}
+	const int32 ItemIndex = 0; //TODO: Get VISIBLE PAGE index
 	const TSubclassOf<APickupItem> ItemClass = *ItemTile->GetPickupItemClass();
 	const FVector ItemLocation = GetSlotLocation(ItemIndex);
 	const FRotator ItemRotation = FRotator::ZeroRotator;
@@ -84,7 +104,6 @@ void ABagActor::SpawnItemActor(UBagItemTile* ItemTile)
 
 	if (!ItemTile->bItemActorGrabChangeEventConnected)
 	{
-		ItemTile->OnItemActorGrabbedChanged.AddDynamic(this, &ABagActor::SetGrabbedItemTile);
 		ItemTile->bItemActorGrabChangeEventConnected = true;
 	}
 	
@@ -99,32 +118,161 @@ void ABagActor::DestroyItemActor(UBagItemTile* ItemTile)
 		PickupItemActor->Destroy();
 	}
 }
+// Utility
 
-void ABagActor::SetupView()
+// Item management
+void ABagActor::BeginItemGrab(UPrimitiveComponent* GrabComponent, AActor* Actor)
 {
-	TArray<TSubclassOf<APickupItem>> ItemClasses;
-	PawnItems->GetKeys(ItemClasses);
-	
-	if (UBagUI* BagUI = Cast<UBagUI>(BagWidget->GetWidget()))
-	{
-		BagUI->SetupBagUI(this, ItemClasses);
+	GrabbedItemActor = Actor;
 
-		BagUI->ChangePage(0);
-	}
+	bGrabbedItemHoverActionChanged = false;
+	bRemoveGrabbedItemInitial = false;
+	bRemoveGrabbedItem = false;
 }
 
-void ABagActor::ClearView()
+void ABagActor::OnPlayerCursorHoverChanged(bool bIsHovered, AActor* PlayerGrabbedItem)
 {
-	if (UBagUI* BagUI = Cast<UBagUI>(BagWidget->GetWidget()))
+	if (!BagUI.IsValid())
 	{
-		for (APickupItem* PickupItem : BagUI->GetAllSpawnedActors())
+		return;
+	}
+	if (!GrabbedItemActor.IsValid())
+	{
+		return;
+	}
+
+	if (!bGrabbedItemHoverActionChanged)
+	{
+		bGrabbedItemHoverActionChanged = true;
+		bRemoveGrabbedItemInitial = !bIsHovered;
+	}
+	
+	// Mark item for removal if it's outside of bag ui
+	bRemoveGrabbedItem = !bIsHovered;
+	
+	if (bIsHovered)
+	{
+		if (OnGrabbedActorPositionOverrideRequest.IsBound())
 		{
-			PickupItem->Destroy();
+			OnGrabbedActorPositionOverrideRequest.Broadcast( GetSlotLocation(0) + FVector3d::UpVector*50.f); //TODO: Get VISIBLE PAGE index
+		}
+	}
+	else
+	{
+		if (OnGrabbedActorPositionOverrideClearRequest.IsBound())
+		{
+			OnGrabbedActorPositionOverrideClearRequest.Broadcast();
 		}
 	}
 }
 
+void ABagActor::CommitGrabbedItemAction(UPrimitiveComponent* GrabComponent, AActor* Actor)
+{
+	if (!GrabbedItemActor.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Commit: GrabbedItemActor is nullptr!"))
+		return;
+	}
+
+	if (!bGrabbedItemHoverActionChanged || bRemoveGrabbedItemInitial != bRemoveGrabbedItem)
+	{
+		// No action
+		UE_LOG(LogTemp, Warning, TEXT("No action"))
+		// If item was form inventory, return it to position
+		if (!bRemoveGrabbedItem)
+		{
+			if (const APickupItem* PickupItem = Cast<APickupItem>(Actor))
+			{
+				SpawnItemActor(BagItemTiles.FindRef(PickupItem->GetClass()));
+				Actor->Destroy();
+			}
+		}
+	}
+	else if (!bRemoveGrabbedItem)
+	{
+		// Add Item
+		if (const APickupItem* PickupItem = Cast<APickupItem>(Actor))
+		{
+			if (OnAddItemRequest.IsBound())
+			{
+				OnAddItemRequest.Broadcast(PickupItem->GetClass());
+			}
+			Actor->Destroy();
+		}
+	}
+	else
+	{
+		// Remove Item
+		if (const APickupItem* PickupItem = Cast<APickupItem>(Actor))
+		{
+			if (OnRemoveItemRequest.IsBound())
+			{
+				OnRemoveItemRequest.Broadcast(PickupItem->GetClass());
+			}
+		}
+	}
+
+	GrabbedItemActor = nullptr;
+	
+	bGrabbedItemHoverActionChanged = false;
+	bRemoveGrabbedItemInitial = false;
+	bRemoveGrabbedItem = false;
+}
+
+void ABagActor::OnNewItemAdded(TSubclassOf<APickupItem> ItemClass, int32 NewAmount)
+{
+	if (!BagUI.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Bag UI not valid!"))
+		return;
+	}
+
+	if (NewAmount == 1)
+	{
+		if (UBagItemTile* NewItemTile = BagUI->CreateNewItemTile(ItemClass, NewAmount))
+		{
+			BagUI->ChangePage(1000);
+			SpawnItemActor(NewItemTile);
+		}
+		return;
+	}
+	
+	if (UBagItemTile* ItemTile = BagItemTiles.FindRef(ItemClass))
+	{
+		ItemTile->SetItemAmountTextBlock(NewAmount);
+	}
+}
+
+void ABagActor::OnItemRemoved(TSubclassOf<APickupItem> ItemClass, int32 NewAmount)
+{
+	UBagItemTile* ItemTile = BagItemTiles.FindRef(ItemClass);
+	if (ItemTile == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ItemTile not found!") );
+		return;
+	}
+	
+	// Remove Item Tile
+	if (NewAmount <= 0)
+	{
+		BagItemTiles.Remove(ItemClass);
+		ItemTile->SetPickupItemClass(nullptr);
+		return;
+	}
+	
+	// Update Item Tile Amount
+	ItemTile->SetItemAmountTextBlock(NewAmount);
+	ItemTile->SpawnPickupItem();
+}
+// Item management
+
+// Input
 void ABagActor::ChangeSlotsPage(int PageOffset)
 {
-	
+	if (!BagUI.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Bag UI not valid!"))
+		return;
+	}
+	BagUI->ChangePage(PageOffset);
 }

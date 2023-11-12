@@ -8,14 +8,14 @@ APickupItem::APickupItem()
 
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("ItemMesh"));
 	RootComponent = ItemMesh;
-	ItemMesh->SetCollisionProfileName("Item");
+	ItemMesh->SetCollisionProfileName(FName("PickupItem_BlockVisibility"), true);
 	ItemMesh->SetSimulatePhysics(true);
 }
 
 void APickupItem::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	ItemMesh->SetCollisionProfileName(FName("PickupItem_BlockVisibility"), true);
 }
 
 TSubclassOf<AActor> APickupItem::Pickup_Implementation(APawn* Pawn)
@@ -49,7 +49,11 @@ void APickupItem::Grab_Implementation()
 	{
 		OnItemGrabbedChanged.Broadcast(this, true);
 	}
+	
 	SetSimulatePhysics(true);
+	if (ItemMesh == nullptr) return;
+
+	ItemMesh->SetCollisionProfileName(FName("PickupItem_NoVisibility"), true);
 }
 
 UPrimitiveComponent* APickupItem::GetGrabComponent_Implementation()
@@ -62,6 +66,9 @@ UPrimitiveComponent* APickupItem::GetGrabComponent_Implementation()
 void APickupItem::Release_Implementation()
 {
 	IPropGrabInterface::Release_Implementation();
+
+	ItemMesh->SetCollisionProfileName(FName("PickupItem_BlockVisibility"), true);
+
 	if (OnItemGrabbedChanged.IsBound())
 	{
 		OnItemGrabbedChanged.Broadcast(this, false);

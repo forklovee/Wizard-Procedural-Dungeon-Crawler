@@ -95,7 +95,8 @@ void AWizardPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	// set interaction inputs
 	Input->BindAction(PrimaryAction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnPrimaryHandAction);
 	Input->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnInteractAction);
-	Input->BindAction(HoldItem_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnGrabItemAction);
+	Input->BindAction(GrabItemBegin_InputAction.Get(), ETriggerEvent::Completed, this, &AWizardPlayer::OnGrabItemAction);
+	// Input->BindAction(GrabItemEnd_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnGrabItemAction);
 
 	// set bag inputs
 	Input->BindAction(OpenBag_InputAction.Get(), ETriggerEvent::Triggered, this, &AWizardPlayer::OnToggleBagAction);
@@ -154,7 +155,7 @@ void AWizardPlayer::BeginPlay()
 
 void AWizardPlayer::OnGrabItemAction(const FInputActionValue& Value)
 {
-	if (PlayerInteraction->IsGrabbingItem())
+	if (PlayerInteraction->IsGrabbingItem() || !PlayerInteraction->CanGrabTarget())
 	{
 		return;
 	}
@@ -287,7 +288,7 @@ void AWizardPlayer::OnPrimaryHandAction(const FInputActionValue& Value)
 
 void AWizardPlayer::OnInteractAction(const FInputActionValue& Value)
 {
-	if (PlayerInteraction->IsGrabbingItem())
+	if (PlayerInteraction->IsGrabbingItem() || PlayerInteraction->bInteractionDisabled)
 	{
 		return;
 	}

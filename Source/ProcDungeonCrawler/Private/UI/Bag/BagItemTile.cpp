@@ -5,6 +5,29 @@
 #include "Items/PickupItem.h"
 
 #include "Components/Button.h"
+#include "Components/TextBlock.h"
+
+void UBagItemTile::NativeConstruct()
+{
+	Super::NativeConstruct();
+}
+
+void UBagItemTile::SetCanSetNewItem(bool State)
+{
+	// If could set new item, remove the hover event bindings
+	if (bCanSetNewItem)
+	{
+		TileButton->OnHovered.RemoveDynamic(this, &UBagItemTile::OnTileHovered);
+		TileButton->OnUnhovered.RemoveDynamic(this, &UBagItemTile::OnTileUnHovered);
+	}
+	
+	bCanSetNewItem = State;
+	if (bCanSetNewItem)
+	{
+		TileButton->OnHovered.AddDynamic(this, &UBagItemTile::OnTileHovered);
+		TileButton->OnUnhovered.AddDynamic(this, &UBagItemTile::OnTileUnHovered);
+	}
+}
 
 void UBagItemTile::SpawnPickupItem()
 {
@@ -40,20 +63,25 @@ TSubclassOf<APickupItem> UBagItemTile::GetPickupItemClass() const
 
 void UBagItemTile::SetPickupItemActor(APickupItem* PickupItem)
 {
-	if (PickupItemActor != nullptr)
-	{
-		PickupItemActor->OnItemGrabbedChanged.RemoveDynamic(this, &UBagItemTile::OnItemGrabbed);
-	}
+	// if (PickupItemActor != nullptr)
+	// {
+		// PickupItemActor->OnItemGrabbedChanged.RemoveDynamic(this, &UBagItemTile::OnItemGrabbed);
+	// }
 	PickupItemActor = PickupItem;
-	if (PickupItem != nullptr)
-	{
-		PickupItem->OnItemGrabbedChanged.AddDynamic(this, &UBagItemTile::OnItemGrabbed);
-	}
+	// if (PickupItem != nullptr)
+	// {
+	// 	PickupItem->OnItemGrabbedChanged.AddDynamic(this, &UBagItemTile::OnItemGrabbed);
+	// }
 }
 
 APickupItem* UBagItemTile::GetPickupItemActor() const
 {
 	return PickupItemActor.Get();
+}
+
+void UBagItemTile::SetItemAmountTextBlock(int32 ItemAmount)
+{
+	ItemAmountTextBlock->SetText(FText::FromString(FString::FromInt(ItemAmount)));
 }
 
 int32 UBagItemTile::GetIndex() const
@@ -74,23 +102,4 @@ void UBagItemTile::OnTileHovered()
 void UBagItemTile::OnTileUnHovered()
 {
 	bIsTargeted = false;
-}
-
-void UBagItemTile::OnItemGrabbed(APickupItem* Item, bool bIsGrabbed)
-{
-	if (OnItemActorGrabbedChanged.IsBound())
-	{
-		OnItemActorGrabbedChanged.Broadcast(this, bIsGrabbed);
-	}
-}
-
-void UBagItemTile::NativeConstruct()
-{
-	Super::NativeConstruct();
-
-	if (TileButton != nullptr)
-	{
-		TileButton->OnHovered.AddDynamic(this, &UBagItemTile::OnTileHovered);
-		TileButton->OnUnhovered.AddDynamic(this, &UBagItemTile::OnTileUnHovered);
-	}
 }

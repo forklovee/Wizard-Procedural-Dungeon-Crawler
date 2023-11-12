@@ -6,6 +6,8 @@
 #include "Components/WidgetComponent.h"
 #include "Items/PickupItem.h"
 #include "Characters/Player/BagActor.h"
+#include "Characters/Player/WizardPlayer.h"
+#include "Components/Character/PlayerInteractionRaycast.h"
 
 UBagComponent::UBagComponent()
 {
@@ -16,9 +18,9 @@ void UBagComponent::OnPlayerCursorOnWidgetHoverChanged(UWidgetComponent* WidgetC
 	UWidgetComponent* PreviousWidgetComponent)
 {
 	const bool NewPlayerCursorInBounds = WidgetComponent != nullptr && PreviousWidgetComponent == nullptr;
-	if (OnPlayerCursorHoverChanged.IsBound() && NewPlayerCursorInBounds != bPlayerCursorInBounds)
+	if (OnPlayerCursorHoverChanged.IsBound() && NewPlayerCursorInBounds != bPlayerCursorInBounds && BagOwner.IsValid())
 	{
-		OnPlayerCursorHoverChanged.Broadcast(NewPlayerCursorInBounds);
+		OnPlayerCursorHoverChanged.Broadcast(NewPlayerCursorInBounds, BagOwner->PlayerInteraction->GetGrabbedActor());
 	}
 	bPlayerCursorInBounds = NewPlayerCursorInBounds;
 }
@@ -70,10 +72,26 @@ void UBagComponent::ToggleBag()
 		BagRotation.Yaw += 180.0f;
 		
 		BagActor = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
-		BagActor->SetPawnItems(Items);
+		if (BagActor.IsValid())
+		{
+			BagActor->SetPawnItems(Items);
+
+			BagActor->OnGrabbedActorPositionOverrideRequest.AddDynamic(BagOwner->PlayerInteraction, &UPlayerInteractionRaycast::SetGrabbedActorPositionOverride);
+			BagActor->OnGrabbedActorPositionOverrideClearRequest.AddDynamic(BagOwner->PlayerInteraction, &UPlayerInteractionRaycast::ClearGrabbedActorPositionOverride);
+			BagOwner->PlayerInteraction->OnPropGrabbed.AddDynamic(BagActor.Get(), &ABagActor::BeginItemGrab);
+			BagOwner->PlayerInteraction->OnPropReleased.AddDynamic(BagActor.Get(), &ABagActor::CommitGrabbedItemAction);
+			
+			// Input events binding
+			OnPlayerLeftRightInput.AddDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
+			OnPlayerCursorHoverChanged.AddDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
+
+			// Item events binding
+			BagActor->OnAddItemRequest.AddDynamic(this, &UBagComponent::OnAddItemRequest);
+			BagActor->OnRemoveItemRequest.AddDynamic(this, &UBagComponent::OnRemoveItemRequest);
+			OnNewItemAdded.AddDynamic(BagActor.Get(), &ABagActor::OnNewItemAdded);
+			OnItemRemoved.AddDynamic(BagActor.Get(), &ABagActor::OnItemRemoved);
+		}
 		
-		OnPlayerLeftRightInput.AddDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
-		OnPlayerCursorHoverChanged.AddDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
 		
 		SetBagActorAttached(true);
 		bPlayerCursorInBounds = false;
@@ -111,31 +129,53 @@ void UBagComponent::AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 	{
 		Items[ItemClass] += Amount;
 	}
-
-	if (OnBagContentsUpdated.IsBound())
+	
+	if (OnNewItemAdded.IsBound())
+	{
+		OnNewItemAdded.Broadcast(ItemClass, Items[ItemClass]);
+	}
+	
+	if (OnBagContentsUpdated.IsBound()) //TODO: if its really necessary???
 	{
 		OnBagContentsUpdated.Broadcast();
 	}
+}
+
+void UBagComponent::OnAddItemRequest(TSubclassOf<APickupItem> ItemClass)
+{
+	AddItem(ItemClass);
 }
 
 void UBagComponent::RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 {
 	if (!HasItemClass(ItemClass)) return;
 
-	const int32 ItemAmount = GetItemAmount(ItemClass);
+	int32 ItemAmount = GetItemAmount(ItemClass);
 	if (ItemAmount - Amount <= 0)
 	{
 		Items.Remove(ItemClass);
+		ItemAmount = 0;
 	}
 	else
 	{
 		Items[ItemClass] -= Amount;
+		ItemAmount = Items[ItemClass];
 	}
-
-	if (OnBagContentsUpdated.IsBound())
+	
+	if (OnItemRemoved.IsBound())
+	{
+		OnItemRemoved.Broadcast(ItemClass, ItemAmount);
+	}
+	
+	if (OnBagContentsUpdated.IsBound()) //TODO: if its really necessary???
 	{
 		OnBagContentsUpdated.Broadcast();
 	}
+}
+
+void UBagComponent::OnRemoveItemRequest(TSubclassOf<APickupItem> ItemClass)
+{
+	RemoveItem(ItemClass);
 }
 
 bool UBagComponent::HasItemClass(TSubclassOf<APickupItem> ItemClass) const
@@ -150,4 +190,14 @@ int32 UBagComponent::GetItemAmount(TSubclassOf<APickupItem> ItemClass) const
 		return Items[ItemClass];
 	}
 	return 0;
+}
+
+void UBagComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (AWizardPlayer* WizardPawn = Cast<AWizardPlayer>(GetOwner()))
+	{
+		BagOwner = WizardPawn;
+	}
 }

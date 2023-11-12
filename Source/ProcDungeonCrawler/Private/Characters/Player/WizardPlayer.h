@@ -148,7 +148,9 @@ public:
 	TSoftObjectPtr<UInputAction> Interaction_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
-	TSoftObjectPtr<UInputAction> HoldItem_InputAction;
+	TSoftObjectPtr<UInputAction> GrabItemBegin_InputAction;
+	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
+	TSoftObjectPtr<UInputAction> GrabItemEnd_InputAction;
 	
 	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
 	TSoftObjectPtr<UInputAction> PrimaryAction_InputAction;

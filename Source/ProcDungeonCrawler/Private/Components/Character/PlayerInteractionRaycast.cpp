@@ -23,10 +23,10 @@ void UPlayerInteractionRaycast::UpdateInteractionTarget(FVector NewForwardVector
 	{
 		return;
 	}
-
+	
 	FHitResult NewInteractionTarget;
 	CastRaycast(NewInteractionTarget);
-
+	
 	if (NewInteractionTarget.GetActor() != nullptr &&
 		!NewInteractionTarget.GetActor()->Implements<UPropInteractionEnabler>()
 		)
@@ -117,10 +117,29 @@ UPrimitiveComponent* UPlayerInteractionRaycast::Grab()
 	return nullptr;
 }
 
+bool UPlayerInteractionRaycast::CanGrabTarget() const
+{
+	return InteractionTarget.GetActor() != nullptr &&
+		   InteractionTarget.GetActor()->Implements<UPropInteractionEnabler>() &&
+		   InteractionTarget.GetActor()->Implements<UPropGrabInterface>() &&
+		   IPropGrabInterface::Execute_CanBeGrabbed(InteractionTarget.GetActor());
+}
+
 FTransform UPlayerInteractionRaycast::GetGrabTargetTransform() const
 {
-	const FVector GrabLocation = GetComponentLocation() +
-								ForwardVector * 50.f;
+	FVector GrabLocation;
+	if (bUseGrabOverridenPosition)
+	{
+		const FRotator LookAtRotator = FRotationMatrix::MakeFromX(ForwardVector).Rotator();
+		GrabLocation = GrabbedActorPositionOverride;
+		return FTransform(LookAtRotator, GrabLocation);
+	}
+
+	FHitResult NewInteractionTarget;
+	CastRaycast(NewInteractionTarget);
+	float GrabDistance = NewInteractionTarget.GetActor() ? NewInteractionTarget.Distance - 55.f: 100.f;
+	GrabDistance = FMath::Clamp(GrabDistance, 50.f, 100.f);
+	GrabLocation = GetComponentLocation() + ForwardVector * GrabDistance;
 	const FRotator LookAtRotator = FRotationMatrix::MakeFromX(ForwardVector).Rotator();
 	return FTransform(LookAtRotator, GrabLocation);
 }
@@ -128,6 +147,11 @@ FTransform UPlayerInteractionRaycast::GetGrabTargetTransform() const
 bool UPlayerInteractionRaycast::IsGrabbingItem() const
 {
 	return GrabbedActor.IsValid();
+}
+
+AActor* UPlayerInteractionRaycast::GetGrabbedActor() const
+{
+	return GrabbedActor.Get();
 }
 
 bool UPlayerInteractionRaycast::Release()
@@ -141,7 +165,7 @@ bool UPlayerInteractionRaycast::Release()
 	{
 		return false;
 	}
-	
+	bUseGrabOverridenPosition = false;
 	IPropGrabInterface::Execute_Release(Target);
 	UPrimitiveComponent* GrabComponent = IPropGrabInterface::Execute_GetGrabComponent(Target);
 	if (OnPropReleased.IsBound())
@@ -149,6 +173,17 @@ bool UPlayerInteractionRaycast::Release()
 		OnPropReleased.Broadcast(GrabComponent, Target);
 	}
 	return true;
+}
+
+void UPlayerInteractionRaycast::SetGrabbedActorPositionOverride(FVector NewPosition)
+{
+	bUseGrabOverridenPosition = true;
+	GrabbedActorPositionOverride = NewPosition;
+}
+
+void UPlayerInteractionRaycast::ClearGrabbedActorPositionOverride()
+{
+	bUseGrabOverridenPosition = false;
 }
 
 void UPlayerInteractionRaycast::CastRaycast(FHitResult& OutHitResult) const

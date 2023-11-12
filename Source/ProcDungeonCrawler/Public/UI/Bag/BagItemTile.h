@@ -6,13 +6,12 @@
 #include "Blueprint/UserWidget.h"
 #include "BagItemTile.generated.h"
 
+class UTextBlock;
 class UButton;
 class APickupItem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnPickupItemRequest, UBagItemTile*, BagItemTile);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDestroyPickupItemRequest, UBagItemTile*, BagItemTile);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemActorGrabbedChanged, UBagItemTile*, BagItemTile, bool, bIsGrabbed);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API UBagItemTile : public UUserWidget
@@ -22,7 +21,8 @@ class PROCDUNGEONCRAWLER_API UBagItemTile : public UUserWidget
 public:
 	FOnSpawnPickupItemRequest OnSpawnPickupItemRequest;
 	FOnDestroyPickupItemRequest OnDestroyPickupItemRequest;
-	FOnItemActorGrabbedChanged OnItemActorGrabbedChanged;
+
+	void SetCanSetNewItem(bool State);
 	
 	void SpawnPickupItem();
 	void DestroyPickupItem();
@@ -32,14 +32,16 @@ public:
 
 	void SetPickupItemActor(APickupItem* PickupItem);
 	APickupItem* GetPickupItemActor() const;
+
+	void SetItemAmountTextBlock(int32 ItemAmount);
 	
 	int32 GetIndex() const;
 	
 	UFUNCTION()
 	bool IsTargeted() const;
 	
-	UFUNCTION()
-	void OnItemGrabbed(APickupItem* Item, bool bIsGrabbed);
+	// UFUNCTION()
+	// void OnItemGrabbed(APickupItem* Item, bool bIsGrabbed);
 
 protected:
 	virtual void NativeConstruct() override;
@@ -54,10 +56,17 @@ public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UButton* TileButton;
 
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UTextBlock* DragItemTextBlock;	
+	
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UTextBlock* ItemAmountTextBlock;
+
 	bool bItemActorGrabChangeEventConnected = false;
 protected:
 	TSubclassOf<APickupItem> PickupItemClass;
 	TWeakObjectPtr<APickupItem> PickupItemActor;
-	
+
+	bool bCanSetNewItem = false;
 	bool bIsTargeted = false;
 };

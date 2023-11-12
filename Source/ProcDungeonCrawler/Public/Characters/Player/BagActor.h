@@ -11,25 +11,38 @@ class APickupItem;
 class UBagUI;
 class UWidgetComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRequestRemoveItemFromBag, int, SlotIdx, APickupItem*, Item);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRequestAddItemFromBag, int, SlotIdx, APickupItem*, Item);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGrabbedActorPositionOverrideRequest, FVector, NewPosition);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGrabbedActorPositionOverrideClearRequest);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAddItemRequest, TSubclassOf<APickupItem>, Item);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveItemRequest,  TSubclassOf<APickupItem>, Item);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API ABagActor : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
+public:
+	// Interaction
+	FOnGrabbedActorPositionOverrideRequest OnGrabbedActorPositionOverrideRequest;
+	FOnGrabbedActorPositionOverrideClearRequest OnGrabbedActorPositionOverrideClearRequest;
+	// Bag Component Item Changes
+	FOnAddItemRequest OnAddItemRequest;
+	FOnRemoveItemRequest OnRemoveItemRequest;
+	
 	ABagActor();
 
 	UFUNCTION()
-	void OnPlayerCursorHoverChanged(bool bIsHovered);
+	void BeginItemGrab(UPrimitiveComponent* GrabComponent, AActor* Actor);
+	UFUNCTION()
+	void OnPlayerCursorHoverChanged(bool bIsHovered, AActor* PlayerGrabbedItem = nullptr);
+	UFUNCTION()
+	void CommitGrabbedItemAction(UPrimitiveComponent* GrabComponent, AActor* Actor);
 	
 	bool IsOpen() const { return bIsOpen; }
 
 	UFUNCTION()
 	void SetupView();
-
 	UFUNCTION()
 	void ClearView();
 	
@@ -41,16 +54,21 @@ public:
 
 	UFUNCTION()
 	void SpawnItemActor(UBagItemTile* ItemTile);
-
 	UFUNCTION()
 	void DestroyItemActor(UBagItemTile* ItemTile);
-	
+
+	UFUNCTION()
+	void OnNewItemAdded(TSubclassOf<APickupItem> ItemClass, int32 NewAmount);
+	UFUNCTION()
+	void OnItemRemoved(TSubclassOf<APickupItem> ItemClass, int32 NewAmount);
 protected:
 	virtual void BeginPlay() override;
 
-	UFUNCTION()
-	void SetGrabbedItemTile(UBagItemTile* Item, bool bIsGrabbed);
 	FVector GetSlotLocation(int SlotIdx) const;
+
+private:
+	UFUNCTION()
+	void ItemTile_SpawnAndDestroyRequests(UBagItemTile* ItemTile);
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
@@ -70,13 +88,21 @@ private:
 	int ViewSlots = 3;
 	
 	UPROPERTY(EditAnywhere, Category="Slots")
-	float SlotOffset = 100.f;
-	
+	float SlotOffset = 25.f;
+
+	TWeakObjectPtr<UBagUI> BagUI;
 	bool bIsOpen = false;
 
 	int ViewStartIdx = 0;
 	int LastViewStartIdx = 0;
 	
 	TMap<TSubclassOf<APickupItem>, int32>* PawnItems;
+	TMap<TSubclassOf<APickupItem>, UBagItemTile*> BagItemTiles;
+
+	TWeakObjectPtr<AActor> GrabbedItemActor;
+	bool bGrabbedItemHoverActionChanged = false;
+	bool bRemoveGrabbedItemInitial = false;
+	bool bRemoveGrabbedItem = false;
+	
 	TWeakObjectPtr<UBagItemTile> GrabbedItemTile;
 };

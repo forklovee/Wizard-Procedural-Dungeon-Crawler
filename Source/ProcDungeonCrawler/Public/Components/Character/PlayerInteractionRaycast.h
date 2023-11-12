@@ -55,12 +55,18 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	UPrimitiveComponent* Grab();
+	bool CanGrabTarget() const;
 	FTransform GetGrabTargetTransform() const;
 	bool IsGrabbingItem() const;
+	AActor* GetGrabbedActor() const;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	bool Release();
-
+	
+	UFUNCTION()
+	void SetGrabbedActorPositionOverride(FVector NewPosition);
+	UFUNCTION()
+	void ClearGrabbedActorPositionOverride();
 private:
 	void CastRaycast(FHitResult& OutHitResult) const;
 	void ClearInteractionTarget() const;
@@ -82,6 +88,9 @@ public:
 
 private:
 	FVector ForwardVector;
+	
+	bool bUseGrabOverridenPosition = false;
+	FVector GrabbedActorPositionOverride;
 	
 	TWeakObjectPtr<AActor> GrabbedActor;
 	FHitResult InteractionTarget;
