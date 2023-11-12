@@ -9,6 +9,8 @@
 #include "Interface/PropPickupInterface.h"
 #include "PickupItem.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemGrabbedChanged, APickupItem*, Item, bool, bIsGrabbed);
+
 UCLASS()
 class APickupItem : public AActor,
 					public IPropInteractionEnabler, // Can be interaction target
@@ -16,8 +18,9 @@ class APickupItem : public AActor,
 {
 	GENERATED_BODY()
 	
-public:	
-	// Sets default values for this actor's properties
+public:
+	FOnItemGrabbedChanged OnItemGrabbedChanged;
+	
 	APickupItem();
 
 	// Interaction Enabler interface

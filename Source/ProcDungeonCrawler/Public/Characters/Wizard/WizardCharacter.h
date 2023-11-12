@@ -35,7 +35,9 @@ protected:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USpellbookComponent* SpellBook;
-	
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* HandsRootComponent;
 	UPROPERTY(EditAnywhere)
 	USceneComponent* RightHandSocketComponent;
 	UPROPERTY(EditAnywhere)

@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "BagUI.generated.h"
 
+class ABagActor;
+class APickupItem;
 class UScrollBox;
 class UUniformGridPanel;
 /**
@@ -17,9 +19,24 @@ class PROCDUNGEONCRAWLER_API UBagUI : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	void SetupBagUI(ABagActor* BagActor, TArray<TSubclassOf<APickupItem>>& ItemClasses);
+
+	TArray<APickupItem*> GetAllSpawnedActors() const;
+
+	UFUNCTION()
+	void ChangePage(int Direction);
+	
+protected:
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> BagItemWidgetClass;
+	
+public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	UScrollBox* MainGridContainer;
+	UScrollBox* ScrollBox;
 	
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	UUniformGridPanel* ItemGrid;
+	UPanelWidget* BagItemsPanel;
+
+private:
+	int CurrentPage = 0;
 };

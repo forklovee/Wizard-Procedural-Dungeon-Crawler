@@ -3,12 +3,24 @@
 
 #include "Components/Character/BagComponent.h"
 
+#include "Components/WidgetComponent.h"
 #include "Items/PickupItem.h"
 #include "Characters/Player/BagActor.h"
 
 UBagComponent::UBagComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UBagComponent::OnPlayerCursorOnWidgetHoverChanged(UWidgetComponent* WidgetComponent,
+	UWidgetComponent* PreviousWidgetComponent)
+{
+	const bool NewPlayerCursorInBounds = WidgetComponent != nullptr && PreviousWidgetComponent == nullptr;
+	if (OnPlayerCursorHoverChanged.IsBound() && NewPlayerCursorInBounds != bPlayerCursorInBounds)
+	{
+		OnPlayerCursorHoverChanged.Broadcast(NewPlayerCursorInBounds);
+	}
+	bPlayerCursorInBounds = NewPlayerCursorInBounds;
 }
 
 bool UBagComponent::IsOpen() const
@@ -39,9 +51,11 @@ void UBagComponent::ToggleBag()
 	if (BagActor.IsValid())
 	{
 		OnPlayerLeftRightInput.RemoveDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
+		OnPlayerCursorHoverChanged.RemoveDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
 		BagActor->ClearView();
 		BagActor.Get()->Destroy();
 		BagActor = nullptr;
+		bPlayerCursorInBounds = false;
 	}
 	else
 	{
@@ -59,8 +73,10 @@ void UBagComponent::ToggleBag()
 		BagActor->SetPawnItems(Items);
 		
 		OnPlayerLeftRightInput.AddDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
+		OnPlayerCursorHoverChanged.AddDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
 		
 		SetBagActorAttached(true);
+		bPlayerCursorInBounds = false;
 	}
 
 	if (OnBagStateChanged.IsBound())

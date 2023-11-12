@@ -5,6 +5,8 @@
 
 #include "Components/WidgetComponent.h"
 #include "Items/PickupItem.h"
+#include "UI/Bag/BagItemTile.h"
+#include "UI/Bag/BagUI.h"
 
 ABagActor::ABagActor()
 {
@@ -23,6 +25,29 @@ ABagActor::ABagActor()
 	BagWidget->SetManuallyRedraw(true);
 }
 
+void ABagActor::OnPlayerCursorHoverChanged(bool bIsHovered)
+{
+	if (!bIsHovered && GrabbedItemTile != nullptr)
+	{
+		const TSubclassOf<APickupItem> ItemClass = GrabbedItemTile->GetPickupItemClass();
+		if (int* ItemAmountPtr = PawnItems->Find(ItemClass))
+		{
+			*ItemAmountPtr -= 1;
+			if (*ItemAmountPtr <= 0)
+			{
+				PawnItems->Remove(ItemClass);
+				GrabbedItemTile->SetPickupItemClass(nullptr);
+			}
+			else
+			{
+				SpawnItemActor(GrabbedItemTile.Get());
+			}
+			return;
+		}
+		GrabbedItemTile->SetPickupItemClass(nullptr);
+	}
+}
+
 void ABagActor::SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items)
 {
 	PawnItems = &Items;
@@ -31,104 +56,75 @@ void ABagActor::SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items)
 void ABagActor::BeginPlay()
 {
 	Super::BeginPlay();
+}
 
-	SpawnedItems.SetNum(ViewSlots);
+void ABagActor::SetGrabbedItemTile(UBagItemTile* Item, bool bIsGrabbed)
+{
+	GrabbedItemTile = bIsGrabbed ? Item : nullptr;
 }
 
 FVector ABagActor::GetSlotLocation(int SlotIdx) const
 {
 	const FVector RightVector = GetActorForwardVector().RotateAngleAxis(90.f, FVector::UpVector);
 	const FVector SlotsOrigin = GetActorForwardVector()*-25.f + FVector::UpVector*25.f + (RightVector * 25.f * (ViewSlots - 1) / 2.f);
-	return GetActorLocation() + SlotsOrigin + (RightVector * 25.f * SlotIdx);
+	return GetActorLocation() + SlotsOrigin - (RightVector * 25.f * SlotIdx);
+}
+
+void ABagActor::SpawnItemActor(UBagItemTile* ItemTile)
+{
+	const int32 ItemIndex = ItemTile->GetIndex();
+	const TSubclassOf<APickupItem> ItemClass = *ItemTile->GetPickupItemClass();
+	const FVector ItemLocation = GetSlotLocation(ItemIndex);
+	const FRotator ItemRotation = FRotator::ZeroRotator;
+
+	APickupItem* PickupItemActor = Cast<APickupItem>(
+			GetWorld()->SpawnActor(ItemClass->GetDefaultObject()->GetClass(), &ItemLocation, &ItemRotation)
+			);
+	PickupItemActor->SetSimulatePhysics(false);
+
+	if (!ItemTile->bItemActorGrabChangeEventConnected)
+	{
+		ItemTile->OnItemActorGrabbedChanged.AddDynamic(this, &ABagActor::SetGrabbedItemTile);
+		ItemTile->bItemActorGrabChangeEventConnected = true;
+	}
+	
+	ItemTile->SetPickupItemActor( PickupItemActor );
+}
+
+void ABagActor::DestroyItemActor(UBagItemTile* ItemTile)
+{
+	if (APickupItem* PickupItemActor = ItemTile->GetPickupItemActor())
+	{
+		ItemTile->SetPickupItemActor(nullptr);
+		PickupItemActor->Destroy();
+	}
 }
 
 void ABagActor::SetupView()
 {
-	ViewStartIdx = 0;
 	TArray<TSubclassOf<APickupItem>> ItemClasses;
 	PawnItems->GetKeys(ItemClasses);
-	for (int idx = ViewStartIdx; idx < ViewSlots; idx++)
+	
+	if (UBagUI* BagUI = Cast<UBagUI>(BagWidget->GetWidget()))
 	{
-		if (idx >= ItemClasses.Num() || idx < 0)
-		{
-			break;
-		}
-		const TSubclassOf<APickupItem>& ItemClass = ItemClasses[idx];
-		const FVector ItemLocation = GetSlotLocation(idx);
-		const FRotator ItemRotation = FRotator::ZeroRotator;
-		
-		SpawnedItems[idx] = Cast<APickupItem>(
-			GetWorld()->SpawnActor(ItemClass->GetDefaultObject()->GetClass(), &ItemLocation, &ItemRotation)
-			);
-		if (SpawnedItems[idx] == nullptr)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to spawn item: %s"), *ItemClass->GetName());
-		}
-		else
-		{
-			SpawnedItems[idx]->SetSimulatePhysics(false);
-		}
+		BagUI->SetupBagUI(this, ItemClasses);
+
+		BagUI->ChangePage(0);
 	}
 }
 
 void ABagActor::ClearView()
 {
-	for (int Idx = 0; Idx < SpawnedItems.Num(); Idx++)
+	if (UBagUI* BagUI = Cast<UBagUI>(BagWidget->GetWidget()))
 	{
-		if (SpawnedItems[Idx] != nullptr)
+		for (APickupItem* PickupItem : BagUI->GetAllSpawnedActors())
 		{
-			SpawnedItems[Idx]->Destroy();
-			SpawnedItems[Idx] = nullptr;
+			PickupItem->Destroy();
 		}
 	}
 }
 
 void ABagActor::ChangeSlotsPage(int PageOffset)
 {
-	PageOffset = -1; // Right
 	
-	TArray<TSubclassOf<APickupItem>> ItemClasses;
-	PawnItems->GetKeys(ItemClasses);
-	
-	LastViewStartIdx = ViewStartIdx;
-	ViewStartIdx += PageOffset;
-	ViewStartIdx = FMath::Clamp(ViewStartIdx, 0, PawnItems->Num() - ViewSlots);
-	
-	for (int ActorIdx = 0; ActorIdx < SpawnedItems.Num(); ActorIdx++)
-	{
-		APickupItem* ItemActor = SpawnedItems[ActorIdx];
-		if (ItemActor == nullptr)
-		{
-			const int NewItemIdx = ViewStartIdx + ActorIdx - PageOffset;
-			if (NewItemIdx < 0 || NewItemIdx > ItemClasses.Num())
-			{
-				continue;
-			}
-			const TSubclassOf<APickupItem> NewItemClass = ItemClasses[NewItemIdx];
-			const FVector ItemLocation = GetSlotLocation(ActorIdx);
-			const FRotator ItemRotation = FRotator::ZeroRotator;
-
-			SpawnedItems[ActorIdx] = Cast<APickupItem>(
-			GetWorld()->SpawnActor(NewItemClass->GetDefaultObject()->GetClass(), &ItemLocation, &ItemRotation)
-			);
-			if (SpawnedItems[ActorIdx] == nullptr)
-			{
-				UE_LOG(LogTemp, Error, TEXT("Failed to spawn item: %s"), *NewItemClass->GetName());
-			}
-			else
-			{
-				SpawnedItems[ActorIdx]->SetSimulatePhysics(false);
-			}
-		}
-		
-		const int NewActorIdx = ActorIdx + PageOffset;
-		if (NewActorIdx < 0 || NewActorIdx >= ViewSlots)
-		{
-			ItemActor->Destroy();
-			SpawnedItems[ActorIdx] = nullptr;
-			continue;
-		}
-
-		SpawnedItems[NewActorIdx] = SpawnedItems[ActorIdx];
-	}
 }

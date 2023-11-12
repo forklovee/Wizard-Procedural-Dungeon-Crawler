@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "BagActor.generated.h"
 
+class UBagItemTile;
 class APickupItem;
 class UBagUI;
 class UWidgetComponent;
@@ -20,6 +21,9 @@ class PROCDUNGEONCRAWLER_API ABagActor : public AActor
 	
 public:	
 	ABagActor();
+
+	UFUNCTION()
+	void OnPlayerCursorHoverChanged(bool bIsHovered);
 	
 	bool IsOpen() const { return bIsOpen; }
 
@@ -34,9 +38,18 @@ public:
 	
 	UFUNCTION()
 	void SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items);
+
+	UFUNCTION()
+	void SpawnItemActor(UBagItemTile* ItemTile);
+
+	UFUNCTION()
+	void DestroyItemActor(UBagItemTile* ItemTile);
+	
 protected:
 	virtual void BeginPlay() override;
-	
+
+	UFUNCTION()
+	void SetGrabbedItemTile(UBagItemTile* Item, bool bIsGrabbed);
 	FVector GetSlotLocation(int SlotIdx) const;
 	
 public:
@@ -63,7 +76,7 @@ private:
 
 	int ViewStartIdx = 0;
 	int LastViewStartIdx = 0;
-	UPROPERTY()
-	TArray<APickupItem*> SpawnedItems;
+	
 	TMap<TSubclassOf<APickupItem>, int32>* PawnItems;
+	TWeakObjectPtr<UBagItemTile> GrabbedItemTile;
 };

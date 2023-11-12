@@ -18,17 +18,21 @@
 #include "Kismet/GameplayStatics.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "UI/InteractionUI.h"
+#include "UI/Bag/BagUI.h"
 #include "UI/Wizard/RuneCastsHistory.h"
 #include "UI/Wizard/WizardHUD.h"
 
 AWizardPlayer::AWizardPlayer(): Super()
 {
 	CameraArmComponent = CreateDefaultSubobject<USpringArmComponent>("CameraArmComponent");
-	CameraArmComponent->SetupAttachment(RootComponent);
+	CameraArmComponent->SetupAttachment(HandsRootComponent);
 	
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
 	CameraComponent->SetupAttachment(CameraArmComponent);
 
+	RightHandSocketComponent->SetupAttachment(CameraComponent);
+	LeftHandSocketComponent->SetupAttachment(CameraComponent);
+	
 	PhysicsHandleComponent = CreateDefaultSubobject<UPhysicsHandleComponent>("PhysicsHandle");
 	
 	ArmsMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>("HandsMeshComponent");
@@ -143,7 +147,8 @@ void AWizardPlayer::BeginPlay()
 		OnRuneSlotSelected.AddDynamic(SpellBook, &USpellbookComponent::CastRuneOfIdx);
 		SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
 		SpellBook->OnCastedRunesCleared.AddDynamic(WizardHUD->CastedRuneHistory, &URuneCastsHistory::ClearCastHistory);
-		
+
+		WidgetInteractionComponent->OnHoveredWidgetChanged.AddDynamic(Bag, &UBagComponent::OnPlayerCursorOnWidgetHoverChanged);
 	}
 }
 
@@ -210,7 +215,7 @@ void AWizardPlayer::UpdateBagInputContext(bool IsBagOpen)
 	PlayerInteraction->bInteractionDisabled = IsBagOpen;
 	
 	// SetInteractionInput(!IsBagOpen);
-	// SetCharacterMovementInput(!IsBagOpen);
+	SetCharacterMovementInput(!IsBagOpen);
 }
 
 void AWizardPlayer::UpdateSpellBookInputContext(bool IsSpellBookOpen)
@@ -320,10 +325,15 @@ void AWizardPlayer::OnToggleBagAction(const FInputActionValue& Value)
 {
 	if (OnToggleBagRequest.IsBound())
 	{
-		bool IsBagOpen = Bag->IsOpen();
+		const bool IsBagOpen = Bag->IsOpen();
+		SetCrouch(!IsBagOpen);
 		if (IsBagOpen)
 		{
 			OnUILeftRightInput.AddDynamic(Bag, &UBagComponent::OnLeftRightInputAction);
+		}
+		else
+		{
+			OnUILeftRightInput.RemoveDynamic(Bag, &UBagComponent::OnLeftRightInputAction);
 		}
 		OnToggleBagRequest.Broadcast(!IsBagOpen);
 	}

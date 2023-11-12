@@ -14,10 +14,13 @@ AWizardCharacter::AWizardCharacter()
 	bUseControllerRotationYaw = true;
 
 	// Hand sockets
+	HandsRootComponent = CreateDefaultSubobject<USceneComponent>(FName("HandsRoot"));
+	HandsRootComponent->SetupAttachment(RootComponent);
+	
 	LeftHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("LeftHandSocket"));
-	LeftHandSocketComponent->SetupAttachment(RootComponent, FName("LeftHand"));
+	LeftHandSocketComponent->SetupAttachment(HandsRootComponent, NAME_None);
 	RightHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("RightHandSocket"));
-	RightHandSocketComponent->SetupAttachment(RootComponent, FName("RightHand"));
+	RightHandSocketComponent->SetupAttachment(HandsRootComponent, NAME_None);
 	
 	SpellBook = CreateDefaultSubobject<USpellbookComponent>(FName("Spellbook"));
 	SpellBook->SetupAttachment(LeftHandSocketComponent);

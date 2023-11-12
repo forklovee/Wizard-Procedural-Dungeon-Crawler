@@ -6,12 +6,14 @@
 #include "Components/ActorComponent.h"
 #include "BagComponent.generated.h"
 
+class UWidgetComponent;
 class APickupItem;
 class ABagActor;
 struct FInputActionValue;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBagContentsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBagStateChanged, bool, bIsOpen);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerCursorHoverChanged, bool, bIsHovered);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerLeftRightInput, int, Direction);
 
@@ -23,11 +25,15 @@ class PROCDUNGEONCRAWLER_API UBagComponent : public USceneComponent
 public:
 	FOnBagContentsUpdated OnBagContentsUpdated;
 	FOnBagStateChanged OnBagStateChanged;
-
+	FOnPlayerCursorHoverChanged OnPlayerCursorHoverChanged;
+	
 	FOnPlayerLeftRightInput OnPlayerLeftRightInput;
 	
 	UBagComponent();
 
+	UFUNCTION()
+	void OnPlayerCursorOnWidgetHoverChanged(UWidgetComponent* WidgetComponent, UWidgetComponent* PreviousWidgetComponent);
+	
 	UFUNCTION(BlueprintCallable, Category= "Bag")
 	bool IsOpen() const;
 	
@@ -62,4 +68,6 @@ private:
 
 	// 3D UI Actor
 	TWeakObjectPtr<ABagActor> BagActor;
+
+	bool bPlayerCursorInBounds = false;
 };

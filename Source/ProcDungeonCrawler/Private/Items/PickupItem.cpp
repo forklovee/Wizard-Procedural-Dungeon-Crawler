@@ -45,6 +45,10 @@ void APickupItem::Grab_Implementation()
 {
 	IPropGrabInterface::Grab_Implementation();
 
+	if (OnItemGrabbedChanged.IsBound())
+	{
+		OnItemGrabbedChanged.Broadcast(this, true);
+	}
 	SetSimulatePhysics(true);
 }
 
@@ -58,6 +62,10 @@ UPrimitiveComponent* APickupItem::GetGrabComponent_Implementation()
 void APickupItem::Release_Implementation()
 {
 	IPropGrabInterface::Release_Implementation();
+	if (OnItemGrabbedChanged.IsBound())
+	{
+		OnItemGrabbedChanged.Broadcast(this, false);
+	}
 }
 
 void APickupItem::SetSimulatePhysics_Implementation(const bool bNewSimulatePhysics)
