@@ -50,8 +50,10 @@ TArray<APickupItem*> UBagUI::GetAllSpawnedActors() const
 
 void UBagUI::ChangePage(int Direction)
 {
+	const int MaxPage = FMath::CeilToInt32(BagItemsPanel->GetChildrenCount() / 3.0);
+	const int NewPage = FMath::Clamp(CurrentPage + Direction, 0, MaxPage - 1);
 	// Destroy all visible items
-	if (CurrentPage + Direction != CurrentPage)
+	if (NewPage != CurrentPage)
 	{
 		const int StartIdx = CurrentPage * 3;
 		for (int Idx = StartIdx; Idx < StartIdx+3; Idx++)
@@ -65,8 +67,7 @@ void UBagUI::ChangePage(int Direction)
 		}
 	}
 	
-	const int MaxPage = FMath::CeilToInt32(BagItemsPanel->GetChildrenCount() / 3.0);
-	CurrentPage = FMath::Clamp(CurrentPage + Direction, 0, MaxPage - 1);
+	CurrentPage = NewPage;
 
 	// Spawn new items from page
 	const int StartIdx = CurrentPage * 3;

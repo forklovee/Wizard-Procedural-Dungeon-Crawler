@@ -114,8 +114,12 @@ void ABagActor::DestroyItemActor(UBagItemTile* ItemTile)
 {
 	if (APickupItem* PickupItemActor = ItemTile->GetPickupItemActor())
 	{
-		ItemTile->SetPickupItemActor(nullptr);
 		PickupItemActor->Destroy();
+		ItemTile->SetPickupItemActor(nullptr);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("DestroyItemActor: NULL!"))
 	}
 }
 // Utility
@@ -179,7 +183,7 @@ void ABagActor::CommitGrabbedItemAction(UPrimitiveComponent* GrabComponent, AAct
 		// No action
 		UE_LOG(LogTemp, Warning, TEXT("No action"))
 		// If item was form inventory, return it to position
-		if (!bRemoveGrabbedItem)
+		if (bGrabbedItemHoverActionChanged && !bRemoveGrabbedItem)
 		{
 			if (const APickupItem* PickupItem = Cast<APickupItem>(Actor))
 			{
@@ -231,15 +235,19 @@ void ABagActor::OnNewItemAdded(TSubclassOf<APickupItem> ItemClass, int32 NewAmou
 	{
 		if (UBagItemTile* NewItemTile = BagUI->CreateNewItemTile(ItemClass, NewAmount))
 		{
+			BagItemTiles.Add(ItemClass, NewItemTile);
 			BagUI->ChangePage(1000);
-			SpawnItemActor(NewItemTile);
 		}
 		return;
 	}
-	
+	UE_LOG(LogTemp, Warning, TEXT("BagItemTiles NUM: %i"), BagItemTiles.Num());
 	if (UBagItemTile* ItemTile = BagItemTiles.FindRef(ItemClass))
 	{
 		ItemTile->SetItemAmountTextBlock(NewAmount);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ItemTile not found!!!"))
 	}
 }
 
@@ -248,7 +256,7 @@ void ABagActor::OnItemRemoved(TSubclassOf<APickupItem> ItemClass, int32 NewAmoun
 	UBagItemTile* ItemTile = BagItemTiles.FindRef(ItemClass);
 	if (ItemTile == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ItemTile not found!") );
+		UE_LOG(LogTemp, Error, TEXT("OnItemRemoved: ItemTile not found!") );
 		return;
 	}
 	

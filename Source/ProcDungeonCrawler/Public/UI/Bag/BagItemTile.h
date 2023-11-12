@@ -39,10 +39,6 @@ public:
 	
 	UFUNCTION()
 	bool IsTargeted() const;
-	
-	// UFUNCTION()
-	// void OnItemGrabbed(APickupItem* Item, bool bIsGrabbed);
-
 protected:
 	virtual void NativeConstruct() override;
 
