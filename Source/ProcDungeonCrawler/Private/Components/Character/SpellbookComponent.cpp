@@ -173,6 +173,7 @@ void USpellbookComponent::PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass)
 
 void USpellbookComponent::CastPreparedSpell(AWizardCharacter* WizardCharacter)
 {
+	//TODO: Check if spell can be casted
 	if (!IsSpellPrepared()) return;
 
 	PreparedSpell->CastSpell(WizardCharacter);

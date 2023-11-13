@@ -33,7 +33,7 @@ public:
 	// Spell casting
 	virtual void CastSpell(AWizardCharacter* WizardCharacter);
 	virtual void ApplyEffectsOnTarget(AActor* TargetActor);
-	
+
 	// Actor targetting
 	virtual bool CanActorBeTargeted(AActor* Actor) const;
 	UFUNCTION(BlueprintCallable)
@@ -47,6 +47,9 @@ public:
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Spell")
 	bool bRequireTarget = true;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Spell")
+	float ManaCost = 10.0f;
 	
 protected:
 	UPROPERTY(EditAnywhere, Category="Particles", meta=(AllowPrivateAccess="true"))

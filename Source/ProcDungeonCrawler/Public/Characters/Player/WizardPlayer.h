@@ -177,4 +177,7 @@ protected:
 	EHandsVisibility HandsVisibility = EHandsVisibility::E_Hidden;
 
 	bool bNewHoldingItem = false;
+
+private:
+	float TargetCameraFieldOfView = 90.f;
 };

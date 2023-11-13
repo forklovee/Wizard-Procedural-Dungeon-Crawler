@@ -2,11 +2,9 @@
 
 #include "Characters/Wizard/WizardCharacter.h"
 
+#include "Components/Character/PawnStats.h"
 #include "Components/Character/SpellbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
-#include "Interface/PropPickupInterface.h"
-#include "Spell/RuneCast.h"
 
 AWizardCharacter::AWizardCharacter()
 {
@@ -21,9 +19,13 @@ AWizardCharacter::AWizardCharacter()
 	LeftHandSocketComponent->SetupAttachment(HandsRootComponent, NAME_None);
 	RightHandSocketComponent = CreateDefaultSubobject<USceneComponent>(FName("RightHandSocket"));
 	RightHandSocketComponent->SetupAttachment(HandsRootComponent, NAME_None);
-	
+
+	// Spell cast enabler
 	SpellBook = CreateDefaultSubobject<USpellbookComponent>(FName("Spellbook"));
 	SpellBook->SetupAttachment(LeftHandSocketComponent);
+
+	// Pawn Stats
+	WizardStats = CreateDefaultSubobject<UPawnStats>(FName("WizardStats"));
 	
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -78,6 +80,13 @@ void AWizardCharacter::PrimaryHandAction()
 {
 	// No prepared spell.
 	if (!SpellBook->IsSpellPrepared()) return;
-	
-	SpellBook->CastPreparedSpell(this);
+
+	if (WizardStats->CanCastSpell(SpellBook->GetPreparedSpell()))
+	{
+		SpellBook->CastPreparedSpell(this);
+	}
+	else
+	{
+		
+	}
 }

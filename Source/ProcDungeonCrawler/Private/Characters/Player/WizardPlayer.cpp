@@ -12,13 +12,13 @@
 #include "Camera/CameraComponent.h"
 #include "Components/WidgetInteractionComponent.h"
 #include "Components/Character/BagComponent.h"
+#include "Components/Character/PawnStats.h"
 #include "Components/Character/PlayerInteractionRaycast.h"
 #include "Components/Character/SpellbookComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "UI/InteractionUI.h"
-#include "UI/Bag/BagUI.h"
 #include "UI/Wizard/RuneCastsHistory.h"
 #include "UI/Wizard/WizardHUD.h"
 
@@ -63,6 +63,15 @@ void AWizardPlayer::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	if (CameraComponent->FieldOfView != TargetCameraFieldOfView)
+	{
+		CameraComponent->FieldOfView = FMath::Lerp(
+			CameraComponent->FieldOfView,
+			TargetCameraFieldOfView,
+			10.f * DeltaSeconds
+			);
+	}
+	
 	PlayerInteraction->UpdateInteractionTarget(CameraComponent->GetForwardVector());
 	
 	if (PlayerInteraction->IsGrabbingItem())
@@ -138,6 +147,11 @@ void AWizardPlayer::BeginPlay()
 	{
 		UWizardHUD* WizardHUD = PlayerController->SetupWizardHud();
 
+		WizardStats->OnHurt.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerHurt);
+		WizardStats->OnHeal.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerHeal);
+		WizardStats->OnManaUsage.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerManaUsage);
+		WizardStats->UpdateUIStats();
+		
 		PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
 		PlayerInteraction->OnItemPickedUp.AddDynamic(Bag, &UBagComponent::AddItem);
 		PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
@@ -177,7 +191,6 @@ void AWizardPlayer::OnGrabItemAction(const FInputActionValue& Value)
 	}
 }
 
-
 void AWizardPlayer::OnReleaseItemAction(const FInputActionValue& Value)
 {
 	if (!PlayerInteraction->IsGrabbingItem())
@@ -212,7 +225,8 @@ bool AWizardPlayer::AreHandsVisible() const
 void AWizardPlayer::UpdateBagInputContext(bool IsBagOpen)
 {
 	//TODO: Add Bag specific actions
-
+	TargetCameraFieldOfView = !IsBagOpen ? 90.0f : 100.0f;
+	
 	PlayerInteraction->bInteractionDisabled = IsBagOpen;
 	
 	// SetInteractionInput(!IsBagOpen);

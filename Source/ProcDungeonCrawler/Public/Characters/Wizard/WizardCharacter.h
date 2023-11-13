@@ -7,6 +7,7 @@
 
 #include "WizardCharacter.generated.h"
 
+class UPawnStats;
 class APickupItem;
 class USpellbookComponent;
 
@@ -42,15 +43,18 @@ public:
 	USceneComponent* RightHandSocketComponent;
 	UPROPERTY(EditAnywhere)
 	USceneComponent* LeftHandSocketComponent;
+
+	UPROPERTY(EditAnywhere)
+	UPawnStats* WizardStats;
 private:
 	bool bIsCrouching = false;
 	bool bBlockMovement = false;
 	bool bIsSprinting = false;
 
 	UPROPERTY(EditAnywhere, Category= "Movement", meta = (AllowPrivateAccess = "true"))
-	float WalkingSpeed = 8.0f;
+	float WalkingSpeed = 400.0f;
 	UPROPERTY(EditAnywhere, Category= "Movement", meta = (AllowPrivateAccess = "true"))
-	float RunningSpeed = 14.0f;
+	float RunningSpeed = 700.0f;
 
 	float MovementSpeed = 0.0f;
 };

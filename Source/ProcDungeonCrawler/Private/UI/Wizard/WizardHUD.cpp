@@ -52,6 +52,30 @@ void UWizardHUD::UnbindRuneToSlot(int SlotIdx)
 	RuneCastSlots[SlotIdx]->ClearRuneData();
 }
 
+void UWizardHUD::OnPlayerHeal(float Health, float HealHealh)
+{
+	if (OnPlayerHeal_UpdateHealth.IsBound())
+	{
+		OnPlayerHeal_UpdateHealth.Broadcast(Health, HealHealh);
+	}
+}
+
+void UWizardHUD::OnPlayerHurt(AActor* DamageCauser, float Damage, UDamageType* DamageType)
+{
+	if (OnPlayerHurt_UpdateHealth.IsBound())
+	{
+		OnPlayerHurt_UpdateHealth.Broadcast(DamageCauser, Damage, DamageType);
+	}
+}
+
+void UWizardHUD::OnPlayerManaUsage(float Mana, float ManaUsage)
+{
+	if (OnPlayerManaUsage_ManaUpdate.IsBound())
+	{
+		OnPlayerManaUsage_ManaUpdate.Broadcast(Mana, ManaUsage);
+	}
+}
+
 void UWizardHUD::BindRuneToSlot(int SlotIdx, URuneCast* RuneCast)
 {
 	if (SlotIdx < 0 || SlotIdx > RuneCastSlots.Num()-1) return;
