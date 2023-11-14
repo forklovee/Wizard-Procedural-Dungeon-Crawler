@@ -27,11 +27,14 @@ void ADungeonRoom::BeginPlay()
 	Super::BeginPlay();
 }
 
-
-
-void ADungeonRoom::Build() const
+void ADungeonRoom::Build()
 {
 	PCGComponent->Cleanup();
+	GetWorld()->GetTimerManager().SetTimer(BuildTimerHandle, this, &ADungeonRoom::BuildTimerCallback, 1.0f);	
+}
+
+void ADungeonRoom::BuildTimerCallback()
+{
 	PCGComponent->Generate();
 }
 

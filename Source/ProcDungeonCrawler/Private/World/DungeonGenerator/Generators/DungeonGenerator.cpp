@@ -1,8 +1,12 @@
 #include "World/DungeonGenerator/Generators/DungeonGenerator.h"
 
+#include "PCGComponent.h"
 #include "World/DungeonGenerator/DataAssets/DungeonConfig.h"
 #include "World/DungeonGenerator/DataAssets/DungeonRoomDictionary.h"
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
+
+#include "PCG/Public/PCGGraph.h"
+#include "PCG/Public/PCGVolume.h"
 
 ADungeonGenerator::ADungeonGenerator()
 {
@@ -49,19 +53,32 @@ bool ADungeonGenerator::BuildDungeon()
 		UE_LOG(LogTemp, Warning, TEXT("Room %i: %s"), RoomData.Id, *UEnum::GetValueAsString(RoomData.RoomType));
 
 		// get room class to spawn a premade room actor
-		TSubclassOf<ADungeonRoom> RoomClass = DungeonRoomDictionary->GetRandomRoomClassOfType(RoomData.RoomType);
-		if (RoomClass == nullptr)
+		FRoomResourceEntry RoomResource = DungeonRoomDictionary->GetRandomRoomClassOfType(RoomData.RoomType);
+		if (RoomResource.RoomClass == nullptr)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Room class is null!"));
 			return false;
 		}
 
-		ADungeonRoom* DungeonRoom = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomClass));
+		ADungeonRoom* DungeonRoom = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomResource.RoomClass));
 		if (DungeonRoom == nullptr)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
 			return false;
 		}
+		
+		UPCGGraph* Graph = nullptr;
+		if (RoomResource.Graph.IsValid())
+		{
+			Graph = RoomResource.Graph.LoadSynchronous();
+			if (!Graphs.Contains(Graph))
+			{
+				Graphs.Add(Graph);
+			}
+			FName GraphName = Graph->GetFName();
+			DungeonRoom->Tags.Add(GraphName);
+		}
+		
 		RoomData.RoomActor = DungeonRoom;
 
 		// Start room position isn't calculated
@@ -140,8 +157,19 @@ bool ADungeonGenerator::BuildDungeon()
 				break;
 			}
 		}
+	}
 
-		DungeonRoom->Build();
+	for (UPCGGraph* Graph: Graphs)
+	{
+		if (APCGVolume* PCGVolume = Cast<APCGVolume>(GetWorld()->SpawnActor(APCGVolume::StaticClass())))
+		{
+			PCGVolume->SetActorScale3D(FVector3d(1000.f, 1000.f, 1000.f));
+			PCGVolume->PCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
+			PCGVolume->PCGComponent->SetGraph(Graph);
+			
+			PCGVolume->PCGComponent->Generate();
+		}
+		
 	}
 	
 	return true;

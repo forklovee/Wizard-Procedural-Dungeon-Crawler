@@ -9,13 +9,13 @@ bool UDungeonRoomDictionary::HasRoomClassOfType(const ERoomType RoomType) const
 	return RoomRepository.Contains(RoomType);
 }
 
-TSubclassOf<ADungeonRoom> UDungeonRoomDictionary::GetRandomRoomClassOfType(const ERoomType RoomType)
+FRoomResourceEntry UDungeonRoomDictionary::GetRandomRoomClassOfType(const ERoomType RoomType)
 {
 	FRoomRepositoryEntry* RoomRepositoryEntry = RoomRepository.Find(RoomType);
 	if (RoomRepositoryEntry == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("RoomRepositoryEntry is NULL!"));
-		return nullptr;
+		return FRoomResourceEntry();
 	}
 	
 	TArray<int> Weights;
@@ -27,10 +27,10 @@ TSubclassOf<ADungeonRoom> UDungeonRoomDictionary::GetRandomRoomClassOfType(const
 	if (RandomRoomIndex == -1)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Weight search of %i: RoomIndex is -1"), Weights.Num());
-		return nullptr;
+		return FRoomResourceEntry();
 	}
 	
-	return RoomRepositoryEntry->PossibleRooms[RandomRoomIndex].RoomClass;
+	return RoomRepositoryEntry->PossibleRooms[RandomRoomIndex];
 }
 
 int UDungeonRoomDictionary::GetRandomRoomClassIndexByWeight(TArray<int>& Weights) const

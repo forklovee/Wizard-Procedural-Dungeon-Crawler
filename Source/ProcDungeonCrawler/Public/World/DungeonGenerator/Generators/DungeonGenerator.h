@@ -8,6 +8,7 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
 
+class UPCGGraph;
 struct FWallRange;
 class UDungeonRoomDictionary;
 class UDungeonConfig;
@@ -105,6 +106,7 @@ public:
 	TSoftObjectPtr<UDungeonConfig> DungeonConfigDataAsset;
 	
 protected:
+	TArray<UPCGGraph*> Graphs;
 	TArray<FGenRoomData> Rooms;
 
 	UPROPERTY()

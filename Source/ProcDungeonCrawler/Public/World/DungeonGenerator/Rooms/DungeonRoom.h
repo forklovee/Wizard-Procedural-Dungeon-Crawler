@@ -137,7 +137,7 @@ class PROCDUNGEONCRAWLER_API ADungeonRoom : public AActor
 public:
 	ADungeonRoom();
 
-	void Build() const;
+	void Build();
 
 	FVector GetRoomCenter() const;
 	
@@ -149,6 +149,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+private:
+	void BuildTimerCallback();
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Room")
 	uint8 RoomHeight = 1;
@@ -158,5 +160,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	UPCGComponent* PCGComponent;
-	
+
+private:
+	FTimerHandle BuildTimerHandle;
 };

@@ -7,6 +7,7 @@
 #include "Engine/DataAsset.h"
 #include "DungeonRoomDictionary.generated.h"
 
+class UPCGGraph;
 class ADungeonRoom;
 enum class ERoomType : uint8;
 
@@ -18,11 +19,15 @@ struct FRoomResourceEntry
 	FRoomResourceEntry()
 	{
 		RoomClass = nullptr;
+		Graph = nullptr;
 		Probability = 1.f;
 	}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<ADungeonRoom> RoomClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSoftObjectPtr<UPCGGraph> Graph;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Probability = 1.f;
@@ -49,7 +54,7 @@ class PROCDUNGEONCRAWLER_API UDungeonRoomDictionary : public UDataAsset
 
 public:
 	bool HasRoomClassOfType(const ERoomType RoomType) const;
-	TSubclassOf<ADungeonRoom> GetRandomRoomClassOfType(const ERoomType RoomType);
+	FRoomResourceEntry GetRandomRoomClassOfType(const ERoomType RoomType);
 
 private:
 	int GetRandomRoomClassIndexByWeight(TArray<int>& Weights) const;
