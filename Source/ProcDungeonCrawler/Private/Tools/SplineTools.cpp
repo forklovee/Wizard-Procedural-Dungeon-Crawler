@@ -9,11 +9,68 @@ USplineTools::USplineTools(const FObjectInitializer& ObjectInitializer) : Super(
 {
 }
 
-bool USplineTools::IsSplineIntersect(const UWorld* World,
-									 const FVector& FirstSplineLocation, const USplineComponent* FirstSpline,
-                                     const FVector& SecondSplineLocation, const USplineComponent* SecondSpline,
-                                     FVector& IntersectionPoint,
-                                     const bool bDebug)
+bool USplineTools::AreLinesIntersecting(const UWorld* World,
+										const FVector& FirstLineStart, const FVector& FirstLineEnd,
+										const FVector& SecondLineStart, const FVector& SecondLineEnd,
+										FVector& IntersectionPoint,
+										bool& bOverlapping,
+										const bool bDebug)
+{
+	const FVector DebugSplineHandleSize = FVector::OneVector*.5f;
+
+	if (bDebug)
+	{
+		// First Spline Debug
+		DrawDebugBox(World, FirstLineStart + FVector3d::UpVector*50.f, DebugSplineHandleSize, FColor::Orange, true, 0.1f, 0, 5.f);
+		DrawDebugBox(World, FirstLineEnd + FVector3d::UpVector*50.f, DebugSplineHandleSize, FColor::Orange, true, 0.1f, 0, 5.f);
+
+		// Second Spline Debug
+		DrawDebugBox(World, SecondLineStart, DebugSplineHandleSize, FColor::Yellow, true, 0.1f, 0, 5.f);
+		DrawDebugBox(World, SecondLineEnd, DebugSplineHandleSize, FColor::Yellow, true, 0.1f, 0, 5.f);
+	}
+	const float Top = (SecondLineEnd.X - SecondLineStart.X)*(FirstLineStart.Y - SecondLineStart.Y) - (SecondLineEnd.Y - SecondLineStart.Y)*(FirstLineStart.X - SecondLineStart.X);
+	const float UTop = (SecondLineStart.Y - FirstLineStart.Y)*(FirstLineStart.X - FirstLineEnd.X) - (SecondLineStart.X - FirstLineStart.X)*(FirstLineStart.Y - FirstLineEnd.Y);
+	const float Bottom = (SecondLineEnd.Y - SecondLineStart.Y)*(FirstLineEnd.X-FirstLineStart.X) - (SecondLineEnd.X - SecondLineStart.X)*(FirstLineEnd.Y - FirstLineStart.Y);
+	const float T = Top/Bottom;
+	const float U = UTop/Bottom;
+	bOverlapping = Bottom == 0.f;
+	
+	IntersectionPoint = FVector(
+		FMath::Lerp(FirstLineStart.X, FirstLineEnd.X, T),
+		FMath::Lerp(FirstLineStart.Y, FirstLineEnd.Y, T),
+		0.f
+		);
+
+	UE_LOG(LogTemp, Display, TEXT("Top: %f, UTop: %f, Bottom: %f, T: %f, U: %f"), Top, UTop, Bottom, T, U);
+	
+	if (T >= 0.0 && T <= 1.0
+		&& U >= 0.0 && U <= 1.0
+		&& Bottom != 0.0) // Valid intersection
+			{
+		if (bDebug)
+		{
+			// Valid Intersection Debug
+			DrawDebugBox(World, IntersectionPoint, DebugSplineHandleSize, FColor::Green, true, 100.1f, 0, 10.f);
+		}
+		return true;
+			}
+	
+	if (bDebug)
+	{
+		// Invalid Intersection Debug
+		DrawDebugBox(World, IntersectionPoint, DebugSplineHandleSize, FColor::Red, true, 100.1f, 0, 10.f);
+	}
+	
+	return false;
+	
+}
+
+bool USplineTools::AreSplinesIntersecting(const UWorld* World,
+                                          const FVector& FirstSplineLocation, const USplineComponent* FirstSpline,
+                                          const FVector& SecondSplineLocation, const USplineComponent* SecondSpline,
+                                          FVector& IntersectionPoint,
+                                          bool& bOverlapping,
+                                          const bool bDebug)
 {
 	const FVector DebugSplineHandleSize = FVector::OneVector*.5f;
 	
@@ -39,6 +96,7 @@ bool USplineTools::IsSplineIntersect(const UWorld* World,
 	const float Bottom = (SecondEnd.Y - SecondStart.Y)*(FirstEnd.X-FirstStart.X) - (SecondEnd.X - SecondStart.X)*(FirstEnd.Y - FirstStart.Y);
 	const float T = Top/Bottom;
 	const float U = UTop/Bottom;
+	bOverlapping = Bottom == 0.f;
 	
 	IntersectionPoint = FVector(
 		FMath::Lerp(FirstStart.X, FirstEnd.X, T),

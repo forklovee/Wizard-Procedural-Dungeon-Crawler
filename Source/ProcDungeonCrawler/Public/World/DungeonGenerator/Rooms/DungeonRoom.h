@@ -145,7 +145,6 @@ public:
 	TArray<FRoomWall> GetRoomWallsOfNormal(const FVector& WallNormal) const;
 
 	bool IsOverlappingWithRoom(const FRoomWall& ThisRoomWall, const ADungeonRoom* OtherRoom, const FRoomWall& OtherRoomWall) const;
-	bool IsPointIntersectsWall(const FVector& Point, const FRoomWall& RoomWall) const;
 	
 protected:
 	virtual void BeginPlay() override;

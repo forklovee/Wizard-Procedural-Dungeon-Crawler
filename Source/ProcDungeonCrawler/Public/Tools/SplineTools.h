@@ -15,9 +15,17 @@ class PROCDUNGEONCRAWLER_API USplineTools : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 
-	static bool IsSplineIntersect(const UWorld* World,
-		const FVector& FirstSplineLocation, const USplineComponent* FirstSpline,
-		const FVector& SecondSplineLocation, const USplineComponent* SecondSpline,
-		FVector& IntersectionPoint,
-		const bool bDebug = false);
+	static bool AreLinesIntersecting(const UWorld* World,
+									const FVector& FirstLineStart, const FVector& FirstLineEnd,
+									const FVector& SecondLineStart, const FVector& SecondLineEnd,
+									FVector& IntersectionPoint,
+									bool& bOverlapping,
+									const bool bDebug);
+	
+	static bool AreSplinesIntersecting(const UWorld* World,
+									const FVector& FirstSplineLocation, const USplineComponent* FirstSpline,
+									const FVector& SecondSplineLocation, const USplineComponent* SecondSpline,
+									FVector& IntersectionPoint,
+									bool& bOverlapping,
+									const bool bDebug = false);
 };

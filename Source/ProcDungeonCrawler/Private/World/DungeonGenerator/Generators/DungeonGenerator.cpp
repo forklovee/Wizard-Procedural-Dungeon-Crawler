@@ -56,50 +56,56 @@ bool ADungeonGenerator::BuildDungeon()
 			return false;
 		}
 
-		// spawn room actor
-		if (ADungeonRoom* DungeonRoom = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomClass)))
+		ADungeonRoom* DungeonRoom = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomClass));
+		if (DungeonRoom == nullptr)
 		{
-			RoomData.RoomActor = DungeonRoom;
+			UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
+			return false;
+		}
+		RoomData.RoomActor = DungeonRoom;
 
-			// Start room position doesn't get calculated
-			if (RoomData.Id == 0){
-				DungeonRoom->SetActorLocation(-DungeonRoom->GetRoomCenter());
-				DungeonRoom->Build();
+		// Start room position isn't calculated
+		if (RoomData.Id == 0){
+			DungeonRoom->SetActorLocation(-DungeonRoom->GetRoomCenter());
+			DungeonRoom->Build();
+			continue;
+		}
+
+		// get last room data
+		FGenRoomData& LastRoomData = Rooms[RoomIdx-1];
+
+		// get current room walls data
+		TArray<FRoomWall> ThisRoomWalls = RoomData.RoomActor->GetRoomWalls();
+
+		bool bCorrectLocationFound = false;
+		while (ThisRoomWalls.Num() > 0)
+		{
+			if (bCorrectLocationFound)
+			{
+				break;
+			}
+			const int RandomWallIndex = FMath::RandRange(0, ThisRoomWalls.Num()-1);
+			UE_LOG(LogTemp, Display, TEXT("\t Room %i Selected Random Wall of Idx %i out of %i"), RoomIdx, RandomWallIndex, ThisRoomWalls.Num());
+
+			const FRoomWall& ThisRoomWall = ThisRoomWalls[RandomWallIndex];
+			const FVector ThisWallNormal = ThisRoomWall.GetWallNormal();
+			// invert current room random wall normal to get last room desired wall normal
+			FVector LastRoomDesiredWallNormal = -ThisWallNormal;
+
+			TArray<FRoomWall> LastRoomWalls = LastRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
+			if (LastRoomWalls.Num() == 0)
+			{
+				ThisRoomWalls.RemoveAt(RandomWallIndex);
+				UE_LOG(LogTemp, Error, TEXT("No compatible walls found for new room!"));
 				continue;
 			}
-			// Start room position doesn't get calculated
 
-			// get last room data
-			FGenRoomData& LastRoomData = Rooms[RoomIdx-1];
-
-			// get current room wall data
-			TArray<FRoomWall> ThisRoomWalls = RoomData.RoomActor->GetRoomWalls();
-			// get random room wall
-			while (ThisRoomWalls.Num() > 0)
+			
+			for (FRoomWall& LastRoomWall: LastRoomWalls)
 			{
-				// const int RandomWallIndex = FMath::RandRange(0, ThisRoomWalls.Num()-1);
-				const int RandomWallIndex = 0;
-				UE_LOG(LogTemp, Error, TEXT("%s: RandomWallIndex: %i/%i"), *GetName(), RandomWallIndex, ThisRoomWalls.Num());
-				const FRoomWall& ThisRoomWall = ThisRoomWalls[RandomWallIndex];
-				const FVector ThisWallNormal = ThisRoomWall.GetWallNormal();
-				// invert current room random wall normal to get last room desired wall normal
-				FVector LastRoomDesiredWallNormal = -ThisWallNormal;
-
-				TArray<FRoomWall> LastRoomWalls = LastRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
-				if (LastRoomWalls.Num() == 0)
-				{
-					ThisRoomWalls.RemoveAt(RandomWallIndex);
-					UE_LOG(LogTemp, Error, TEXT("No compatible walls found for new room!"));
-					continue;
-				}
-
-				// compatible last room wall found!!!
-				// TODO: get random last room wall -> check if its valid -> if not get another one
-				FRoomWall& LastRoomWall = LastRoomWalls[0];
-				
-				// align current room actor to last room actor 
 				FVector ThisWallStart = ThisRoomWall.StartPoint;
 				FVector ThisWallEnd = ThisRoomWall.EndPoint;
+				
 				// Check point directions from center to determine which point starts the wall - to the left
 				TArray<FVector> LastWallPointDirections = LastRoomWall.GetPointDirectionsFromWallCenter();
 				TArray<FVector> ThisWallPointDirections = ThisRoomWall.GetPointDirectionsFromWallCenter();
@@ -109,49 +115,33 @@ bool ADungeonGenerator::BuildDungeon()
 					ThisWallStart = ThisRoomWall.EndPoint;
 					ThisWallEnd = ThisRoomWall.StartPoint;
 				}
-
-				bool IsOverlapping = false;
-
-				// const FVector ThisRoomLocation = LastRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
-				const FVector ThisRoomLocation = LastRoomData.RoomActor->GetActorLocation() + LastRoomData.Id*FVector(50, 0, 0);
-				for (FRoomWall& RoomWall: LastRoomWalls)
+				
+				const FVector ThisRoomLocation = LastRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
+				DungeonRoom->SetActorLocation(ThisRoomLocation);
+				// Check this wall intersections with last room walls
+				bool bIsOverlapping = false;
+				for (FRoomWall& TestLastRoomWall: LastRoomData.RoomActor->GetRoomWalls())
 				{
-					if (DungeonRoom->IsOverlappingWithRoom(ThisRoomWall, LastRoomData.RoomActor.Get(), RoomWall))
+					if (DungeonRoom->IsOverlappingWithRoom(ThisRoomWall, LastRoomData.RoomActor.Get(), LastRoomWall))
 					{
-						IsOverlapping = true;
+						UE_LOG(LogTemp, Error, TEXT("Room %i is overlapping!"), RoomData.Id);
+						bIsOverlapping = true;
 						break;
 					}
-				
 				}
 
-				// for (const FGenRoomData& Room : Rooms)
-				// {
-				// 	if (!Room.RoomActor.IsValid() || Room.Id == RoomData.Parent->Id) continue;
-				// 	
-				// 	
-				// }
-				if (IsOverlapping)
+				if (bIsOverlapping)
 				{
-					UE_LOG(LogTemp, Error, TEXT("Room %i is overlapping!"), RoomData.Id);
+					continue;
 				}
-				
-				
-				UE_LOG(LogTemp, Error, TEXT("Room %i is not overlapping at all!"), RoomData.Id);
-				DungeonRoom->SetActorLocation(ThisRoomLocation);
-				DungeonRoom->Build();
+
+				// good!
+				bCorrectLocationFound = true;
 				break;
 			}
-			
-			
-			
-			
-			
 		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to create a Room Actor!"));
-			return false;
-		}
+
+		DungeonRoom->Build();
 	}
 	
 	return true;

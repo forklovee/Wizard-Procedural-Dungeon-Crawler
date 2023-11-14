@@ -26,11 +26,12 @@ void ASplineIntersectionTest::Tick(float DeltaTime)
 	{
 		return;
 	}
+	bool bOverlapping = false;
 	FVector IntersectionPoint = FVector::ZeroVector;
-	if (USplineTools::IsSplineIntersect(GetWorld(),
+	if (USplineTools::AreSplinesIntersecting(GetWorld(),
 		GetActorLocation(), SplineComponent,
 		OtherSplineActor->GetActorLocation(), OtherSplineActor->SplineComponent,
-		IntersectionPoint, bShowDebug))
+		IntersectionPoint, bOverlapping, true))
 	{
 		UE_LOG(LogTemp, Display, TEXT("Intersection Point: %s"), *IntersectionPoint.ToString());
 	}
