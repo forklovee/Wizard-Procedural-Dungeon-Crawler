@@ -13,9 +13,11 @@ class ASpellCast;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRuneAdded, int, RuneIdx, URuneCast*, RuneCast);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRuneCasted, int, RuneIdx, URuneCast*, RuneCast, TArray<URuneCast*>&, CastedRunes);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastedRunesCleared);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnValidRuneSequenceCasted, TSubclassOf<ASpellCast>, SpellCast, float, ManaCost);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpellCasted, URuneCast*, RuneCast);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSpellCasted, ASpellCast*, SpellCast, float, ManaCost);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastedRunesCleared);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API USpellbookComponent : public USceneComponent
@@ -25,6 +27,8 @@ class PROCDUNGEONCRAWLER_API USpellbookComponent : public USceneComponent
 public:
 	FOnRuneAdded OnRuneAdded;
 	FOnRuneCasted OnRuneCasted;
+	FOnValidRuneSequenceCasted OnValidRuneSequenceCasted;
+	
 	FOnCastedRunesCleared OnCastedRunesCleared;
 	
 	FOnSpellCasted OnSpellCasted;
@@ -39,17 +43,20 @@ public:
 	void CastRune(URuneCast* RuneCast);
 	UFUNCTION()
 	void CastRuneOfIdx(int Idx);
-	bool IsRuneSequenceValid(TArray<URuneCast*>& SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass);
+	
+	TSubclassOf<ASpellCast> GetSpellCastClass(TArray<URuneCast*>& RuneSequence, float& OutManaCost) const;
 
 	void ClearCastedRunes();
 	
 	// Spells
 	bool IsSpellPrepared() const;
-	ASpellCast* GetPreparedSpell() const;
-	void PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass);
+	ASpellCast* GetPreparedSpell(float& OutManaCost) const;
+	void PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass, float ManaCost);
 
 	void CastPreparedSpell(AWizardCharacter* WizardCharacter);
 
+	static float GetRuneSequenceManaCost(TArray<URuneCast*>& RuneSequence);
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -60,7 +67,7 @@ public:
 
 private:
 	// Spell oriented variables
-	TWeakObjectPtr<ASpellCast> PreparedSpell;
+	TTuple<TWeakObjectPtr<ASpellCast>, float> PreparedSpell;
 	TArray<FHitResult> SpellTargets;
 	
 	// Obtained Runes

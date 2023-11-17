@@ -18,6 +18,8 @@ ADoor::ADoor()
 	FrameMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("FrameMesh"));
 	FrameMesh->SetupAttachment(RootComponent);
 
+	DoorConstraint->SetConstrainedComponents(DoorMesh, FName("None"), FrameMesh, FName("None"));
+	
 	DoorOpenFinalYaw = 150.f;
 }
 
@@ -33,7 +35,7 @@ bool ADoor::Interact_Implementation(APawn* Pawn)
 	const bool bIsDoorOpened = IsDoorOpened();
 	if (bIsDoorOpened)
 	{
-		CloseDoor();		
+		CloseDoor();
 	}
 	else
 	{
@@ -59,6 +61,9 @@ void ADoor::BeginPlay()
 {
 	Super::BeginPlay();
 
+	DoorConstraint->SetConstrainedComponents(DoorMesh, FName("None"), FrameMesh, FName("None"));
+	Tags.Add(FName("Door"));
+	
 	SetActorTickEnabled(false);
 }
 

@@ -2,10 +2,7 @@
 
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 
-#include "FrameTypes.h"
-#include "PCGComponent.h"
 #include "Components/SplineComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Tools/SplineTools.h"
 
 
@@ -17,25 +14,13 @@ ADungeonRoom::ADungeonRoom()
 	RoomBaseSpline = CreateDefaultSubobject<USplineComponent>(FName("RoomBaseSpline"));
 	RoomBaseSpline->ComponentTags.Add(FName("RoomBaseSpline"));
 	RoomBaseSpline->SetupAttachment(RootComponent);
-	
-	PCGComponent = CreateDefaultSubobject<UPCGComponent>(FName("PCGComponent"));
-	PCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand; 
 }
 
 void ADungeonRoom::BeginPlay()
 {
 	Super::BeginPlay();
-}
 
-void ADungeonRoom::Build()
-{
-	PCGComponent->Cleanup();
-	GetWorld()->GetTimerManager().SetTimer(BuildTimerHandle, this, &ADungeonRoom::BuildTimerCallback, 1.0f);	
-}
-
-void ADungeonRoom::BuildTimerCallback()
-{
-	PCGComponent->Generate();
+	Tags.Add(TargetRoomPCGTag);
 }
 
 FVector ADungeonRoom::GetRoomCenter() const

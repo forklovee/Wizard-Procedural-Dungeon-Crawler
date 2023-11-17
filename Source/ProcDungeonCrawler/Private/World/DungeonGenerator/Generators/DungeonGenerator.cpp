@@ -7,6 +7,9 @@
 
 #include "PCG/Public/PCGGraph.h"
 #include "PCG/Public/PCGVolume.h"
+#include "Tools/SplineTools.h"
+#include "World/DungeonGenerator/Path/WalkthroughPath.h"
+#include "World/DungeonGenerator/Rooms/RoomPCGGlobalVolume.h"
 
 ADungeonGenerator::ADungeonGenerator()
 {
@@ -43,7 +46,12 @@ bool ADungeonGenerator::BuildDungeon()
 		UE_LOG(LogTemp, Error, TEXT("Failed to load Dungeon Data!"));
 		return false;
 	}
+	if (WalkthroughPathClass == nullptr)
+	{
+		return false;
+	}
 
+	AWalkthroughPath* MainWalkthroughPath = GetWorld()->SpawnActor<AWalkthroughPath>(WalkthroughPathClass);
 	for (int RoomIdx = 0; RoomIdx < Rooms.Num(); RoomIdx++)
 	{
 		// get generated room data
@@ -67,16 +75,18 @@ bool ADungeonGenerator::BuildDungeon()
 			return false;
 		}
 		
-		UPCGGraph* Graph = nullptr;
-		if (RoomResource.Graph.IsValid())
+		if (RoomResource.PCGRoomVolumeClass != nullptr)
 		{
-			Graph = RoomResource.Graph.LoadSynchronous();
-			if (!Graphs.Contains(Graph))
+			if (!PCGRoomVolumes.Contains(RoomResource.PCGRoomVolumeClass))
 			{
-				Graphs.Add(Graph);
+				PCGRoomVolumes.Add(RoomResource.PCGRoomVolumeClass);
 			}
-			FName GraphName = Graph->GetFName();
-			DungeonRoom->Tags.Add(GraphName);
+			FString VolumeStringName = RoomResource.PCGRoomVolumeClass->GetName();
+			DungeonRoom->Tags.Add(FName(VolumeStringName));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("VOLUME CLASS NULL!!!"));
 		}
 		
 		RoomData.RoomActor = DungeonRoom;
@@ -84,7 +94,6 @@ bool ADungeonGenerator::BuildDungeon()
 		// Start room position isn't calculated
 		if (RoomData.Id == 0){
 			DungeonRoom->SetActorLocation(-DungeonRoom->GetRoomCenter());
-			DungeonRoom->Build();
 			continue;
 		}
 
@@ -133,7 +142,8 @@ bool ADungeonGenerator::BuildDungeon()
 					ThisWallEnd = ThisRoomWall.StartPoint;
 				}
 				
-				const FVector ThisRoomLocation = LastRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
+				FVector ThisRoomLocation = LastRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
+				ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
 				DungeonRoom->SetActorLocation(ThisRoomLocation);
 				// Check this wall intersections with last room walls
 				bool bIsOverlapping = false;
@@ -151,6 +161,13 @@ bool ADungeonGenerator::BuildDungeon()
 				{
 					continue;
 				}
+				
+				MainWalkthroughPath->SplineComponent->AddSplinePoint(LastRoomData.RoomActor->GetActorLocation() + LastRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
+				USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
+				MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + ThisRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
+				USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
+				MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + DungeonRoom->GetRoomCenter(), ESplineCoordinateSpace::Local, true);
+				USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
 
 				// good!
 				bCorrectLocationFound = true;
@@ -158,18 +175,19 @@ bool ADungeonGenerator::BuildDungeon()
 			}
 		}
 	}
-
-	for (UPCGGraph* Graph: Graphs)
+	
+	for (TSubclassOf<ARoomPCGGlobalVolume> PcgVolume: PCGRoomVolumes)
 	{
-		if (APCGVolume* PCGVolume = Cast<APCGVolume>(GetWorld()->SpawnActor(APCGVolume::StaticClass())))
+		if (PcgVolume == nullptr)
 		{
-			PCGVolume->SetActorScale3D(FVector3d(1000.f, 1000.f, 1000.f));
-			PCGVolume->PCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
-			PCGVolume->PCGComponent->SetGraph(Graph);
-			
-			PCGVolume->PCGComponent->Generate();
+			UE_LOG(LogTemp, Display, TEXT("Volume null!"))
+			continue;
 		}
 		
+		if (ARoomPCGGlobalVolume* RoomPcgRoom = GetWorld()->SpawnActor<ARoomPCGGlobalVolume>(PcgVolume))
+		{
+			RoomPcgRoom->SetActorScale3D(FVector3d(1000.f, 1000.f, 1000.f));
+		}
 	}
 	
 	return true;

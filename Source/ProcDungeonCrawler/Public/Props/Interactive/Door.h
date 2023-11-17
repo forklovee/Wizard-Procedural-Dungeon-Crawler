@@ -23,15 +23,15 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interaction")
 	FText GetPropNameText();
-	FText GetPropNameText_Implementation();
+	virtual FText GetPropNameText_Implementation() override;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
 	bool Interact(APawn* Pawn);
-	bool Interact_Implementation(APawn* Pawn);
+	virtual bool Interact_Implementation(APawn* Pawn) override;
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
 	FText GetInteractionNameText();
-	FText GetInteractionNameText_Implementation();
+	virtual FText GetInteractionNameText_Implementation() override;
 	
 protected:
 	virtual void BeginPlay() override;

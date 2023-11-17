@@ -56,34 +56,28 @@ float UPawnStats::GetMana() const
 	return Mana;
 }
 
-bool UPawnStats::CanCastSpell(ASpellCast* SpellCast)
+bool UPawnStats::HasRequiredMana(float ManaCost) const
 {
-	if (SpellCast == nullptr)
-	{
-		return false;
-	}
-	
-	const float SpellCost = SpellCast->ManaCost;
-	if (SpellCost > Mana)
-	{
-		return false;
-	}
-
-	Mana = FMath::Clamp(Mana - SpellCost, 0.f, MaxMana);
-	if (OnManaUsage.IsBound())
-	{
-		OnManaUsage.Broadcast(Mana, SpellCost);
-	}
-	return true;
+	return Mana >= ManaCost;
 }
 
-void UPawnStats::Hurt(AActor* DamageCauser, float Damage, UDamageType* DamageType)
+void UPawnStats::TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+	AController* InstigatedBy, AActor* DamageCauser)
 {
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 
 	if (OnHurt.IsBound())
 	{
 		OnHurt.Broadcast(DamageCauser, Damage, DamageType);
+	}
+}
+
+void UPawnStats::UseMana(ASpellCast* SpellCast, float ManaCost)
+{
+	Mana = FMath::Clamp(Mana - ManaCost, 0.f, MaxMana);
+	if (OnManaUsage.IsBound())
+	{
+		OnManaUsage.Broadcast(Mana, ManaCost);
 	}
 }
 

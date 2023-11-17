@@ -11,7 +11,7 @@ class UStatusEffect;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHeal, float, Health, float, HealAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaUsage, float, Mana, float, ManaUsed);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt, AActor*, DamageCauser, float, Damage, UDamageType*, DamageType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt, AActor*, DamageCauser, float, Damage, const UDamageType*, DamageType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatusEffectApplied, UStatusEffect*, StatusEffect);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -45,13 +45,16 @@ public:
 	float GetMana() const;
 
 	UFUNCTION(BlueprintCallable)
-	bool CanCastSpell(ASpellCast* SpellCast);
+	bool HasRequiredMana(float ManaCost) const;
 	
 	UFUNCTION(BlueprintCallable)
-	void Hurt(AActor* DamageCauser, float Damage, UDamageType* DamageType);
+	void TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 	UFUNCTION(BlueprintCallable)
 	void Heal(float HealAmount);
+
+	UFUNCTION(BlueprintCallable)
+	void UseMana(ASpellCast* SpellCast, float ManaCost);
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyStatusEffect(TSubclassOf<UStatusEffect> StatusEffect);

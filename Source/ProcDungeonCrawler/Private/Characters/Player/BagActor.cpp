@@ -92,10 +92,10 @@ void ABagActor::SpawnItemActor(UBagItemTile* ItemTile)
 		UE_LOG(LogTemp, Error, TEXT("SpawnItemActor: ItemTile is nullptr!"))
 		return;
 	}
-	const int32 ItemIndex = 0; //TODO: Get VISIBLE PAGE index
+	const int32 ItemIndex = ItemTile->GetIndex(); //TODO: Get VISIBLE PAGE index
 	const TSubclassOf<APickupItem> ItemClass = *ItemTile->GetPickupItemClass();
 	const FVector ItemLocation = GetSlotLocation(ItemIndex);
-	const FRotator ItemRotation = FRotator::ZeroRotator;
+	const FRotator ItemRotation = GetActorRotation();
 
 	APickupItem* PickupItemActor = Cast<APickupItem>(
 			GetWorld()->SpawnActor(ItemClass->GetDefaultObject()->GetClass(), &ItemLocation, &ItemRotation)

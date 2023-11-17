@@ -7,6 +7,7 @@
 #include "Interface/PropPickupInterface.h"
 #include "Items/PickupItem.h"
 #include "Items/Rune.h"
+#include "Items/Weapon/Weapon.h"
 #include "Spell/RuneCast.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -212,12 +213,23 @@ void UPlayerInteractionRaycast::ClearInteractionTarget() const
 
 bool UPlayerInteractionRaycast::PickUpItem(AActor* Target) const
 {
+	if (const AWeapon* Weapon = Cast<AWeapon>(Target))
+	{
+		if (OnWeaponPickedUp.IsBound())
+		{
+			OnWeaponPickedUp.Broadcast(Weapon->GetClass());
+		}
+		IPropPickupInterface::Execute_Pickup(Target, Cast<APawn>(GetOwner()));
+		return true;
+	}
+
 	if (const APickupItem* PickupItem = Cast<APickupItem>(Target))
 	{
 		if (OnItemPickedUp.IsBound())
 		{
 			OnItemPickedUp.Broadcast(PickupItem->GetClass(), 1);
 		}
+
 		IPropPickupInterface::Execute_Pickup(Target, Cast<APawn>(GetOwner()));
 		return true;
 	}

@@ -7,6 +7,7 @@
 
 #include "WizardCharacter.generated.h"
 
+class ASpellCast;
 class UPawnStats;
 class APickupItem;
 class USpellbookComponent;
@@ -32,7 +33,13 @@ protected:
 
 	bool IsCrouching() const { return bIsCrouching; }
 	void SetCrouch(const bool bNewIsCrounching);
-	
+
+	void SetCombatMode(bool bNewInCombatMode);
+
+private:
+	UFUNCTION()
+	void PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass, float ManaCost);
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USpellbookComponent* SpellBook;
@@ -47,6 +54,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	UPawnStats* WizardStats;
 private:
+	bool bInCombatMode = false;
+	
 	bool bIsCrouching = false;
 	bool bBlockMovement = false;
 	bool bIsSprinting = false;
@@ -58,3 +67,5 @@ private:
 
 	float MovementSpeed = 0.0f;
 };
+
+

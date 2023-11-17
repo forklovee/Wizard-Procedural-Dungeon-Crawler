@@ -6,6 +6,7 @@
 #include "Components/SceneComponent.h"
 #include "PlayerInteractionRaycast.generated.h"
 
+class AWeapon;
 class URuneCast;
 class APickupItem;
 
@@ -20,6 +21,7 @@ enum class EInteractionType
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnNewInteractionTarget, FText, ActorName, EInteractionType, OnClickInteractionType, bool, bCanBeGrabbed);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponPickedUp, TSubclassOf<AWeapon>, WeaponClass);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, TSubclassOf<APickupItem>, ItemClass, int32, Amount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRunePickedUp, URuneCast*, RuneCast);
 
@@ -39,6 +41,8 @@ public:
 	FOnItemPickedUp OnItemPickedUp;
 	UPROPERTY(BlueprintAssignable)
 	FOnRunePickedUp OnRunePickedUp;
+	UPROPERTY(BlueprintAssignable)
+	FOnWeaponPickedUp OnWeaponPickedUp;
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnPropGrabbed OnPropGrabbed;

@@ -5,6 +5,7 @@
 
 #include "Characters/Player/BagActor.h"
 #include "Components/PanelWidget.h"
+#include "Components/UniformGridPanel.h"
 #include "Items/PickupItem.h"
 #include "UI/Bag/BagItemTile.h"
 
@@ -87,8 +88,18 @@ UBagItemTile* UBagUI::CreateNewItemTile(TSubclassOf<APickupItem> ItemClass, int3
 	UBagItemTile* BagItemTile = CreateWidget<UBagItemTile>(GetWorld(), BagItemWidgetClass);
 	BagItemTile->SetPickupItemClass(ItemClass);
 	BagItemTile->SetItemAmountTextBlock(Amount);
-	BagItemsPanel->AddChild(BagItemTile);
 
+	if (UUniformGridPanel* Grid = Cast<UUniformGridPanel>(BagItemsPanel))
+	{
+		const int ColIdx = BagItemsPanel->GetChildrenCount() % 3;
+		const int RowIdx = FMath::FloorToInt(BagItemsPanel->GetChildrenCount() / 3.0);
+		Grid->AddChildToUniformGrid(BagItemsPanel, RowIdx, ColIdx);		
+	}
+	else
+	{
+		BagItemsPanel->AddChild(BagItemTile);
+	}
+	
 	if (OnNewItemTileCreated.IsBound())
 	{
 		OnNewItemTileCreated.Broadcast(BagItemTile);

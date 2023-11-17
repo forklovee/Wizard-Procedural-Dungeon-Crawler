@@ -9,12 +9,20 @@ USplineTools::USplineTools(const FObjectInitializer& ObjectInitializer) : Super(
 {
 }
 
+void USplineTools::SetTangentsToZero(USplineComponent* SplineComponent, int PointIndex)
+{
+	PointIndex = FMath::Clamp(PointIndex, 0, SplineComponent->GetNumberOfSplinePoints() - 1);
+	FSplinePoint SplinePoint = SplineComponent->GetSplinePointAt(PointIndex, ESplineCoordinateSpace::Local);
+	SplinePoint.ArriveTangent = FVector::ZeroVector;
+	SplinePoint.LeaveTangent = FVector::ZeroVector;
+}
+
 bool USplineTools::AreLinesIntersecting(const UWorld* World,
-										const FVector& FirstLineStart, const FVector& FirstLineEnd,
-										const FVector& SecondLineStart, const FVector& SecondLineEnd,
-										FVector& IntersectionPoint,
-										bool& bOverlapping,
-										const bool bDebug)
+                                        const FVector& FirstLineStart, const FVector& FirstLineEnd,
+                                        const FVector& SecondLineStart, const FVector& SecondLineEnd,
+                                        FVector& IntersectionPoint,
+                                        bool& bOverlapping,
+                                        const bool bDebug)
 {
 	const FVector DebugSplineHandleSize = FVector::OneVector*.5f;
 

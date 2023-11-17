@@ -44,7 +44,7 @@ void USpellbookComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (PreparedSpell != nullptr)
+	if (PreparedSpell.Key.IsValid())
 	{
 		UKismetSystemLibrary::SphereTraceMulti(
 			GetWorld(),
@@ -95,10 +95,13 @@ void USpellbookComponent::CastRune(URuneCast* RuneCast)
 		OnRuneCasted.Broadcast(Runes.Find(RuneCast), RuneCast, CastedRunes);
 	}
 	
-	TSubclassOf<ASpellCast> OutSpellCastClass;
-	if (IsRuneSequenceValid(CastedRunes, OutSpellCastClass))
+	float OutManaCost = 0.f;
+	if (const TSubclassOf<ASpellCast> SpellCastClass = GetSpellCastClass(CastedRunes, OutManaCost))
 	{
-		PrepareSpell(OutSpellCastClass);
+		if (OnValidRuneSequenceCasted.IsBound())
+		{
+			OnValidRuneSequenceCasted.Broadcast(SpellCastClass, OutManaCost);
+		}
 	}
 	else
 	{
@@ -110,8 +113,18 @@ void USpellbookComponent::CastRune(URuneCast* RuneCast)
 	}
 }
 
-void USpellbookComponent::CastRuneOfIdx(int Idx)
+float USpellbookComponent::GetRuneSequenceManaCost(TArray<URuneCast*>& RuneSequence)
 {
+	float ManaCost = 0.f;
+	for (const URuneCast* RuneCast: RuneSequence)
+	{
+		ManaCost += RuneCast->ManaCost;
+	}
+	return ManaCost;
+}
+
+void USpellbookComponent::CastRuneOfIdx(int Idx)
+{ 
 	if (URuneCast* RuneCast = GetRuneOfIdx(Idx))
 	{
 		CastRune(RuneCast);
@@ -122,41 +135,28 @@ void USpellbookComponent::CastRuneOfIdx(int Idx)
 	}
 }
 
-bool USpellbookComponent::IsRuneSequenceValid(TArray<URuneCast*>& SpellRunes, TSubclassOf<ASpellCast>& OutSpellCastClass)
+TSubclassOf<ASpellCast> USpellbookComponent::GetSpellCastClass(TArray<URuneCast*>& RuneSequence, float& OutManaCost) const
 {
 	TArray< TArray<URuneCast*> > RuneChains;
 	SpellBook.GetKeys(RuneChains);
 	
-	const int RuneChainId = RuneChains.Find(SpellRunes);
+	const int RuneChainId = RuneChains.Find(RuneSequence);
 
 	if (RuneChainId != INDEX_NONE) //Spell found
 	{
-		OutSpellCastClass = SpellBook[SpellRunes];
-
-		ClearCastedRunes();
-		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
-		return true;
+		OutManaCost = GetRuneSequenceManaCost(RuneSequence);
+		return SpellBook[RuneSequence];
 	}
 	
-	if (CastedRunes.Num() == 4)
-	{
-		ClearCastedRunes();
-		GetWorld()->GetTimerManager().ClearTimer(ClearCastedRunesTimerHandle);
-	}
-	return false;
+	return nullptr;
 }
 
 bool USpellbookComponent::IsSpellPrepared() const
 {
-	return PreparedSpell.IsValid();
+	return PreparedSpell.Key.IsValid();
 }
 
-ASpellCast* USpellbookComponent::GetPreparedSpell() const
-{
-	return PreparedSpell.Get();
-}
-
-void USpellbookComponent::PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass)
+void USpellbookComponent::PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass, float ManaCost)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Spell prepared: %s"), *SpellCastClass->GetName());
 
@@ -165,7 +165,8 @@ void USpellbookComponent::PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass)
 	{
 		SpellToCast->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		// Spell spawned successfully
-		PreparedSpell = SpellToCast;
+		PreparedSpell.Key = SpellToCast;
+		PreparedSpell.Value = ManaCost;
 
 		SetComponentTickEnabled(true);
 	}
@@ -173,19 +174,29 @@ void USpellbookComponent::PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass)
 
 void USpellbookComponent::CastPreparedSpell(AWizardCharacter* WizardCharacter)
 {
-	//TODO: Check if spell can be casted
 	if (!IsSpellPrepared()) return;
 
-	PreparedSpell->CastSpell(WizardCharacter);
-	if (PreparedSpell->bRequireTarget && SpellTargets.Num() > 0)
+	ASpellCast* SpellCast = PreparedSpell.Key.Get();
+	const float ManaCost = PreparedSpell.Value;
+	
+	SpellCast->CastSpell(WizardCharacter);
+	
+	if (SpellCast->bRequireTarget && SpellTargets.Num() > 0)
 	{
-		if (AActor* TargetActor = PreparedSpell->GetFirstValidHitResultActor(SpellTargets))
+		if (AActor* TargetActor = SpellCast->GetFirstValidHitResultActor(SpellTargets))
 		{
-			PreparedSpell->TargetActor(TargetActor);
-			PreparedSpell->ApplyEffectsOnTarget(TargetActor);
+			SpellCast->TargetActor(TargetActor);
+			SpellCast->ApplyEffectsOnTarget(TargetActor);
 		}
 	}
-	PreparedSpell = nullptr;
+
+	if (OnSpellCasted.IsBound())
+	{
+		OnSpellCasted.Broadcast(SpellCast, ManaCost);
+	}
+	
+	PreparedSpell.Key = nullptr;
+	PreparedSpell.Value = 0.f;
 }
 
 void USpellbookComponent::ClearCastedRunes()

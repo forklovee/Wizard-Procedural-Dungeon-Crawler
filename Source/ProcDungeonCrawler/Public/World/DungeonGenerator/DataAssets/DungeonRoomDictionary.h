@@ -7,6 +7,7 @@
 #include "Engine/DataAsset.h"
 #include "DungeonRoomDictionary.generated.h"
 
+class ARoomPCGGlobalVolume;
 class UPCGGraph;
 class ADungeonRoom;
 enum class ERoomType : uint8;
@@ -19,7 +20,7 @@ struct FRoomResourceEntry
 	FRoomResourceEntry()
 	{
 		RoomClass = nullptr;
-		Graph = nullptr;
+		PCGRoomVolumeClass = nullptr;
 		Probability = 1.f;
 	}
 	
@@ -27,7 +28,7 @@ struct FRoomResourceEntry
 	TSubclassOf<ADungeonRoom> RoomClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSoftObjectPtr<UPCGGraph> Graph;
+	TSubclassOf<ARoomPCGGlobalVolume> PCGRoomVolumeClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Probability = 1.f;

@@ -35,6 +35,10 @@ void AWizardCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	MovementSpeed = WalkingSpeed;
+	OnTakeAnyDamage.AddDynamic(WizardStats, &UPawnStats::TakeDamage);
+
+	SpellBook->OnValidRuneSequenceCasted.AddDynamic(this, &AWizardCharacter::PrepareSpell);
+	SpellBook->OnSpellCasted.AddDynamic(WizardStats, &UPawnStats::UseMana);
 }
 
 // Movement
@@ -75,18 +79,28 @@ void AWizardCharacter::SetCrouch(const bool bNewIsCrouching)
 	}
 }
 
+void AWizardCharacter::SetCombatMode(bool bNewInCombatMode)
+{
+	bInCombatMode = bNewInCombatMode;
+}
+
 // Hand action and Interaction
 void AWizardCharacter::PrimaryHandAction()
 {
 	// No prepared spell.
 	if (!SpellBook->IsSpellPrepared()) return;
+	
+	SpellBook->CastPreparedSpell(this);
+}
 
-	if (WizardStats->CanCastSpell(SpellBook->GetPreparedSpell()))
+void AWizardCharacter::PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass, float ManaCost)
+{
+	if (WizardStats->HasRequiredMana(ManaCost))
 	{
-		SpellBook->CastPreparedSpell(this);
+		SpellBook->PrepareSpell(SpellCastClass, ManaCost);
 	}
 	else
 	{
-		
+		SpellBook->ClearCastedRunes();
 	}
 }

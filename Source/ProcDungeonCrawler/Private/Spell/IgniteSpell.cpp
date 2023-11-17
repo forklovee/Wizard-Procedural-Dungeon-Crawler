@@ -3,6 +3,13 @@
 
 #include "Spell/IgniteSpell.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/SphereComponent.h"
+
+AIgniteSpell::AIgniteSpell(): Super()
+{
+	SpellHitBoxComponent = CreateDefaultSubobject<USphereComponent>(FName("SpellHitBox"));
+	SpellHitBoxComponent->SetupAttachment(RootComponent);
+}
 
 void AIgniteSpell::CastSpell(AWizardCharacter* WizardCharacter)
 {

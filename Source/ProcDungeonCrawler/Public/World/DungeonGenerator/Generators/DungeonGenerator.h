@@ -8,6 +8,8 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
 
+class AWalkthroughPath;
+class ARoomPCGGlobalVolume;
 class UPCGGraph;
 struct FWallRange;
 class UDungeonRoomDictionary;
@@ -103,10 +105,13 @@ protected:
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UDungeonConfig> DungeonConfigDataAsset;
 	
 protected:
-	TArray<UPCGGraph*> Graphs;
+	TArray<TSubclassOf<ARoomPCGGlobalVolume>> PCGRoomVolumes;
 	TArray<FGenRoomData> Rooms;
 
 	UPROPERTY()
