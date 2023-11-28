@@ -30,6 +30,11 @@ bool ADungeonGenerator::GenerateDungeon()
 	}
 
 	// Create start room to feed generation algorithm
+
+	int LevelsToGenerate = DungeonConfig->Level
+	
+
+	
 	FGenRoomData RoomData = FGenRoomData(0, ERoomType::Start);
 	Rooms.Add( RoomData );
 	Rooms = GenerateDungeonTree(RoomData, Rooms);

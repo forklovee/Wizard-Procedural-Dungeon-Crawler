@@ -21,7 +21,7 @@ enum class EInteractionType
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnNewInteractionTarget, FText, ActorName, EInteractionType, OnClickInteractionType, bool, bCanBeGrabbed);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponPickedUp, TSubclassOf<AWeapon>, WeaponClass);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponPickedUp, TSubclassOf<AWeapon>, WeaponClass);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, TSubclassOf<APickupItem>, ItemClass, int32, Amount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRunePickedUp, URuneCast*, RuneCast);
 

@@ -35,6 +35,7 @@ void AWizardCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	MovementSpeed = WalkingSpeed;
+	
 	OnTakeAnyDamage.AddDynamic(WizardStats, &UPawnStats::TakeDamage);
 
 	SpellBook->OnValidRuneSequenceCasted.AddDynamic(this, &AWizardCharacter::PrepareSpell);

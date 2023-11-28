@@ -8,6 +8,7 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
 
+class ADungeonObstacle;
 class AWalkthroughPath;
 class ARoomPCGGlobalVolume;
 class UPCGGraph;
@@ -74,6 +75,8 @@ struct FGenRoomData
 	int Id = 0;
 	
 	ERoomType RoomType;
+
+	TSubclassOf<ADungeonObstacle> Obstacle_FromParent_Class;
 	
 	FGenRoomData* Parent;
 	TArray<FGenRoomData*> Children;
@@ -112,7 +115,7 @@ public:
 	
 protected:
 	TArray<TSubclassOf<ARoomPCGGlobalVolume>> PCGRoomVolumes;
-	TArray<FGenRoomData> Rooms;
+	TArray<TArray<FGenRoomData>> DungeonLevels;
 
 	UPROPERTY()
 	UDungeonConfig* DungeonConfig;
@@ -120,4 +123,7 @@ protected:
 	UDungeonRuleDictionary* DungeonRuleDictionary;
 	UPROPERTY()
 	UDungeonRoomDictionary* DungeonRoomDictionary;
+
+private:
+	int CurrentGeneratedLevel = 0;
 };

@@ -12,30 +12,16 @@ enum class ERoomType: uint8
 	None,
 	
 	Start,
-	Hallway,
 	Corridor,
+	Stairs,
 	End,
 
 	Basic,
-	Basic_NoEnemies,
 	
-	Obstacle,
-	Obstacle_NoEnemies,
-	ObstacleSolver,
-	ObstacleSolver_NoEnemies,
-	
-	Treasure,
-	Treasure_NoEnemies,
-	BigTreasure,
-	BigTreasure_NoEnemies,
-	
-	Rune,
-	Rune_NoEnemies,
+	LootRoom,
 
 	MiniBoss,
-	MainBoss,
-	
-	Wildcard
+	MainBoss
 };
 
 USTRUCT(BlueprintType)
@@ -73,9 +59,11 @@ private:
 	TArray<FRuleCollection> GetRoomCollectionsByType(const ERoomType RoomType) const;
 	
 public:
+	/* Rule collection applied when starting to generate a dungeon level */ 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Rules")
-	TArray<FRuleCollection> RuleCollections;
+	TArray<FRuleCollection> BaseRuleCollections;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Wildcards")
-	TArray<ERoomType> Wildcards;
+	/* Rule collections used to extant base rule collection */ 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Rules")
+	TArray<FRuleCollection> ExtensionRuleCollections;
 };

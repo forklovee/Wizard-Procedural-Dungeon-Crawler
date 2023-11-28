@@ -2,10 +2,19 @@
 <project version="4">
   <component name="UserContentModel">
     <attachedFolders>
+      <Path>Plugins/VRGesturePlugin</Path>
       <Path>Source/ProcDungeonCrawler/Private/Spell</Path>
       <Path>Source/ProcDungeonCrawler/Public/Spell</Path>
     </attachedFolders>
-    <explicitIncludes />
+    <explicitIncludes>
+      <Path>Plugins/VRGesturePlugin/Binaries</Path>
+      <Path>Plugins/VRGesturePlugin/Intermediate</Path>
+      <Path>Plugins/VRGesturePlugin/Resources</Path>
+      <Path>Plugins/VRGesturePlugin/Source/VRGesturePlugin/Private/VRGesturePlugin.cpp</Path>
+      <Path>Plugins/VRGesturePlugin/Source/VRGesturePlugin/Public</Path>
+      <Path>Plugins/VRGesturePlugin/Source/VRGesturePlugin/VRGesturePlugin.Build.cs</Path>
+      <Path>Plugins/VRGesturePlugin/VRGesturePlugin.uplugin</Path>
+    </explicitIncludes>
     <explicitExcludes />
   </component>
 </project>

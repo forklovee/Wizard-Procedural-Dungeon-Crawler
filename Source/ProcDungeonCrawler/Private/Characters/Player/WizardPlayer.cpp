@@ -147,7 +147,7 @@ void AWizardPlayer::BeginPlay()
 	{
 		UWizardHUD* WizardHUD = PlayerController->SetupWizardHud();
 
-		WizardStats->OnHurt.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerHurt);
+		// WizardStats->OnHurt.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerHurt);
 		WizardStats->OnHeal.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerHeal);
 		WizardStats->OnManaUsage.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerManaUsage);
 		WizardStats->UpdateUIStats();

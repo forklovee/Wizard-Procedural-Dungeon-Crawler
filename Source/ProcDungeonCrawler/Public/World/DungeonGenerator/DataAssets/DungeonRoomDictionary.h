@@ -20,15 +20,11 @@ struct FRoomResourceEntry
 	FRoomResourceEntry()
 	{
 		RoomClass = nullptr;
-		PCGRoomVolumeClass = nullptr;
 		Probability = 1.f;
 	}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<ADungeonRoom> RoomClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<ARoomPCGGlobalVolume> PCGRoomVolumeClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Probability = 1.f;
@@ -45,7 +41,7 @@ struct FRoomRepositoryEntry
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray< FRoomResourceEntry > PossibleRooms;
+	TArray<FRoomResourceEntry> PossibleRooms;
 };
 
 UCLASS()

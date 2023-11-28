@@ -3,6 +3,7 @@
 
 #include "Items/Weapon/Weapon.h"
 #include "Characters/Wizard/WizardCharacter.h"
+#include "Engine/DamageEvents.h"
 
 AWeapon::AWeapon(): Super()
 {
@@ -60,7 +61,9 @@ void AWeapon::Grab_Implementation()
 
 void AWeapon::DealDamage(APawn* DamagedPawn)
 {
+	if (!bCanDealDamage || WeaponOwner == nullptr || DamagedPawn == nullptr) return;
 	
+	DamagedPawn->TakeDamage(Damage, FDamageEvent(), WeaponOwner->GetController(), WeaponOwner.Get());
 }
 
 void AWeapon::OnWeaponMeshHitPawn(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
