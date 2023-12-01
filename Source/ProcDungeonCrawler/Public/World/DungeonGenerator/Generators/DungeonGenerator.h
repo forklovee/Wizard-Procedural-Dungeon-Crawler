@@ -133,6 +133,8 @@ protected:
 	UPROPERTY()
 	UDungeonRoomDictionary* DungeonRoomDictionary;
 
+	TArray<FObstacleData> ObstacleSolverDataMap;
+
 private:
 	int CurrentGeneratedLevel = 0;
 };

@@ -166,6 +166,27 @@ TArray<URuneCast*> USpellbookComponent::GetRequiredRunesForSpell(TSubclassOf<ASp
 	return RuneChains[SpellId];
 }
 
+bool USpellbookComponent::CanSpellBeCasted(TSubclassOf<ASpellCast> SpellCastClass,
+	TArray<URuneCast*>& OutMissingRunes) const
+{
+	const TArray<URuneCast*> RequiredRunes = GetRequiredRunesForSpell(SpellCastClass);
+	if (RequiredRunes.Num() == 0)
+	{
+		return false;
+	}
+
+	bool bCanCast = true;
+	for (URuneCast* RequiredRune : RequiredRunes)
+	{
+		if (!Runes.Contains(RequiredRune))
+		{
+			bCanCast = false;
+			OutMissingRunes.Add(RequiredRune);
+		}
+	}
+	return bCanCast;
+}
+
 bool USpellbookComponent::IsSpellPrepared() const
 {
 	return PreparedSpell.Key.IsValid();

@@ -236,18 +236,22 @@ bool ADungeonGenerator::LoadAndSetDungeonData()
 		UE_LOG(LogTemp, Error, TEXT("DungeonConfig is null!"));
 		return false;
 	}
-	
+
+	// Load Dungeon Config
 	if (DungeonConfig == nullptr)
 	{
 		DungeonConfig = DungeonConfigDataAsset.LoadSynchronous();
 	}
 	if (DungeonConfig->DungeonRuleDictionaryDataAsset.IsNull() ||
-		DungeonConfig->DungeonRoomDictionaryDataAsset.IsNull())
+		DungeonConfig->DungeonRoomDictionaryDataAsset.IsNull() ||
+		DungeonConfig->ObstacleDataTable.IsNull()
+		)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Some Data Asset in Dungeon Config is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("Some CRUCIAL Data Asset in Dungeon Config is NULL!"));
 		return false;
 	}
 
+	// Load Dungeon Room Dictionary
 	if (DungeonRoomDictionary == nullptr)
 	{
 		DungeonRoomDictionary = DungeonConfig->DungeonRoomDictionaryDataAsset.LoadSynchronous();
@@ -257,6 +261,8 @@ bool ADungeonGenerator::LoadAndSetDungeonData()
 		UE_LOG(LogTemp, Error, TEXT("No Start Room in Room Dictionary!"));
 		return false;
 	}
+	
+	// Load Dungeon Rule Dictionary
 	if (DungeonRuleDictionary == nullptr)
 	{
 		DungeonRuleDictionary = DungeonConfig->DungeonRuleDictionaryDataAsset.LoadSynchronous();
@@ -265,6 +271,18 @@ bool ADungeonGenerator::LoadAndSetDungeonData()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Rule Dictionary Has No Floor Structures!"));
 		return false;
+	}
+
+	//Load Obstacle Data Table
+	if (ObstacleSolverDataMap.Num() == 0)
+	{
+		const UDataTable* ObstacleDataTable = DungeonConfig->ObstacleDataTable.LoadSynchronous();
+		TArray<FObstacleData*> SpellBookRows;
+		ObstacleDataTable->GetAllRows<FObstacleData>(TEXT("Obstacle"), SpellBookRows);
+		for (const FObstacleData* Row : SpellBookRows)
+		{
+			ObstacleSolverDataMap.Add(*Row);
+		}
 	}
 
 	return true;
@@ -381,23 +399,27 @@ FGenRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(int ObstacleRoomId,
 			PossibleObstacleSolvers.Add(NewRoom);
 		}
 	}
-	
+
+	FGenRoomData* ObstacleSolver;
 	if (PossibleObstacleSolvers.Num() > 0)
 	{
 		// solver cannot be placed in the first room of the branch!
 		const int RandomObstacleSolverIdx = FMath::RandRange(1, PossibleObstacleSolvers.Num()-1);
+		ObstacleSolver = PossibleObstacleSolvers[RandomObstacleSolverIdx];
+		ObstacleSolver->ObstacleSolutionRoomId = ObstacleRoomId;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Room Marked As Obstacle Solver! Choosing From Branch..."))
+	
+		// If no room is marked to have an obstacle solver, choose a random room from the branch	
+		const int RandomObstacleSolverIdx = FMath::RandRange(1, FloorRoomBranch.Num()-1);
 		FGenRoomData* ObstacleSolver = PossibleObstacleSolvers[RandomObstacleSolverIdx];
 		ObstacleSolver->ObstacleSolutionRoomId = ObstacleRoomId;
-		return ObstacleSolver;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("No Room Marked As Obstacle Solver! Choosing From Branch..."))
 	
-	// If no room is marked to have an obstacle solver, choose a random room from the branch	
-	const int RandomObstacleSolverIdx = FMath::RandRange(1, FloorRoomBranch.Num()-1);
-	FGenRoomData* ObstacleSolver = PossibleObstacleSolvers[RandomObstacleSolverIdx];
-	ObstacleSolver->ObstacleSolutionRoomId = ObstacleRoomId;
-
 	//Todo: Choose Solver
+	
 	
 	return ObstacleSolver;
 }

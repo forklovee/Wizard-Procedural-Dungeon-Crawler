@@ -4,6 +4,9 @@
 
 #include "DungeonAssets.generated.h"
 
+class APickupItem;
+class ASpellCast;
+
 UENUM(BlueprintType)
 enum class EAssetType: uint8
 {
@@ -122,21 +125,20 @@ struct FDungeonAssetResource : public FTableRowBase
 	int Rarity = 0;
 };
 
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FObstacleData: public FTableRowBase
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AActor> ObstacleClass;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName SolverRequiredTag;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray< TSubclassOf<AActor> > RequiredPickups;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray< TSubclassOf<AActor> > RequiredSpellCasts;
-};
+	TSubclassOf<APickupItem> RequiredPickup;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="RequiredPickup == nullptr"))
+	FName SolverRequiredTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ASpellCast> RequiredSpellCast;
+};

@@ -37,11 +37,8 @@ struct FRuleProperties
 	TSubclassOf<AActor> PreferredObstacleClass;
 
 	// Obstacle Solvers
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="bHasObstacle"))
 	bool bCanHaveObstacleSolver = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="!bCanHaveObstacleSolver"))
-	TSubclassOf<AActor> PreferredObstacleSolverClass;
 	
 	// Room Assets
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -49,7 +49,4 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Obstacles")
 	TSoftObjectPtr<UDataTable> ObstacleDataTable;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Obstacles")
-	TArray<TSubclassOf<ADungeonObstacle>> PossibleObstacles;	
 };
