@@ -31,6 +31,7 @@ struct FRoomData
 		Id = 0;
 		RoomRules = FRuleProperties();
 		RoomActor = nullptr;
+		Obstacle_FromParent_Class = nullptr;
 	}
 
 	FRoomData(int NewFloorId, int NewId, FRuleProperties& NewRoomRules)
@@ -41,6 +42,7 @@ struct FRoomData
 		RoomRules = NewRoomRules;
 		
 		RoomActor = nullptr;
+		Obstacle_FromParent_Class = nullptr;
 	}
 	
 	bool IsWallRangeOccupied(const FVector& WallNormal, const float& StartPoint, const float& EndPoint) const
@@ -78,12 +80,14 @@ struct FRoomData
 		return true;
 	}
 
+	bool bIsExit = false;
+	bool bIsOnMainWalkthroughPath = false;
 	int FloorId = 0;
 	int Id = 0;
 	
 	FRuleProperties RoomRules;
 
-	TSubclassOf<ADungeonObstacle> Obstacle_FromParent_Class;
+	TSubclassOf<ADungeonObstacle> Obstacle_FromParent_Class = nullptr;
 	int ObstacleSolutionRoomId = -1;
 
 	TArray<TSubclassOf<AActor>> RequiredAssetsToSpawn;
@@ -120,6 +124,33 @@ struct FFloorData
 	TArray<FRoomData*> ObstacleSolverRooms;
 };
 
+USTRUCT()
+struct FDungeonObstacle
+{
+	GENERATED_BODY()
+
+	FDungeonObstacle()
+	{
+		
+	}
+	
+	FDungeonObstacle(TSubclassOf<AActor> NewObstacleClass,
+		TSubclassOf<APickupItem> NewRequiredPickup, FName NewSolverRequiredTag,
+		TSubclassOf<ASpellCast> NewRequiredSpellCast)
+	{
+		ObstacleClass = NewObstacleClass;
+		RequiredPickup = NewRequiredPickup;
+		SolverRequiredTag = NewSolverRequiredTag;
+		RequiredSpellCast = NewRequiredSpellCast;
+	}
+
+	TSubclassOf<AActor> ObstacleClass;
+	TSubclassOf<APickupItem> RequiredPickup;
+	FName SolverRequiredTag;
+	
+	TSubclassOf<ASpellCast> RequiredSpellCast;
+};
+
 UCLASS()
 class PROCDUNGEONCRAWLER_API ADungeonGenerator : public AActor
 {
@@ -129,7 +160,7 @@ public:
 	ADungeonGenerator();
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
-	bool GenerateDungeon();
+	bool GenerateDungeon(AWizardPlayer* Player);
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
 	bool BuildDungeon();
@@ -140,8 +171,9 @@ protected:
 	bool LoadAndSetDungeonData();
 	bool ExtendFloorRoomTree(const FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
 	TArray<FRoomData*> ConnectRuleCollectionToRooms(const int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection, const bool bIsMainWalkthroughPath = false);
-	FRoomData* SetSolverAndObstacleRoom(const int ObstacleRoomId, TArray<FRoomData*>& FloorRoomBranch);
-	FObstacleData* GetObstacleDataByObstacleClass(const UBagComponent* PlayerBag, const USpellbookComponent* PlayerSpellBook, TSubclassOf<AActor> ObstacleClass) const;
+	FRoomData* SetSolverAndObstacleRoom(FRoomData& ObstacleRoom, TArray<FRoomData*>& FloorRoomBranch);
+	FDungeonObstacle* GetObstacleData(TArray<FDungeonObstacle>& PossibleObstacleData) const;
+	FDungeonObstacle* GetObstacleDataByObstacleClass(TSubclassOf<AActor> ObstacleClass);
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
@@ -164,8 +196,11 @@ protected:
 	UPROPERTY()
 	UDungeonRoomDictionary* DungeonRoomDictionary;
 
-	TArray<FObstacleData> ObstacleSolverDataMap;
+	TMap<TSubclassOf<AActor>, FDungeonObstacle> ObstacleSolverMap;
 
+	TWeakObjectPtr<UBagComponent> PlayerBag;
+	TWeakObjectPtr<USpellbookComponent> PlayerSpellBook;
+	
 private:
 	int CurrentGeneratedLevel = 0;
 };

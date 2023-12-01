@@ -125,18 +125,26 @@ struct FDungeonAssetResource : public FTableRowBase
 	int Rarity = 0;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FObstacleData: public FTableRowBase
 {
 	GENERATED_BODY()
 
+	FObstacleData()
+	{
+		ObstacleClass = nullptr;
+		RequiredPickup = nullptr;
+		RequiredSpellCast = nullptr;
+		SolverRequiredTag = NAME_None;
+	}
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AActor> ObstacleClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<APickupItem> RequiredPickup;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="RequiredPickup == nullptr"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="RequiredPickup == nullptr"))
 	FName SolverRequiredTag;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

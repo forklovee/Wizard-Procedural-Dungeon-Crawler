@@ -1,20 +1,19 @@
 
 #include "World/DungeonGenerator/DataAssets/DungeonRuleDictionary.h"
 
+int UDungeonRuleDictionary::GetFloorAmount() const
+{
+	return PerFloorRoomStructures.Num();
+}
+
 bool UDungeonRuleDictionary::HasFloorRoomStructures(const int Floor) const
 {
-	return PerFloorRoomStructures.Num() > Floor;
+	return GetFloorAmount() > Floor;
 }
 
-TArray<FRuleCollection>& UDungeonRuleDictionary::GetFloorRoomStructures(const int Floor)
+FRuleCollection& UDungeonRuleDictionary::GetFloorRoomStructure(const int Floor)
 {
 	return PerFloorRoomStructures[Floor];
-}
-
-FRuleCollection& UDungeonRuleDictionary::GetRandomFloorRoomStructure(const int Floor)
-{
-	TArray<FRuleCollection>& RoomCollectionsOfType = GetFloorRoomStructures(Floor);
-	return RoomCollectionsOfType[FMath::RandRange(0, RoomCollectionsOfType.Num() - 1)];
 }
 
 bool UDungeonRuleDictionary::HasRoomExtensionOfType(const ERoomType RoomType) const

@@ -17,11 +17,4 @@ UCLASS()
 class PROCDUNGEONCRAWLER_API ADungeonCrawlerGamemode : public AGameModeBase
 {
 	GENERATED_BODY()
-
-protected:
-	virtual void BeginPlay() override;
-
-public:
-	TWeakObjectPtr<UBagComponent> PlayerBag;
-	TWeakObjectPtr<USpellbookComponent> PlayerSpellBook;
 };

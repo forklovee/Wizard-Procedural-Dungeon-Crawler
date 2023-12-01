@@ -33,11 +33,14 @@ struct FRuleProperties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bHasObstacle = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="!bHasObstacle"))
-	TSubclassOf<AActor> PreferredObstacleClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bHasObstacle"))
+	bool bUsePreferredObstacleClass = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bHasObstacle && bUsePreferredObstacleClass"))
+	TSubclassOf<AActor> PreferredObstacleClass = nullptr;
 
 	// Obstacle Solvers
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="bHasObstacle"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="!bHasObstacle"))
 	bool bCanHaveObstacleSolver = false;
 	
 	// Room Assets
@@ -69,6 +72,15 @@ struct FRuleCollection
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="RoomType != ERoomType::None"))
 	TArray<FRuleProperties> Rules;
+};
+
+USTRUCT(BlueprintType)
+struct FFloorRoomStructure
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FRuleCollection Structure;
 };
 
 USTRUCT(BlueprintType)
@@ -104,17 +116,25 @@ class PROCDUNGEONCRAWLER_API UDungeonRuleDictionary : public UDataAsset
 	GENERATED_BODY()
 
 public:
+	int GetFloorAmount() const;
+	
 	bool HasFloorRoomStructures(const int Floor) const;
-	TArray<FRuleCollection>& GetFloorRoomStructures(const int Floor);
-	FRuleCollection& GetRandomFloorRoomStructure(const int Floor);
+	FRuleCollection& GetFloorRoomStructure(const int Floor);
 	
 	bool HasRoomExtensionOfType(const ERoomType RoomType) const;
 	FRuleExtension GetRandomRoomExtensionOfType(const ERoomType RoomType) const;
 
 public:
-	/* Rule collection applied when starting to generate a dungeon level */ 
+	/* Rule collection applied when starting to generate a dungeon level
+	  Set floors are generated in order, starting from index 0
+	 
+	  Ex. if you set this array to have 3 elements, it will generate 3 floors:
+	 	First floor = PerFloorRoomStructures[0]
+	 	Second floor = PerFloorRoomStructures[1]
+	 	Third floor = PerFloorRoomStructures[2]
+	 */ 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Rules")
-	TMap<int, TArray<FRuleCollection>> PerFloorRoomStructures;
+	TArray<FRuleCollection> PerFloorRoomStructures;
 
 	/* Rule collections used to extant base rule collection */ 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Rules")
