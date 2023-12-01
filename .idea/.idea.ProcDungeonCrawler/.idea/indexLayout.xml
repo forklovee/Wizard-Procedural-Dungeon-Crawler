@@ -5,6 +5,7 @@
       <Path>Plugins/VRGesturePlugin</Path>
       <Path>Source/ProcDungeonCrawler/Private/Spell</Path>
       <Path>Source/ProcDungeonCrawler/Public/Spell</Path>
+      <Path>Source/ProcDungeonCrawler/Public/World</Path>
     </attachedFolders>
     <explicitIncludes>
       <Path>Plugins/VRGesturePlugin/Binaries</Path>

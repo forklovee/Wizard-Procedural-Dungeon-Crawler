@@ -1,24 +1,34 @@
 
 #include "World/DungeonGenerator/DataAssets/DungeonRuleDictionary.h"
 
-bool UDungeonRuleDictionary::HasRoomCollectionOfType(const ERoomType RoomType) const
+bool UDungeonRuleDictionary::HasFloorRoomStructures(const int Floor) const
 {
-	return RuleCollections.ContainsByPredicate([=](const FRuleCollection& RuleCollection)
+	return PerFloorRoomStructures.Num() > Floor;
+}
+
+TArray<FRuleCollection>& UDungeonRuleDictionary::GetFloorRoomStructures(const int Floor)
+{
+	return PerFloorRoomStructures[Floor];
+}
+
+FRuleCollection& UDungeonRuleDictionary::GetRandomFloorRoomStructure(const int Floor)
+{
+	TArray<FRuleCollection>& RoomCollectionsOfType = GetFloorRoomStructures(Floor);
+	return RoomCollectionsOfType[FMath::RandRange(0, RoomCollectionsOfType.Num() - 1)];
+}
+
+bool UDungeonRuleDictionary::HasRoomExtensionOfType(const ERoomType RoomType) const
+{
+	return RuleExtensions.ContainsByPredicate([=](const FRuleExtension& RuleCollection)
 		{ return RuleCollection.RoomType == RoomType; }
 	);
 }
 
-FRuleCollection UDungeonRuleDictionary::GetRandomRoomCollectionByType(const ERoomType RoomType) const
+FRuleExtension UDungeonRuleDictionary::GetRandomRoomExtensionOfType(const ERoomType RoomType) const
 {
-	const TArray<FRuleCollection> RoomCollectionsOfType = GetRoomCollectionsByType(RoomType);
-	if (RoomCollectionsOfType.Num() == 0) return FRuleCollection();
-
-	return RoomCollectionsOfType[FMath::RandRange(0, RoomCollectionsOfType.Num() - 1)];
-}
-
-TArray<FRuleCollection> UDungeonRuleDictionary::GetRoomCollectionsByType(const ERoomType RoomType) const
-{
-	return RuleCollections.FilterByPredicate([=] (const FRuleCollection& RuleCollection)
+	TArray<FRuleExtension> RoomExtensions = RuleExtensions.FilterByPredicate([=](const FRuleExtension& RuleCollection)
 		{ return RuleCollection.RoomType == RoomType; }
-		);
+	);
+
+	return RoomExtensions[FMath::RandRange(0, RoomExtensions.Num() - 1)];
 }

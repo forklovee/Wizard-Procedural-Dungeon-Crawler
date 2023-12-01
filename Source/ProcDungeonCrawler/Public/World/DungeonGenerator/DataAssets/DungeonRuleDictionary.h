@@ -4,24 +4,51 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "World/DungeonGenerator/Rooms/RoomType.h"
+#include "World/DungeonGenerator/DataAssets/DungeonAssets.h"
 #include "DungeonRuleDictionary.generated.h"
 
-UENUM(BlueprintType)
-enum class ERoomType: uint8
+enum class ERoomType: uint8;
+class URoomType;
+
+USTRUCT(BlueprintType)
+struct FRuleProperties
 {
-	None,
-	
-	Start,
-	Corridor,
-	Stairs,
-	End,
+	GENERATED_BODY()
 
-	Basic,
+	FRuleProperties()
+	{
+		RoomType = ERoomType::None;
+		bHasObstacle = false;
+	}
 	
-	LootRoom,
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ERoomType RoomType;
 
-	MiniBoss,
-	MainBoss
+	// Room Extension
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bMarkForExtension = true;
+	
+	// Obstacles
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bHasObstacle = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="!bHasObstacle"))
+	TSubclassOf<AActor> PreferredObstacleClass;
+
+	// Obstacle Solvers
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bCanHaveObstacleSolver = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditConditionHides="!bCanHaveObstacleSolver"))
+	TSubclassOf<AActor> PreferredObstacleSolverClass;
+	
+	// Room Assets
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FRoomPossibleAssetType> PossibleAssetTypes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FRoomPossibleEnemyType> PossibleEnemyTypes;
 };
 
 USTRUCT(BlueprintType)
@@ -29,6 +56,29 @@ struct FRuleCollection
 {
 	GENERATED_BODY()
 	FRuleCollection()
+	{
+		Rules = {};
+	}
+
+	bool IsValid() const
+	{
+		return Rules.Num() > 0;
+	}
+
+	int Num() const
+	{
+		return Rules.Num();
+	}
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="RoomType != ERoomType::None"))
+	TArray<FRuleProperties> Rules;
+};
+
+USTRUCT(BlueprintType)
+struct FRuleExtension
+{
+	GENERATED_BODY()
+	FRuleExtension()
 	{
 		RoomType = ERoomType::None;
 		Rules = {};
@@ -39,10 +89,16 @@ struct FRuleCollection
 		return RoomType != ERoomType::None && Rules.Num() > 0;
 	}
 	
+	int Num() const
+	{
+		return Rules.Num();
+	}
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ERoomType RoomType;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<ERoomType> Rules;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="RoomType != ERoomType::None"))
+	FRuleCollection Rules;
 };
 
 UCLASS()
@@ -51,19 +107,19 @@ class PROCDUNGEONCRAWLER_API UDungeonRuleDictionary : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	bool HasRoomCollectionOfType(const ERoomType RoomType) const;
+	bool HasFloorRoomStructures(const int Floor) const;
+	TArray<FRuleCollection>& GetFloorRoomStructures(const int Floor);
+	FRuleCollection& GetRandomFloorRoomStructure(const int Floor);
 	
-	FRuleCollection GetRandomRoomCollectionByType(const ERoomType RoomType) const;
+	bool HasRoomExtensionOfType(const ERoomType RoomType) const;
+	FRuleExtension GetRandomRoomExtensionOfType(const ERoomType RoomType) const;
 
-private:
-	TArray<FRuleCollection> GetRoomCollectionsByType(const ERoomType RoomType) const;
-	
 public:
 	/* Rule collection applied when starting to generate a dungeon level */ 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Rules")
-	TArray<FRuleCollection> BaseRuleCollections;
+	TMap<int, TArray<FRuleCollection>> PerFloorRoomStructures;
 
 	/* Rule collections used to extant base rule collection */ 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Rules")
-	TArray<FRuleCollection> ExtensionRuleCollections;
+	TArray<FRuleExtension> RuleExtensions;
 };

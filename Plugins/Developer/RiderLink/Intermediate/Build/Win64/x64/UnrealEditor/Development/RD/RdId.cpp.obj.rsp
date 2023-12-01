@@ -1,8 +1,8 @@
-"C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Source\RD\src\rd_framework_cpp\src\main\protocol\RdId.cpp"
-/FI"C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\Definitions.h"
-/Fo"C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\RdId.cpp.obj"
-/sourceDependencies "C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\RdId.cpp.dep.json"
-@"C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\RD.Shared.rsp"
+"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Source\RD\src\rd_framework_cpp\src\main\protocol\RdId.cpp"
+/FI"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\Definitions.h"
+/Fo"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\RdId.cpp.obj"
+/sourceDependencies "C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\RdId.cpp.dep.json"
+@"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RD\RD.Shared.rsp"
 /Zc:inline
 /nologo
 /Oi

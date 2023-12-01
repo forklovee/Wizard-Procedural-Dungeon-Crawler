@@ -8,6 +8,7 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
 
+class AWizardPlayer;
 class ADungeonObstacle;
 class AWalkthroughPath;
 class ARoomPCGGlobalVolume;
@@ -26,14 +27,17 @@ struct FGenRoomData
 	FGenRoomData()
 	{
 		Id = 0;
-		RoomType = ERoomType::None;
+		RoomRules = FRuleProperties();
 		RoomActor = nullptr;
 	}
 
-	FGenRoomData(int NewId, ERoomType NewRoomType)
+	FGenRoomData(int NewFloorId, int NewId, FRuleProperties& NewRoomRules)
 	{
+		FloorId = NewFloorId;
 		Id = NewId;
-		RoomType = NewRoomType;
+		
+		RoomRules = NewRoomRules;
+		
 		RoomActor = nullptr;
 	}
 	
@@ -71,12 +75,14 @@ struct FGenRoomData
 	
 		return true;
 	}
-	
+
+	int FloorId = 0;
 	int Id = 0;
 	
-	ERoomType RoomType;
+	FRuleProperties RoomRules;
 
 	TSubclassOf<ADungeonObstacle> Obstacle_FromParent_Class;
+	int ObstacleSolutionRoomId = -1;
 	
 	FGenRoomData* Parent;
 	TArray<FGenRoomData*> Children;
@@ -103,9 +109,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	bool LoadDungeonData();
-	TArray<FGenRoomData> GenerateDungeonTree(FGenRoomData& RoomData, TArray<FGenRoomData>& RoomTree);
-	
+	bool LoadAndSetDungeonData();
+	bool ExtendFloorRoomTree(const int FloorId, const int FloorStartRoomId, const int FloorEndRoomId);
+	TArray<FGenRoomData*> ConnectRuleCollectionToRooms(const int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection);
+	FGenRoomData* SetSolverAndObstacleRoom(int ObstacleRoomId, TArray<FGenRoomData*>& FloorRoomBranch) const;
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
@@ -114,6 +121,8 @@ public:
 	TSoftObjectPtr<UDungeonConfig> DungeonConfigDataAsset;
 	
 protected:
+	TArray<FGenRoomData> Rooms;
+	
 	TArray<TSubclassOf<ARoomPCGGlobalVolume>> PCGRoomVolumes;
 	TArray<TArray<FGenRoomData>> DungeonLevels;
 

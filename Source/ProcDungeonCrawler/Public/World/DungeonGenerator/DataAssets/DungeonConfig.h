@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "DungeonConfig.generated.h"
 
+class UDataTable;
 class ADungeonObstacle;
 class UDungeonRuleDictionary;
 class UDungeonRoomDictionary;
@@ -41,10 +42,10 @@ public:
 	TSoftObjectPtr<UDungeonRoomDictionary> DungeonRoomDictionaryDataAsset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Rooms")
-	TMap<int32, int32> MaxRoomAmountPerLevel;
+	TMap<int32, int32> MaxRoomAmountOnFloor;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Loot")
-	TMap<int32, FMaxLootOnLevel> MaxLootPerLevel;
+	TSoftObjectPtr<UDataTable> DungeonAssetDataTable;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Obstacles")
 	TSoftObjectPtr<UDataTable> ObstacleDataTable;
