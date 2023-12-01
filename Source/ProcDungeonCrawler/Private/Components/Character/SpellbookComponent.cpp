@@ -151,6 +151,21 @@ TSubclassOf<ASpellCast> USpellbookComponent::GetSpellCastClass(TArray<URuneCast*
 	return nullptr;
 }
 
+TArray<URuneCast*> USpellbookComponent::GetRequiredRunesForSpell(TSubclassOf<ASpellCast> SpellCastClass) const
+{
+	TArray<TSubclassOf<ASpellCast>> SpellCastClasses;
+	SpellBook.GenerateValueArray(SpellCastClasses);
+	const int SpellId = SpellCastClasses.Find(SpellCastClass);
+	if (SpellId == INDEX_NONE)
+	{
+		return {};
+	}
+
+	TArray<TArray<URuneCast*>> RuneChains;
+	SpellBook.GenerateKeyArray(RuneChains);
+	return RuneChains[SpellId];
+}
+
 bool USpellbookComponent::IsSpellPrepared() const
 {
 	return PreparedSpell.Key.IsValid();

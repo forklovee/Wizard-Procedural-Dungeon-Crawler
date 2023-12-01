@@ -45,7 +45,9 @@ public:
 	void CastRuneOfIdx(int Idx);
 	
 	TSubclassOf<ASpellCast> GetSpellCastClass(TArray<URuneCast*>& RuneSequence, float& OutManaCost) const;
-
+	
+	TArray<URuneCast*> GetRequiredRunesForSpell(TSubclassOf<ASpellCast> SpellCastClass) const;
+	
 	void ClearCastedRunes();
 	
 	// Spells
