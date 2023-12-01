@@ -20,10 +20,6 @@ class PROCDUNGEONCRAWLER_API ADungeonCrawlerGamemode : public AGameModeBase
 
 protected:
 	virtual void BeginPlay() override;
-	
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spell Book")
-	TSoftObjectPtr<UDataTable> SpellCastDataTable;
 
 private:
 	UPROPERTY()
