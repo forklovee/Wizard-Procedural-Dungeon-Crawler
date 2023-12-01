@@ -8,6 +8,8 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
 
+class UBagComponent;
+class USpellbookComponent;
 class AWizardPlayer;
 class ADungeonObstacle;
 class AWalkthroughPath;
@@ -20,18 +22,18 @@ enum class ERoomType : uint8;
 class ADungeonRoom;
 
 USTRUCT()
-struct FGenRoomData
+struct FRoomData
 {
 	GENERATED_BODY()
 
-	FGenRoomData()
+	FRoomData()
 	{
 		Id = 0;
 		RoomRules = FRuleProperties();
 		RoomActor = nullptr;
 	}
 
-	FGenRoomData(int NewFloorId, int NewId, FRuleProperties& NewRoomRules)
+	FRoomData(int NewFloorId, int NewId, FRuleProperties& NewRoomRules)
 	{
 		FloorId = NewFloorId;
 		Id = NewId;
@@ -83,13 +85,39 @@ struct FGenRoomData
 
 	TSubclassOf<ADungeonObstacle> Obstacle_FromParent_Class;
 	int ObstacleSolutionRoomId = -1;
+
+	TArray<TSubclassOf<AActor>> RequiredAssetsToSpawn;
 	
-	FGenRoomData* Parent;
-	TArray<FGenRoomData*> Children;
+	FRoomData* Parent;
+	TArray<FRoomData*> Children;
 	
 	TMap<FVector, TArray<FWallRange>> OccupiedWallsRanges;
 	
 	TWeakObjectPtr<ADungeonRoom> RoomActor;
+};
+
+USTRUCT()
+struct FFloorData
+{
+	GENERATED_BODY()
+
+	FFloorData()
+	{
+		
+	}
+	FFloorData(const int FloorId)
+	{
+		Id = FloorId;
+	}
+	
+	int Id = 0;
+	int MaxRoomAmount = 0;
+	TArray<FRoomData*> Rooms;
+
+	TArray<FRoomData*> BranchRoots;
+	
+	TArray<FRoomData*> ObstacleRooms;
+	TArray<FRoomData*> ObstacleSolverRooms;
 };
 
 UCLASS()
@@ -110,9 +138,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	bool LoadAndSetDungeonData();
-	bool ExtendFloorRoomTree(const int FloorId, const int FloorStartRoomId, const int FloorEndRoomId);
-	TArray<FGenRoomData*> ConnectRuleCollectionToRooms(const int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection);
-	FGenRoomData* SetSolverAndObstacleRoom(int ObstacleRoomId, TArray<FGenRoomData*>& FloorRoomBranch) const;
+	bool ExtendFloorRoomTree(const FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
+	TArray<FRoomData*> ConnectRuleCollectionToRooms(const int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection, const bool bIsMainWalkthroughPath = false);
+	FRoomData* SetSolverAndObstacleRoom(const int ObstacleRoomId, TArray<FRoomData*>& FloorRoomBranch);
+	FObstacleData* GetObstacleDataByObstacleClass(const UBagComponent* PlayerBag, const USpellbookComponent* PlayerSpellBook, TSubclassOf<AActor> ObstacleClass) const;
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
@@ -121,10 +150,12 @@ public:
 	TSoftObjectPtr<UDungeonConfig> DungeonConfigDataAsset;
 	
 protected:
-	TArray<FGenRoomData> Rooms;
+	TArray<FRoomData> Rooms;
+	TArray<FFloorData> Floors;
+	TArray<FRoomData*> MainWalkthroughPath;
 	
 	TArray<TSubclassOf<ARoomPCGGlobalVolume>> PCGRoomVolumes;
-	TArray<TArray<FGenRoomData>> DungeonLevels;
+	TArray<TArray<FRoomData>> DungeonLevels;
 
 	UPROPERTY()
 	UDungeonConfig* DungeonConfig;

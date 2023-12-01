@@ -3,12 +3,19 @@
 #include "PCGComponent.h"
 #include "Characters/Player/WizardPlayer.h"
 #include "Characters/Wizard/WizardCharacter.h"
+#include "Components/Character/BagComponent.h"
+#include "Components/Character/SpellbookComponent.h"
+#include "Gamemodes/DungeonCrawlerGamemode.h"
+#include "Items/PickupItem.h"
+#include "Kismet/GameplayStatics.h"
 #include "World/DungeonGenerator/DataAssets/DungeonConfig.h"
 #include "World/DungeonGenerator/DataAssets/DungeonRoomDictionary.h"
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 
 #include "PCG/Public/PCGGraph.h"
 #include "PCG/Public/PCGVolume.h"
+#include "Spell/RuneCast.h"
+#include "Spell/SpellCast.h"
 #include "Tools/SplineTools.h"
 #include "World/DungeonGenerator/Path/WalkthroughPath.h"
 #include "World/DungeonGenerator/Rooms/RoomPCGGlobalVolume.h"
@@ -30,9 +37,7 @@ bool ADungeonGenerator::GenerateDungeon()
 		UE_LOG(LogTemp, Error, TEXT("Failed to load Dungeon Data!"));
 		return false;
 	}
-
-	// Create start room
-
+	
 	const TMap<int, TArray<FRuleCollection>>& PerFloorRoomStructures = DungeonRuleDictionary->PerFloorRoomStructures;
 	const int DungeonFloorAmount = PerFloorRoomStructures.Num();
 	if (DungeonFloorAmount == 0)
@@ -44,6 +49,22 @@ bool ADungeonGenerator::GenerateDungeon()
 	for (int FloorId = 0; FloorId < DungeonFloorAmount; FloorId++)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Generating Floor %i"), FloorId);
+		
+		FFloorData& FloorData = Floors[
+			Floors.Add(
+			FFloorData(FloorId)
+		)
+		];
+		
+		if (!DungeonConfig->MaxRoomAmountOnFloor.Contains(FloorData.Id))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Dungeon Config doesn't have an entry for max rooms on floor %i, only required extensions will be applied!"));
+		}
+		else
+		{
+			FloorData.MaxRoomAmount = DungeonConfig->MaxRoomAmountOnFloor[FloorId];
+		}
+		
 		if (!DungeonRuleDictionary->HasFloorRoomStructures(FloorId))
 		{
 			UE_LOG(LogTemp, Error, TEXT("No Room Structures for floor %i! Cancelling generation!"), FloorId);
@@ -55,7 +76,8 @@ bool ADungeonGenerator::GenerateDungeon()
 
 		// If this is a first floor, do not connect first room to parent, because it's not existent!
 		int FloorStartRoomId = FloorId == 0 ? -1 : Rooms.Num();
-		ConnectRuleCollectionToRooms(FloorStartRoomId, FloorId, FloorStructure);
+		FloorData.Rooms = ConnectRuleCollectionToRooms(FloorStartRoomId, FloorId, FloorStructure, true);
+		
 		const int FloorLastRoomId = FloorStartRoomId + FloorStructure.Rules.Num();
 
 		// If it's a first room in the dungeon, reset the start room id to 0 from -1
@@ -64,7 +86,7 @@ bool ADungeonGenerator::GenerateDungeon()
 			FloorStartRoomId = 0;
 		}
 		
-		if (ExtendFloorRoomTree(FloorId, FloorStartRoomId, FloorLastRoomId))
+		if (ExtendFloorRoomTree(FloorData, FloorStartRoomId, FloorLastRoomId))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("\t - Room Tree Extension Successfull! Floor %i has %i rooms."), FloorId, Rooms.Num() - FloorStartRoomId);
 		}
@@ -288,7 +310,7 @@ bool ADungeonGenerator::LoadAndSetDungeonData()
 	return true;
 }
 
-bool ADungeonGenerator::ExtendFloorRoomTree(const int FloorId, const int FloorStartRoomId, const int FloorEndRoomId)
+bool ADungeonGenerator::ExtendFloorRoomTree(const FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId)
 {
 	UE_LOG(LogTemp, Warning, TEXT("\t- Extanding Floor Tree"));
 	if (!LoadAndSetDungeonData())
@@ -297,28 +319,25 @@ bool ADungeonGenerator::ExtendFloorRoomTree(const int FloorId, const int FloorSt
 		return false;
 	}
 
-	int MaxFloorRoomAmount = -1;
-	if (!DungeonConfig->MaxRoomAmountOnFloor.Contains(FloorId))
-	{
-		UE_LOG(LogTemp, Error, TEXT("Dungeon Config doesn't have an entry for max rooms on floor %i, only required extensions will be applied!"));
-	}
-	else
-	{
-		MaxFloorRoomAmount = DungeonConfig->MaxRoomAmountOnFloor[FloorId];
-	}
-
+	int BranchLength = FloorEndRoomId - FloorStartRoomId;
+	int BranchCurrentRoomId = -1; // starting from -1 to increment early
+	// Place out obstacle solvers
 	TArray<int> RoomIdsForExtension;
 	for (int RoomId = FloorStartRoomId; RoomId < FloorEndRoomId; RoomId++)
 	{
-		const FGenRoomData& RoomData = Rooms[RoomId];
+		// incrementing now, because of continues that would skip it
+		BranchCurrentRoomId++;
+		
+		const FRoomData& RoomData = Rooms[RoomId];
 		const FRuleProperties& RoomRules = RoomData.RoomRules;
 
 		// Can't extend from current room
 		if (!RoomRules.bMarkForExtension) continue;
 
+		// add on stack
 		RoomIdsForExtension.Add(RoomId);
 		
-		// Not an obstacle or start room, add on stack
+		// Not an obstacle or start room, omit 
 		if (!RoomRules.bHasObstacle)
 		{
 			continue;
@@ -331,7 +350,7 @@ bool ADungeonGenerator::ExtendFloorRoomTree(const int FloorId, const int FloorSt
 			return false;
 		}
 		const int RandomRoomId = FMath::RandRange(0, RoomIdsForExtension.Num()-1);
-		const FGenRoomData& RandomRoomData = Rooms[RoomIdsForExtension[RandomRoomId]];
+		const FRoomData& RandomRoomData = Rooms[RoomIdsForExtension[RandomRoomId]];
 		
 		const ERoomType RoomType = RandomRoomData.RoomRules.RoomType;
 		if (RoomType == ERoomType::None)
@@ -348,29 +367,37 @@ bool ADungeonGenerator::ExtendFloorRoomTree(const int FloorId, const int FloorSt
 		}
 		
 		FRuleCollection RuleCollection = DungeonRuleDictionary->GetRandomRoomExtensionOfType(RoomType).Rules;
-		TArray<FGenRoomData*> NewRooms = ConnectRuleCollectionToRooms(RandomRoomId, FloorId, RuleCollection);
+		TArray<FRoomData*> NewRooms = ConnectRuleCollectionToRooms(RandomRoomId, FloorData.Id, RuleCollection);
 
 		// Choose Obstacle Solution Room Randomly
-		FGenRoomData* ObstacleSolver = SetSolverAndObstacleRoom(RoomId, NewRooms);
+		FRoomData* ObstacleSolverRoom = SetSolverAndObstacleRoom(RoomId, NewRooms);
 		
 	}
 
 	return true;
 }
 
-TArray<FGenRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(const int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection)
+TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(const int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection,
+	 const bool bIsMainWalkthroughPath)
 {
-	TArray<FGenRoomData*> NewRooms;
+	TArray<FRoomData*> NewRooms;
 	for (int RuleIdx = 0; RuleIdx < RuleCollection.Rules.Num(); RuleIdx++)
 	{
 		FRuleProperties& RuleProperties = RuleCollection.Rules[RuleIdx];
 
 		// Create room data
 		const int NewRoomId = Rooms.Add(
-			FGenRoomData(FloorId, Rooms.Num(), RuleProperties)
+			FRoomData(FloorId, Rooms.Num(), RuleProperties)
 			);
-		FGenRoomData& RoomData = Rooms[NewRoomId];
+		FRoomData& RoomData = Rooms[NewRoomId];
 		NewRooms.Add(&RoomData);
+		
+		// Add to Main Walkthrough path if marked
+		if (bIsMainWalkthroughPath)
+		{
+			MainWalkthroughPath.Add(&RoomData);
+		}
+		
 		// Connect first room to create a branch
 		if (ParentRoomId > -1 && RuleIdx == 0)
 		{
@@ -378,6 +405,12 @@ TArray<FGenRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(const int 
 			continue;
 		}
 
+		// If first room of the branch, add to branch roots
+		if (RuleIdx == 0 && !bIsMainWalkthroughPath)
+		{
+			Floors[FloorId].BranchRoots.Add(&RoomData);
+		}
+		
 		// Create a Parent-Child relation
 		if (RuleIdx > 0)
 		{
@@ -388,11 +421,11 @@ TArray<FGenRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(const int 
 	return NewRooms;
 }
 
-FGenRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(int ObstacleRoomId,
-	TArray<FGenRoomData*>& FloorRoomBranch) const
+FRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(const int ObstacleRoomId,
+	TArray<FRoomData*>& FloorRoomBranch)
 {
-	TArray<FGenRoomData*> PossibleObstacleSolvers;
-	for (FGenRoomData* NewRoom: FloorRoomBranch)
+	TArray<FRoomData*> PossibleObstacleSolvers;
+	for (FRoomData* NewRoom: FloorRoomBranch)
 	{
 		if (NewRoom->RoomRules.bCanHaveObstacleSolver)
 		{
@@ -400,13 +433,14 @@ FGenRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(int ObstacleRoomId,
 		}
 	}
 
-	FGenRoomData* ObstacleSolver;
+	// Choose Obstacle Solver Room Randomly
+	FRoomData* ObstacleSolverRoom;
 	if (PossibleObstacleSolvers.Num() > 0)
 	{
 		// solver cannot be placed in the first room of the branch!
 		const int RandomObstacleSolverIdx = FMath::RandRange(1, PossibleObstacleSolvers.Num()-1);
-		ObstacleSolver = PossibleObstacleSolvers[RandomObstacleSolverIdx];
-		ObstacleSolver->ObstacleSolutionRoomId = ObstacleRoomId;
+		ObstacleSolverRoom = PossibleObstacleSolvers[RandomObstacleSolverIdx];
+		ObstacleSolverRoom->ObstacleSolutionRoomId = ObstacleRoomId;
 	}
 	else
 	{
@@ -414,13 +448,104 @@ FGenRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(int ObstacleRoomId,
 	
 		// If no room is marked to have an obstacle solver, choose a random room from the branch	
 		const int RandomObstacleSolverIdx = FMath::RandRange(1, FloorRoomBranch.Num()-1);
-		FGenRoomData* ObstacleSolver = PossibleObstacleSolvers[RandomObstacleSolverIdx];
-		ObstacleSolver->ObstacleSolutionRoomId = ObstacleRoomId;
+		ObstacleSolverRoom = PossibleObstacleSolvers[RandomObstacleSolverIdx];
+		ObstacleSolverRoom->ObstacleSolutionRoomId = ObstacleRoomId;
+	}
+
+	FRoomData* ObstacleRoom = &Rooms[ObstacleRoomId];
+	const TSubclassOf<AActor> PreferredObstacleClass = ObstacleRoom->RoomRules.PreferredObstacleClass;
+
+	const ADungeonCrawlerGamemode* GameMode = Cast<ADungeonCrawlerGamemode>(UGameplayStatics::GetGameMode(GetWorld()));
+	if (GameMode == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Gamemode is null! Cant access player bag and spellbook!"))
+		return nullptr;
 	}
 	
-	//Todo: Choose Solver
+	//Choose Best Lowest Effort Solver
+	if (const FObstacleData* ObstacleData = GetObstacleDataByObstacleClass(
+		GameMode->PlayerBag.Get(),
+		GameMode->PlayerSpellBook.Get(),
+		PreferredObstacleClass)
+		)
+	{
+		ObstacleRoom->Obstacle_FromParent_Class = ObstacleData->ObstacleClass;
+		ObstacleRoom->ObstacleSolutionRoomId = ObstacleSolverRoom->Id;
+
+		if (ObstacleData->RequiredSpellCast != nullptr)
+		{
+			TArray<URuneCast*> MissingRunes;
+			if (!GameMode->PlayerSpellBook->CanSpellBeCasted(ObstacleData->RequiredSpellCast, MissingRunes))
+			{
+				for (const URuneCast* RuneCast: MissingRunes)
+				{
+					ObstacleSolverRoom->RequiredAssetsToSpawn.Add(RuneCast->GetClass());
+				}
+			}
+		}
+		else if (ObstacleData->RequiredPickup != nullptr)
+		{
+			ObstacleSolverRoom->RequiredAssetsToSpawn.Add(ObstacleData->RequiredPickup);
+		}
+	}
+	else
+	{
+		//Todo: Handle no obstacle solver found
+	}
 	
+	return ObstacleSolverRoom;
+}
+
+FObstacleData* ADungeonGenerator::GetObstacleDataByObstacleClass(const UBagComponent* PlayerBag, const USpellbookComponent* PlayerSpellBook,
+	TSubclassOf<AActor> ObstacleClass) const
+{
+	TArray<FObstacleData> PossibleObstacleData;
+	if (ObstacleClass != nullptr)
+	{
+		PossibleObstacleData = ObstacleSolverDataMap.FilterByPredicate([=] (const FObstacleData& ObstacleData)
+		{
+			return ObstacleData.ObstacleClass == ObstacleClass;
+		});
+	}
+	else
+	{
+		PossibleObstacleData = ObstacleSolverDataMap;
+	}
+
+	// Choose Best Low Effort Obstacle Solver
+	FObstacleData* BestObstacleData = nullptr;
+	bool bPlayerHasPickupItem = true;
+	int PlayerNeededRunes = 2137;
+	for (FObstacleData& ObstacleData: PossibleObstacleData)
+	{
+		// Prioritize Obstacle Solver with SpellCast!
+		// Check if Player has needed runes
+		TArray<URuneCast*> MissingRunes;
+		if (ObstacleData.RequiredSpellCast != nullptr &&
+			!PlayerSpellBook->CanSpellBeCasted(ObstacleData.RequiredSpellCast, MissingRunes)
+			)
+		{
+			if (MissingRunes.Num() != 0 && MissingRunes.Num() < PlayerNeededRunes)
+			{
+				PlayerNeededRunes = MissingRunes.Num();
+				BestObstacleData = &ObstacleData;
+				continue;
+			}
+		}
+		
+		// Check if Player has pickup item
+		if (ObstacleData.RequiredPickup != nullptr && !PlayerBag->HasItemClass(ObstacleData.RequiredPickup))
+		{
+			BestObstacleData = &ObstacleData;
+		}
+	}
+
+	// If no obstacle solver was found, choose random one
+	if (BestObstacleData == nullptr && PossibleObstacleData.Num() > 0)
+	{
+		BestObstacleData = &PossibleObstacleData[FMath::RandRange(0, PossibleObstacleData.Num()-1)];
+	}
 	
-	return ObstacleSolver;
+	return BestObstacleData;
 }
 

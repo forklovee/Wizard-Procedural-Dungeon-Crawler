@@ -21,10 +21,7 @@ class PROCDUNGEONCRAWLER_API ADungeonCrawlerGamemode : public AGameModeBase
 protected:
 	virtual void BeginPlay() override;
 
-private:
-	UPROPERTY()
-	UDataTable* SpellCastTable;
-
+public:
 	TWeakObjectPtr<UBagComponent> PlayerBag;
 	TWeakObjectPtr<USpellbookComponent> PlayerSpellBook;
 };
