@@ -93,8 +93,8 @@ struct FRoomData
 
 	TArray<TSubclassOf<AActor>> RequiredAssetsToSpawn;
 	
-	FRoomData* Parent;
-	TArray<FRoomData*> Children;
+	int ParentId = -1;
+	TArray<int> ChildrenIds;
 	
 	TMap<FVector, TArray<FWallRange>> OccupiedWallsRanges;
 	
@@ -189,9 +189,6 @@ protected:
 	TArray<FRoomData> Rooms;
 	TArray<FFloorData> Floors;
 	TArray<FRoomData*> MainWalkthroughPath;
-	
-	TArray<TSubclassOf<ARoomPCGGlobalVolume>> PCGRoomVolumes;
-	TArray<TArray<FRoomData>> DungeonLevels;
 
 	UPROPERTY()
 	UDungeonConfig* DungeonConfig;
@@ -204,7 +201,7 @@ protected:
 
 	TWeakObjectPtr<UBagComponent> PlayerBag;
 	TWeakObjectPtr<USpellbookComponent> PlayerSpellBook;
-	
+
 private:
 	int CurrentGeneratedLevel = 0;
 };

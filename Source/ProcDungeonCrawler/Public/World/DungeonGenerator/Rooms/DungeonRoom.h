@@ -137,6 +137,8 @@ class PROCDUNGEONCRAWLER_API ADungeonRoom : public AActor
 public:
 	ADungeonRoom();
 
+	void BuildRoom();
+	
 	FVector GetRoomCenter() const;
 	
 	TArray<FRoomWall> GetRoomWalls() const;
@@ -157,6 +159,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	USplineComponent* RoomBaseSpline;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	UPCGComponent* PCGComponent;
+	
 private:
 	FTimerHandle BuildTimerHandle;
 };
