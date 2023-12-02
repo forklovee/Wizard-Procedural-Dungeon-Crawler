@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Items/PickupItem.h"
 #include "World/DungeonGenerator/DataAssets/DungeonRuleDictionary.h"
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
@@ -87,7 +88,7 @@ struct FRoomData
 	
 	FRuleProperties RoomRules;
 
-	TSubclassOf<ADungeonObstacle> Obstacle_FromParent_Class = nullptr;
+	TSubclassOf<AObstacle> Obstacle_FromParent_Class = nullptr;
 	int ObstacleSolutionRoomId = -1;
 
 	TArray<TSubclassOf<AActor>> RequiredAssetsToSpawn;
@@ -169,11 +170,14 @@ protected:
 	virtual void BeginPlay() override;
 
 	bool LoadAndSetDungeonData();
-	bool ExtendFloorRoomTree(const FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
-	TArray<FRoomData*> ConnectRuleCollectionToRooms(const int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection, const bool bIsMainWalkthroughPath = false);
+	bool ExtendFloorRoomTree(FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
+	TArray<FRoomData*> ConnectRuleCollectionToRooms(int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection, const bool bIsMainWalkthroughPath = false);
 	FRoomData* SetSolverAndObstacleRoom(FRoomData& ObstacleRoom, TArray<FRoomData*>& FloorRoomBranch);
-	FDungeonObstacle* GetObstacleData(TArray<FDungeonObstacle>& PossibleObstacleData) const;
-	FDungeonObstacle* GetObstacleDataByObstacleClass(TSubclassOf<AActor> ObstacleClass);
+
+	FObstacleData* GetRandomObstacleData();
+	FObstacleData* GetObstacleDataByObstacleAsset(const TSubclassOf<AObstacle> ObstacleClass);
+
+	FObstacleData* GetObstacleData(TArray<FObstacleData*> PossibleObstacleData) const;
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
@@ -196,7 +200,7 @@ protected:
 	UPROPERTY()
 	UDungeonRoomDictionary* DungeonRoomDictionary;
 
-	TMap<TSubclassOf<AActor>, FDungeonObstacle> ObstacleSolverMap;
+	TMap<TSubclassOf<AObstacle>, FObstacleData*> ObstacleSolverMap;
 
 	TWeakObjectPtr<UBagComponent> PlayerBag;
 	TWeakObjectPtr<USpellbookComponent> PlayerSpellBook;

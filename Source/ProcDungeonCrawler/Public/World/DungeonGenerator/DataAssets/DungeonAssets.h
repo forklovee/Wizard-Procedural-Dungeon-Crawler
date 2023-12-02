@@ -4,6 +4,7 @@
 
 #include "DungeonAssets.generated.h"
 
+class AObstacle;
 class APickupItem;
 class ASpellCast;
 
@@ -132,14 +133,11 @@ struct FObstacleData: public FTableRowBase
 
 	FObstacleData()
 	{
-		ObstacleClass = nullptr;
-		RequiredPickup = nullptr;
-		RequiredSpellCast = nullptr;
-		SolverRequiredTag = NAME_None;
+
 	}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<AActor> ObstacleClass;
+	TSubclassOf<AObstacle> PreferredObstacle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<APickupItem> RequiredPickup;

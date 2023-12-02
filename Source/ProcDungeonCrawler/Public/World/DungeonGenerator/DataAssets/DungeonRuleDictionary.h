@@ -37,7 +37,7 @@ struct FRuleProperties
 	bool bUsePreferredObstacleClass = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bHasObstacle && bUsePreferredObstacleClass"))
-	TSubclassOf<AActor> PreferredObstacleClass = nullptr;
+	TSubclassOf<AObstacle> PreferredObstacle = nullptr;
 
 	// Obstacle Solvers
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="!bHasObstacle"))
