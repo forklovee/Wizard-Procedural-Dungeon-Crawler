@@ -100,15 +100,49 @@ bool ADungeonGenerator::GenerateDungeon(AWizardPlayer* Player)
 			for (const FRoomData* RoomData: FloorData.Rooms)
 			{
 				UE_LOG(LogTemp, Display, TEXT("\t\t- Id: %i, Type: %s"), RoomData->Id, *UEnum::GetValueAsString(RoomData->RoomRules.RoomType));
-				UE_LOG(LogTemp, Display, TEXT("\t\t  Children: (%i)"), RoomData->Children.Num());
-				for (const FRoomData* ChildRoom: RoomData->Children)
+				// Print Children
+				if (RoomData->Children.Num() > 0)
 				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t\t- Id: %i, Type: %s"), ChildRoom->Id, *UEnum::GetValueAsString(ChildRoom->RoomRules.RoomType));
+					UE_LOG(LogTemp, Display, TEXT("\t\t  Children: (%i)"), RoomData->Children.Num());
+					for (const FRoomData* ChildRoom: RoomData->Children)
+					{
+						UE_LOG(LogTemp, Display, TEXT("\t\t\t- Id: %i, Type: %s"), ChildRoom->Id, *UEnum::GetValueAsString(ChildRoom->RoomRules.RoomType));
+					}
 				}
+				else
+				{
+					UE_LOG(LogTemp, Display, TEXT("\t\t -Branch End-"));
+				}
+
+				// Print Parent
 				if (RoomData->Parent != nullptr)
 				{
 					UE_LOG(LogTemp, Display, TEXT("\t\t  Parent: "));
 					UE_LOG(LogTemp, Display, TEXT("\t\t\t- Id: %i, Type: %s"), RoomData->Parent->Id, *UEnum::GetValueAsString(RoomData->Parent->RoomRules.RoomType));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Display, TEXT("\t\t -Dungeon Start-"));
+				}
+
+				// Print Obstacle Data
+				if (RoomData->Obstacle_FromParent_Class != nullptr)
+				{
+					UE_LOG(LogTemp, Display, TEXT("\t\t  Has Obstacle of: %s"), *RoomData->Obstacle_FromParent_Class->GetName());
+				}
+				if (RoomData->HasSolutionToObstacleInRoomIdx > -1)
+				{
+					UE_LOG(LogTemp, Display, TEXT("\t\t  Has Obstacle Solution for Room of Id: %i"), RoomData->HasSolutionToObstacleInRoomIdx);
+				}
+
+				// Print Set Asset Data
+				if (RoomData->RequiredAssetsToSpawn.Num() > 0)
+				{
+					UE_LOG(LogTemp, Display, TEXT("\t\t  Has Assets to Spawn:"));
+					for (const TSubclassOf<AActor> AssetClass: RoomData->RequiredAssetsToSpawn)
+					{
+						UE_LOG(LogTemp, Display, TEXT("\t\t\t- %s"), *AssetClass->GetName());
+					}
 				}
 			}
 		}
@@ -407,7 +441,7 @@ bool ADungeonGenerator::ExtendFloorRoomTree(FFloorData& FloorData, const int Flo
 		}
 		
 		FRuleCollection RuleCollection = DungeonRuleDictionary->GetRandomRoomExtensionOfType(RoomType).Rules;
-		TArray<FRoomData*> NewRooms = ConnectRuleCollectionToRooms(RandomRoomId, FloorData.Id, RuleCollection);
+		TArray<FRoomData*> NewRooms = ConnectRuleCollectionToRooms(RandomRoomData.Id, FloorData.Id, RuleCollection);
 		// Merge New Rooms to Floor Data Rooms
 		for (FRoomData* NewRoom: NewRooms)
 		{
@@ -504,7 +538,7 @@ FRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(FRoomData& ObstacleRoom,
 		// solver cannot be placed in the first room of the branch!
 		const int RandomObstacleSolverIdx = FMath::RandRange(1, PossibleObstacleSolvers.Num()-1);
 		ObstacleSolverRoom = PossibleObstacleSolvers[RandomObstacleSolverIdx];
-		ObstacleSolverRoom->ObstacleSolutionRoomId = ObstacleRoom.Id;
+		ObstacleSolverRoom->HasSolutionToObstacleInRoomIdx = ObstacleRoom.Id;
 	}
 	else
 	{
@@ -513,7 +547,7 @@ FRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(FRoomData& ObstacleRoom,
 		// If no room is marked to have an obstacle solver, choose a random room from the branch	
 		const int RandomObstacleSolverIdx = FMath::RandRange(1, FloorRoomBranch.Num()-1);
 		ObstacleSolverRoom = FloorRoomBranch[RandomObstacleSolverIdx];
-		ObstacleSolverRoom->ObstacleSolutionRoomId = ObstacleRoom.Id;
+		ObstacleSolverRoom->HasSolutionToObstacleInRoomIdx = ObstacleRoom.Id;
 	}
 
 	//Choose Best Lowest Effort Solver
@@ -530,7 +564,7 @@ FRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(FRoomData& ObstacleRoom,
 	
 	//Todo
 	ObstacleRoom.Obstacle_FromParent_Class = ObstacleData->PreferredObstacle;
-	ObstacleRoom.ObstacleSolutionRoomId = ObstacleSolverRoom->Id;
+	ObstacleRoom.HasSolutionToObstacleInRoomIdx = ObstacleSolverRoom->Id;
 
 	if (ObstacleData->RequiredSpellCast != nullptr)
 	{

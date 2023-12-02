@@ -89,7 +89,7 @@ struct FRoomData
 	FRuleProperties RoomRules;
 
 	TSubclassOf<AObstacle> Obstacle_FromParent_Class = nullptr;
-	int ObstacleSolutionRoomId = -1;
+	int HasSolutionToObstacleInRoomIdx = -1;
 
 	TArray<TSubclassOf<AActor>> RequiredAssetsToSpawn;
 	
