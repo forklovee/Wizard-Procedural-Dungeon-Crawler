@@ -262,7 +262,7 @@ bool ADungeonGenerator::BuildDungeon()
 				}
 				
 				FVector ThisRoomLocation = LastRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
-				ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
+				// ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
 				RoomData.RoomActor->SetActorLocation(ThisRoomLocation);
 				// Check this wall intersections with last room walls
 				bool bIsOverlapping = false;
@@ -290,7 +290,6 @@ bool ADungeonGenerator::BuildDungeon()
 				// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
 				
 				// good!
-				RoomData.RoomActor->BuildRoom();
 				bCorrectLocationFound = true;
 				break;
 			}

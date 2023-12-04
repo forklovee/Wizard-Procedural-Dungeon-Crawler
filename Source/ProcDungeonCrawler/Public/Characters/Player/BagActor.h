@@ -47,9 +47,6 @@ public:
 	void ClearView();
 	
 	UFUNCTION()
-	void ChangeSlotsPage(int PageOffset);
-	
-	UFUNCTION()
 	void SetPawnItems(TMap<TSubclassOf<APickupItem>, int32>& Items);
 
 	UFUNCTION()
@@ -63,17 +60,17 @@ public:
 	void OnItemRemoved(TSubclassOf<APickupItem> ItemClass, int32 NewAmount);
 protected:
 	virtual void BeginPlay() override;
-
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UBagUI> BagUIClass;
+	
 	FVector GetSlotLocation(int SlotIdx) const;
 
 private:
 	UFUNCTION()
 	void ItemTile_SpawnAndDestroyRequests(UBagItemTile* ItemTile);
-	
+
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UBagUI> BagUIClass;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* BagMesh;
 	
@@ -83,13 +80,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USceneComponent* SlotsRootComponent;
 	
-private:
 	UPROPERTY(EditAnywhere, Category="Slots")
-	int ViewSlots = 3;
+	FVector2D GridSize = FVector2D(4, 5);
 	
 	UPROPERTY(EditAnywhere, Category="Slots")
 	float SlotOffset = 25.f;
 
+private:
 	TWeakObjectPtr<UBagUI> BagUI;
 	bool bIsOpen = false;
 

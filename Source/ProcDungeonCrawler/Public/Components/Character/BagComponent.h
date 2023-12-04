@@ -78,6 +78,9 @@ public:
 	UPROPERTY(EditAnywhere, Category= "Bag")
 	TSubclassOf<ABagActor> BagActorClass;
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bag", meta=(AllowPrivateAccess = "true"))
+	FVector2D BagSize = FVector2D(4, 3);
+	
 	TWeakObjectPtr<AWizardPlayer> BagOwner;
 private:
 	UPROPERTY()

@@ -3,7 +3,6 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 
 #include "PCGComponent.h"
-#include "PCGSubsystem.h"
 #include "Components/SplineComponent.h"
 #include "Tools/SplineTools.h"
 
@@ -19,12 +18,6 @@ ADungeonRoom::ADungeonRoom()
 
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(FName("PCGComponent"));
 	PCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnLoad;
-}
-
-void ADungeonRoom::BuildRoom()
-{
-	// PCGComponent->GetSubsystem()->ScheduleComponent(PCGComponent, true, {});
-	// PCGComponent->Generate(true);
 }
 
 void ADungeonRoom::BeginPlay()

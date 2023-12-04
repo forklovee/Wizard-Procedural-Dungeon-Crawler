@@ -136,8 +136,6 @@ class PROCDUNGEONCRAWLER_API ADungeonRoom : public AActor
 
 public:
 	ADungeonRoom();
-
-	void BuildRoom();
 	
 	FVector GetRoomCenter() const;
 	

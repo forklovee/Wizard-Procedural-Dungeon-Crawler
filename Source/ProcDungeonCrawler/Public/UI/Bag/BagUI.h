@@ -25,11 +25,9 @@ public:
 	FOnNewItemTileRemoved OnNewItemTileRemoved;
 	
 	TMap<TSubclassOf<APickupItem>, UBagItemTile*> SetupBagUI(ABagActor* BagActor, TMap<TSubclassOf<APickupItem>, int32>* PawnItemsPtr);
-
+	
+	
 	TArray<APickupItem*> GetAllSpawnedActors() const;
-
-	UFUNCTION()
-	void ChangePage(int Direction);
 	
 	UBagItemTile* CreateNewItemTile(TSubclassOf<APickupItem> ItemClass, int32 Amount);
 protected:
@@ -38,13 +36,8 @@ protected:
 	
 public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	UScrollBox* ScrollBox;
-	
-	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UPanelWidget* BagItemsPanel;
 
 private:
-	int CurrentPage = 0;
-
-	TWeakObjectPtr<UBagItemTile> AddNewItemTile;
+	TArray<UBagItemTile*> BagItemTiles;
 };

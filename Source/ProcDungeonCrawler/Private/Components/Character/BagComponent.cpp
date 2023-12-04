@@ -52,7 +52,6 @@ void UBagComponent::ToggleBag()
 {
 	if (BagActor.IsValid())
 	{
-		OnPlayerLeftRightInput.RemoveDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
 		OnPlayerCursorHoverChanged.RemoveDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
 		BagActor->ClearView();
 		BagActor.Get()->Destroy();
@@ -82,7 +81,6 @@ void UBagComponent::ToggleBag()
 			BagOwner->PlayerInteraction->OnPropReleased.AddDynamic(BagActor.Get(), &ABagActor::CommitGrabbedItemAction);
 			
 			// Input events binding
-			OnPlayerLeftRightInput.AddDynamic(BagActor.Get(), &ABagActor::ChangeSlotsPage);
 			OnPlayerCursorHoverChanged.AddDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
 
 			// Item events binding

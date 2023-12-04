@@ -42,7 +42,6 @@ void ABagActor::SetupView()
 	}
 	
 	BagItemTiles = BagUI->SetupBagUI(this, PawnItems);
-	BagUI->ChangePage(0);
 }
 
 void ABagActor::ClearView()
@@ -236,7 +235,6 @@ void ABagActor::OnNewItemAdded(TSubclassOf<APickupItem> ItemClass, int32 NewAmou
 		if (UBagItemTile* NewItemTile = BagUI->CreateNewItemTile(ItemClass, NewAmount))
 		{
 			BagItemTiles.Add(ItemClass, NewItemTile);
-			BagUI->ChangePage(1000);
 		}
 		return;
 	}
@@ -273,14 +271,3 @@ void ABagActor::OnItemRemoved(TSubclassOf<APickupItem> ItemClass, int32 NewAmoun
 	ItemTile->SpawnPickupItem();
 }
 // Item management
-
-// Input
-void ABagActor::ChangeSlotsPage(int PageOffset)
-{
-	if (!BagUI.IsValid())
-	{
-		UE_LOG(LogTemp, Error, TEXT("Bag UI not valid!"))
-		return;
-	}
-	BagUI->ChangePage(PageOffset);
-}

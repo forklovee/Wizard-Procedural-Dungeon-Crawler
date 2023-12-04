@@ -11,6 +11,8 @@
 
 TMap<TSubclassOf<APickupItem>, UBagItemTile*> UBagUI::SetupBagUI(ABagActor* BagActor, TMap<TSubclassOf<APickupItem>, int32>* PawnItemsPtr)
 {
+	BagItemsPanel->ClearChildren();
+	int BagSize = BagActor->SlotsGridSize
 	TMap<TSubclassOf<APickupItem>, UBagItemTile*> BagItemTiles;
 	
 	TArray<TSubclassOf<APickupItem>> ItemClasses;
@@ -27,6 +29,7 @@ TMap<TSubclassOf<APickupItem>, UBagItemTile*> UBagUI::SetupBagUI(ABagActor* BagA
 			continue;
 		}
 		UBagItemTile* BagItemTile = CreateNewItemTile(ItemClass, *ItemAmountPtr);
+		BagItemTile->SpawnPickupItem();
 		BagItemTiles.Add(ItemClass, BagItemTile);
 	}
 
@@ -49,39 +52,39 @@ TArray<APickupItem*> UBagUI::GetAllSpawnedActors() const
 	return SpawnedActors;
 }
 
-void UBagUI::ChangePage(int Direction)
-{
-	const int MaxPage = FMath::CeilToInt32(BagItemsPanel->GetChildrenCount() / 3.0);
-	const int NewPage = FMath::Clamp(CurrentPage + Direction, 0, MaxPage - 1);
-	// Destroy all visible items
-	if (NewPage != CurrentPage)
-	{
-		const int StartIdx = CurrentPage * 3;
-		for (int Idx = StartIdx; Idx < StartIdx+3; Idx++)
-		{
-			UBagItemTile* BagItemTile = Cast<UBagItemTile>(BagItemsPanel->GetChildAt(Idx));
-			if (BagItemTile == nullptr)
-			{
-				continue;
-			}
-			BagItemTile->DestroyPickupItem();
-		}
-	}
-	
-	CurrentPage = NewPage;
-
-	// Spawn new items from page
-	const int StartIdx = CurrentPage * 3;
-	for (int Idx = StartIdx; Idx < StartIdx+3; Idx++)
-	{
-		UBagItemTile* BagItemTile = Cast<UBagItemTile>(BagItemsPanel->GetChildAt(Idx));
-		if (BagItemTile == nullptr || BagItemTile->GetPickupItemClass() == nullptr)
-		{
-			continue;
-		}
-		BagItemTile->SpawnPickupItem();
-	}
-}
+// void UBagUI::ChangePage(int Direction)
+// {
+// 	const int MaxPage = FMath::CeilToInt32(BagItemsPanel->GetChildrenCount() / 3.0);
+// 	const int NewPage = FMath::Clamp(CurrentPage + Direction, 0, MaxPage - 1);
+// 	// Destroy all visible items
+// 	if (NewPage != CurrentPage)
+// 	{
+// 		const int StartIdx = CurrentPage * 3;
+// 		for (int Idx = StartIdx; Idx < StartIdx+3; Idx++)
+// 		{
+// 			UBagItemTile* BagItemTile = Cast<UBagItemTile>(BagItemsPanel->GetChildAt(Idx));
+// 			if (BagItemTile == nullptr)
+// 			{
+// 				continue;
+// 			}
+// 			BagItemTile->DestroyPickupItem();
+// 		}
+// 	}
+// 	
+// 	CurrentPage = NewPage;
+//
+// 	// Spawn new items from page
+// 	const int StartIdx = CurrentPage * 3;
+// 	for (int Idx = StartIdx; Idx < StartIdx+3; Idx++)
+// 	{
+// 		UBagItemTile* BagItemTile = Cast<UBagItemTile>(BagItemsPanel->GetChildAt(Idx));
+// 		if (BagItemTile == nullptr || BagItemTile->GetPickupItemClass() == nullptr)
+// 		{
+// 			continue;
+// 		}
+// 		BagItemTile->SpawnPickupItem();
+// 	}
+// }
 
 UBagItemTile* UBagUI::CreateNewItemTile(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 {
