@@ -39,7 +39,7 @@ bool ALockedDoor::CanPawnUnlock(APawn* Pawn) const
 	
 	if (const AWizardPlayer* Player = Cast<AWizardPlayer>(Pawn))
 	{
-		if (Player->Bag->HasItemClass(RequiredKeyClass))
+		if (Player->Bag->GetItemByClass(RequiredKeyClass) != nullptr)
 		{
 			Player->Bag->RemoveItem(RequiredKeyClass);
 			return true;

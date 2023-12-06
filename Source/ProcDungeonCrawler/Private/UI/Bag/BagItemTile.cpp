@@ -6,72 +6,63 @@
 
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
+#include "Components/Character/BagComponent.h"
 
 void UBagItemTile::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	DefaultButtonBrush = TileButton->GetStyle().Normal;
+	HoverButtonBrush = TileButton->GetStyle().Hovered;
 }
 
-void UBagItemTile::SetCanSetNewItem(bool State)
+void UBagItemTile::UpdateVisualData()
 {
-	// If could set new item, remove the hover event bindings
-	if (bCanSetNewItem)
-	{
-		TileButton->OnHovered.RemoveDynamic(this, &UBagItemTile::OnTileHovered);
-		TileButton->OnUnhovered.RemoveDynamic(this, &UBagItemTile::OnTileUnHovered);
-	}
+	if (BagSlot == nullptr) return;
+
+	DragItemTextBlock->SetVisibility(ESlateVisibility::Collapsed);
+	SetItemAmountTextBlock(BagSlot->Amount);
+}
+
+void UBagItemTile::SetCanBeTargeted(bool bNewCanBeTargeted)
+{
+	UE_LOG(LogTemp, Display, TEXT("Set %s can be targeted"), bCanBeTargeted ? TEXT("can't") : TEXT("can"))
 	
-	bCanSetNewItem = State;
-	if (bCanSetNewItem)
+	// Update button style
+	FButtonStyle TileButtonStyle = TileButton->GetStyle();
+	TileButtonStyle.Hovered = bCanBeTargeted ? HoverButtonBrush : DefaultButtonBrush;
+	TileButton->SetStyle(TileButtonStyle);
+
+	// If no change in targetable state, return
+	if (bCanBeTargeted == bNewCanBeTargeted) return;
+	bCanBeTargeted = bNewCanBeTargeted;
+
+	// Register hover delegates
+	if (bCanBeTargeted)
 	{
 		TileButton->OnHovered.AddDynamic(this, &UBagItemTile::OnTileHovered);
 		TileButton->OnUnhovered.AddDynamic(this, &UBagItemTile::OnTileUnHovered);
 	}
-}
-
-void UBagItemTile::SpawnPickupItem()
-{
-	if (OnSpawnPickupItemRequest.IsBound())
+	else
 	{
-		OnSpawnPickupItemRequest.Broadcast(this);
+		TileButton->OnHovered.RemoveDynamic(this, &UBagItemTile::OnTileHovered);
+		TileButton->OnUnhovered.RemoveDynamic(this, &UBagItemTile::OnTileUnHovered);
 	}
 }
 
-void UBagItemTile::DestroyPickupItem()
+void UBagItemTile::SetBagSlot(FBagSlot* NewBagSlot)
 {
-	if (OnDestroyPickupItemRequest.IsBound())
-	{
-		OnDestroyPickupItemRequest.Broadcast(this);
-	}
+	BagSlot = NewBagSlot;
 }
 
-void UBagItemTile::SetPickupItemClass(TSubclassOf<APickupItem> PickupItem)
+FBagSlot* UBagItemTile::GetBagSlot() const
 {
-	bIsTargeted = false;
-	PickupItemClass = PickupItem;
-
-	if (PickupItemClass == nullptr)
-	{
-		RemoveFromParent();
-	}
-}
-
-TSubclassOf<APickupItem> UBagItemTile::GetPickupItemClass() const
-{
-	return PickupItemClass;
+	return BagSlot;
 }
 
 void UBagItemTile::SetPickupItemActor(APickupItem* PickupItem)
 {
-	// if (PickupItemActor != nullptr)
-	// {
-		// PickupItemActor->OnItemGrabbedChanged.RemoveDynamic(this, &UBagItemTile::OnItemGrabbed);
-	// }
 	PickupItemActor = PickupItem;
-	// if (PickupItem != nullptr)
-	// {
-	// 	PickupItem->OnItemGrabbedChanged.AddDynamic(this, &UBagItemTile::OnItemGrabbed);
-	// }
 }
 
 APickupItem* UBagItemTile::GetPickupItemActor() const
@@ -84,22 +75,18 @@ void UBagItemTile::SetItemAmountTextBlock(int32 ItemAmount)
 	ItemAmountTextBlock->SetText(FText::FromString(FString::FromInt(ItemAmount)));
 }
 
-int32 UBagItemTile::GetIndex() const
-{
-	return GetParent()->GetChildIndex(this);
-}
-
-bool UBagItemTile::IsTargeted() const
-{
-	return bIsTargeted;
-}
-
 void UBagItemTile::OnTileHovered()
 {
-	bIsTargeted = true;
+	if (OnHoverChanged.IsBound())
+	{
+		OnHoverChanged.Broadcast(this, true);
+	}
 }
 
 void UBagItemTile::OnTileUnHovered()
 {
-	bIsTargeted = false;
+	if (OnHoverChanged.IsBound())
+	{
+		OnHoverChanged.Broadcast(this, false);
+	}
 }

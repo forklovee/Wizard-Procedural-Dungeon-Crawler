@@ -63,13 +63,17 @@ void AWizardPlayer::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (CameraComponent->FieldOfView != TargetCameraFieldOfView)
+	if (!FMath::IsNearlyEqual(CameraComponent->FieldOfView,TargetCameraFieldOfView, 0.01))
 	{
 		CameraComponent->FieldOfView = FMath::Lerp(
 			CameraComponent->FieldOfView,
 			TargetCameraFieldOfView,
 			10.f * DeltaSeconds
 			);
+	}
+	else
+	{
+		CameraComponent->FieldOfView = TargetCameraFieldOfView;
 	}
 	
 	PlayerInteraction->UpdateInteractionTarget(CameraComponent->GetForwardVector());

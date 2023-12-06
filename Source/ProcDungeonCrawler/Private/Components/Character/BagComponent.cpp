@@ -3,6 +3,7 @@
 
 #include "Components/Character/BagComponent.h"
 
+#include "IDetailTreeNode.h"
 #include "Components/WidgetComponent.h"
 #include "Items/PickupItem.h"
 #include "Characters/Player/BagActor.h"
@@ -30,6 +31,33 @@ bool UBagComponent::IsOpen() const
 	return BagActor.IsValid();
 }
 
+
+void UBagComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (AWizardPlayer* WizardPawn = Cast<AWizardPlayer>(GetOwner()))
+	{
+		BagOwner = WizardPawn;
+	}
+
+	for (int TileIdx = 0; TileIdx < GetBagSize(); TileIdx++)
+	{
+		const int ColIdx = TileIdx % (int)BagGridSize.X;
+		const int RowIdx = FMath::FloorToInt(TileIdx / (BagGridSize.X*.1f));
+		Items.Add(FBagSlot(TileIdx, FVector2D(ColIdx, RowIdx)));
+	}
+}
+
+void UBagComponent::UpdateItemSlot(FBagSlot BagSlotOverride)
+{
+	if (BagSlotOverride.Index == -1) return;
+
+	FBagSlot& InventoryBagSlot = Items[BagSlotOverride.Index];
+	InventoryBagSlot.Amount = BagSlotOverride.Amount;
+	InventoryBagSlot.ItemClass = BagSlotOverride.ItemClass;
+}
+
 void UBagComponent::SetBagActorAttached(const bool bIsAttached)
 {
 	if (!BagActor.IsValid())
@@ -53,7 +81,9 @@ void UBagComponent::ToggleBag()
 	if (BagActor.IsValid())
 	{
 		OnPlayerCursorHoverChanged.RemoveDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
-		BagActor->ClearView();
+		BagActor->Close();
+
+		// Destroy bag actor
 		BagActor.Get()->Destroy();
 		BagActor = nullptr;
 		bPlayerCursorInBounds = false;
@@ -73,8 +103,11 @@ void UBagComponent::ToggleBag()
 		BagActor = Cast<ABagActor>(GetWorld()->SpawnActor(BagActorClass, &BagLocation, &BagRotation));
 		if (BagActor.IsValid())
 		{
-			BagActor->SetPawnItems(Items);
+			BagActor->Open(this);
 
+			BagActor->OnAddItemRequest.AddDynamic(this, &UBagComponent::UpdateItemSlot);
+			BagActor->OnRemoveItemRequest.AddDynamic(this, &UBagComponent::UpdateItemSlot);
+			
 			BagActor->OnGrabbedActorPositionOverrideRequest.AddDynamic(BagOwner->PlayerInteraction, &UPlayerInteractionRaycast::SetGrabbedActorPositionOverride);
 			BagActor->OnGrabbedActorPositionOverrideClearRequest.AddDynamic(BagOwner->PlayerInteraction, &UPlayerInteractionRaycast::ClearGrabbedActorPositionOverride);
 			BagOwner->PlayerInteraction->OnPropGrabbed.AddDynamic(BagActor.Get(), &ABagActor::BeginItemGrab);
@@ -82,14 +115,7 @@ void UBagComponent::ToggleBag()
 			
 			// Input events binding
 			OnPlayerCursorHoverChanged.AddDynamic(BagActor.Get(), &ABagActor::OnPlayerCursorHoverChanged);
-
-			// Item events binding
-			BagActor->OnAddItemRequest.AddDynamic(this, &UBagComponent::OnAddItemRequest);
-			BagActor->OnRemoveItemRequest.AddDynamic(this, &UBagComponent::OnRemoveItemRequest);
-			OnNewItemAdded.AddDynamic(BagActor.Get(), &ABagActor::OnNewItemAdded);
-			OnItemRemoved.AddDynamic(BagActor.Get(), &ABagActor::OnItemRemoved);
 		}
-		
 		
 		SetBagActorAttached(true);
 		bPlayerCursorInBounds = false;
@@ -101,14 +127,6 @@ void UBagComponent::ToggleBag()
 	}
 }
 
-void UBagComponent::SetupBagActor()
-{
-	if (BagActor.IsValid())
-	{
-		BagActor->SetupView();
-	}
-}
-
 void UBagComponent::OnLeftRightInputAction(int Direction)
 {
 	if (OnPlayerLeftRightInput.IsBound())
@@ -117,85 +135,105 @@ void UBagComponent::OnLeftRightInputAction(int Direction)
 	}
 }
 
+int UBagComponent::GetBagSize() const
+{
+	return BagGridSize.X * BagGridSize.Y;
+}
+
+FVector2D UBagComponent::GetBagGridSize() const
+{
+	return BagGridSize;
+}
+
+int UBagComponent::GetFreeTileAmount()
+{
+	int FreeTileAmount = 0;
+	for (FBagSlot& BagSlot: Items)
+	{
+		if (BagSlot.IsEmpty())
+		{
+			FreeTileAmount++;
+		}
+	}
+	return FreeTileAmount;
+}
+
+bool UBagComponent::IsBagFull()
+{
+	return GetFreeTileAmount() == 0;
+}
+
+FBagSlot* UBagComponent::GetItemByPosition(const FVector2D& TilePos)
+{
+	return Items.FindByPredicate([=](const FBagSlot& BagSlot)
+	{
+		return BagSlot.TilePos == TilePos;
+	});
+}
+
+FBagSlot* UBagComponent::GetItemByClass(const TSubclassOf<APickupItem> ItemClass){
+	return Items.FindByPredicate([=](const FBagSlot& BagSlot)
+	{
+		return BagSlot.ItemClass == ItemClass;
+	});
+}
+
+bool UBagComponent::HasItem(const TSubclassOf<APickupItem> ItemClass)
+{
+	if (GetItemByClass(ItemClass) != nullptr)
+	{
+		return true;
+	}
+	return false;
+}
+
+FBagSlot* UBagComponent::GetFirstFreeTile()
+{
+	return Items.FindByPredicate([=](const FBagSlot& BagSlot)
+	{
+		return BagSlot.ItemClass == nullptr;
+	});
+}
+
 void UBagComponent::AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 {
-	if (!HasItemClass(ItemClass))
+	FBagSlot* BagSlot = GetItemByClass(ItemClass);
+	if (BagSlot == nullptr) // New item
 	{
-		Items.Add(ItemClass, Amount);
+		BagSlot = GetFirstFreeTile();
 	}
-	else
+
+	if (BagSlot == nullptr) // No free tiles
 	{
-		Items[ItemClass] += Amount;
+		return;
 	}
+
+	BagSlot->ItemClass = ItemClass;
+	BagSlot->Amount = BagSlot->Amount == 0 ? Amount : BagSlot->Amount + Amount;
 	
 	if (OnNewItemAdded.IsBound())
 	{
-		OnNewItemAdded.Broadcast(ItemClass, Items[ItemClass]);
+		OnNewItemAdded.Broadcast(*BagSlot);
 	}
-	
-	if (OnBagContentsUpdated.IsBound()) //TODO: if its really necessary???
-	{
-		OnBagContentsUpdated.Broadcast();
-	}
-}
-
-void UBagComponent::OnAddItemRequest(TSubclassOf<APickupItem> ItemClass)
-{
-	AddItem(ItemClass);
 }
 
 void UBagComponent::RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount)
 {
-	if (!HasItemClass(ItemClass)) return;
+	FBagSlot* BagSlot = GetItemByClass(ItemClass);
+	if (BagSlot == nullptr) return;
 
-	int32 ItemAmount = GetItemAmount(ItemClass);
-	if (ItemAmount - Amount <= 0)
+	if (BagSlot->Amount - Amount <= 0)
 	{
-		Items.Remove(ItemClass);
-		ItemAmount = 0;
+		BagSlot->Clear();
 	}
 	else
 	{
-		Items[ItemClass] -= Amount;
-		ItemAmount = Items[ItemClass];
+		BagSlot->ItemClass = ItemClass;
+		BagSlot->Amount -= Amount;
 	}
 	
 	if (OnItemRemoved.IsBound())
 	{
-		OnItemRemoved.Broadcast(ItemClass, ItemAmount);
-	}
-	
-	if (OnBagContentsUpdated.IsBound()) //TODO: if its really necessary???
-	{
-		OnBagContentsUpdated.Broadcast();
-	}
-}
-
-void UBagComponent::OnRemoveItemRequest(TSubclassOf<APickupItem> ItemClass)
-{
-	RemoveItem(ItemClass);
-}
-
-bool UBagComponent::HasItemClass(TSubclassOf<APickupItem> ItemClass) const
-{
-	return Items.Contains(ItemClass);
-}
-
-int32 UBagComponent::GetItemAmount(TSubclassOf<APickupItem> ItemClass) const
-{
-	if (HasItemClass(ItemClass))
-	{
-		return Items[ItemClass];
-	}
-	return 0;
-}
-
-void UBagComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (AWizardPlayer* WizardPawn = Cast<AWizardPlayer>(GetOwner()))
-	{
-		BagOwner = WizardPawn;
+		OnItemRemoved.Broadcast(*BagSlot);
 	}
 }

@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "BagUI.generated.h"
 
+class UBagComponent;
+struct FBagSlot;
 class UBagItemTile;
 class ABagActor;
 class APickupItem;
@@ -24,20 +26,22 @@ public:
 	FOnNewItemTileCreated OnNewItemTileCreated;
 	FOnNewItemTileRemoved OnNewItemTileRemoved;
 	
-	TMap<TSubclassOf<APickupItem>, UBagItemTile*> SetupBagUI(ABagActor* BagActor, TMap<TSubclassOf<APickupItem>, int32>* PawnItemsPtr);
-	
+	TArray<UBagItemTile*>& Setup(ABagActor* BagActor, UBagComponent* BagComponent);
 	
 	TArray<APickupItem*> GetAllSpawnedActors() const;
-	
-	UBagItemTile* CreateNewItemTile(TSubclassOf<APickupItem> ItemClass, int32 Amount);
+
+private:
+	UBagItemTile* CreateNewBagTile(FBagSlot& BagSlot);
+
 protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> BagItemWidgetClass;
 	
 public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	UPanelWidget* BagItemsPanel;
+	UUniformGridPanel* BagItemsPanel;
 
 private:
 	TArray<UBagItemTile*> BagItemTiles;
+	FVector2D GridSize = FVector2D(3, 3);
 };

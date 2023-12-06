@@ -606,7 +606,7 @@ FObstacleData* ADungeonGenerator::GetObstacleData(TArray<FObstacleData*> Possibl
 		}
 		
 		// Check if Player has pickup item
-		if (ObstacleData->RequiredPickup != nullptr && !PlayerBag->HasItemClass(ObstacleData->RequiredPickup))
+		if (ObstacleData->RequiredPickup != nullptr && PlayerBag->GetItemByClass(ObstacleData->RequiredPickup) == nullptr)
 		{
 			BestObstacleData = ObstacleData;
 		}

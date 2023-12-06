@@ -4,14 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/Character/BagComponent.h"
 #include "BagItemTile.generated.h"
 
+struct FBagSlot;
 class UTextBlock;
 class UButton;
 class APickupItem;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnPickupItemRequest, UBagItemTile*, BagItemTile);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDestroyPickupItemRequest, UBagItemTile*, BagItemTile);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHoverChanged, UBagItemTile*, HoveredTile, bool, bIsHovered);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API UBagItemTile : public UUserWidget
@@ -19,26 +20,20 @@ class PROCDUNGEONCRAWLER_API UBagItemTile : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	FOnSpawnPickupItemRequest OnSpawnPickupItemRequest;
-	FOnDestroyPickupItemRequest OnDestroyPickupItemRequest;
-
-	void SetCanSetNewItem(bool State);
+	FOnHoverChanged OnHoverChanged;
 	
-	void SpawnPickupItem();
-	void DestroyPickupItem();
-	
-	void SetPickupItemClass(TSubclassOf<APickupItem> PickupItem);
-	TSubclassOf<APickupItem> GetPickupItemClass() const;
+	void UpdateVisualData();
 
+	void SetCanBeTargeted(bool bIsTargetable);
+	
+	void SetBagSlot(FBagSlot* NewBagSlot);
+	FBagSlot* GetBagSlot() const;
+	
 	void SetPickupItemActor(APickupItem* PickupItem);
 	APickupItem* GetPickupItemActor() const;
 
 	void SetItemAmountTextBlock(int32 ItemAmount);
-	
-	int32 GetIndex() const;
-	
-	UFUNCTION()
-	bool IsTargeted() const;
+
 protected:
 	virtual void NativeConstruct() override;
 
@@ -58,11 +53,15 @@ public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UTextBlock* ItemAmountTextBlock;
 
+	FBagSlot LastBagSlotData;
 	bool bItemActorGrabChangeEventConnected = false;
 protected:
-	TSubclassOf<APickupItem> PickupItemClass;
+	FSlateBrush DefaultButtonBrush;
+	FSlateBrush HoverButtonBrush;
+	
+	FBagSlot* BagSlot = nullptr;
 	TWeakObjectPtr<APickupItem> PickupItemActor;
 
-	bool bCanSetNewItem = false;
+	bool bCanBeTargeted = false;
 	bool bIsTargeted = false;
 };

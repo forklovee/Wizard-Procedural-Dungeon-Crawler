@@ -3,14 +3,53 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "IntVectorTypes.h"
 #include "Components/ActorComponent.h"
+#include "Items/PickupItem.h"
 #include "BagComponent.generated.h"
 
+class AWeapon;
 class AWizardPlayer;
 class UWidgetComponent;
 class APickupItem;
 class ABagActor;
 struct FInputActionValue;
+
+USTRUCT()
+struct FBagSlot
+{
+	GENERATED_BODY()
+
+	FBagSlot() = default;
+	
+	FBagSlot(int NewIndex, FVector2D NewTilePos)
+	{
+		Index = NewIndex;
+		TilePos = NewTilePos;
+	}
+
+	FBagSlot(TSubclassOf<APickupItem> NewItemClass, int32 NewAmount)
+	{
+		ItemClass = NewItemClass;
+		Amount = NewAmount;
+	}
+
+	void Clear()
+	{
+		ItemClass = nullptr;
+		Amount = 0;
+	}
+
+	bool IsEmpty() const
+	{
+		return ItemClass == nullptr;
+	}
+
+	int Index = -1;
+	FVector2D TilePos;
+	TSubclassOf<APickupItem> ItemClass;
+	int32 Amount = 0;
+};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBagContentsUpdated);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBagStateChanged, bool, bIsOpen);
@@ -18,8 +57,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBagStateChanged, bool, bIsOpen);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerCursorHoverChanged, bool, bIsHovered, AActor*, PlayerGrabbedItem);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerLeftRightInput, int, Direction);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewItemAdded, TSubclassOf<APickupItem>, ItemClass, int32, Amount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemRemoved, TSubclassOf<APickupItem>, ItemClass, int32, Amount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewItemAdded, FBagSlot, BagSlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, FBagSlot, BagSlot);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemAmountChanged, TSubclassOf<APickupItem>, ItemClass, int32, NewAmount);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -51,40 +90,47 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category= "Bag")
 	void ToggleBag();
-
-	UFUNCTION(BlueprintCallable, Category= "Bag")
-	void SetupBagActor();
 	
 	UFUNCTION()
 	void OnLeftRightInputAction(int Direction);
 
+	TArray<FBagSlot>& GetItems() { return Items; }
+	int GetBagSize() const;
+	FVector2D GetBagGridSize() const;
+	int GetFreeTileAmount();
+	bool IsBagFull();
+	
+	FBagSlot* GetItemByPosition(const FVector2D& TilePos);
+	FBagSlot* GetItemByClass(const TSubclassOf<APickupItem> ItemClass);
+
+	bool HasItem(const TSubclassOf<APickupItem> ItemClass);
+
+	FBagSlot* GetFirstFreeTile();
+	
 	UFUNCTION()
 	void AddItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
 	UFUNCTION()
-	void OnAddItemRequest(TSubclassOf<APickupItem> ItemClass);
-	UFUNCTION()
 	void RemoveItem(TSubclassOf<APickupItem> ItemClass, int32 Amount = 1);
-	UFUNCTION()
-	void OnRemoveItemRequest(TSubclassOf<APickupItem> Item);
-	
-	bool HasItemClass(TSubclassOf<APickupItem> ItemClass) const;
-	int32 GetItemAmount(TSubclassOf<APickupItem> ItemClass) const;
 
 protected:
 	virtual void BeginPlay() override;
-	
+
+	UFUNCTION()
+	void UpdateItemSlot(FBagSlot BagSlotOverride);
 public:
 	// Bag class
 	UPROPERTY(EditAnywhere, Category= "Bag")
 	TSubclassOf<ABagActor> BagActorClass;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bag", meta=(AllowPrivateAccess = "true"))
-	FVector2D BagSize = FVector2D(4, 3);
+	FVector2D BagGridSize = FVector2D(4, 3);
 	
 	TWeakObjectPtr<AWizardPlayer> BagOwner;
 private:
-	UPROPERTY()
-	TMap<TSubclassOf<APickupItem>, int32> Items;
+	TSubclassOf<AWeapon> WeaponClass;
+	TWeakObjectPtr<AWeapon> WeaponInHand;
+	
+	TArray<FBagSlot> Items;
 
 	// 3D UI Actor
 	TWeakObjectPtr<ABagActor> BagActor;

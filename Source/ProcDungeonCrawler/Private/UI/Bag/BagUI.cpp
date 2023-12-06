@@ -6,31 +6,19 @@
 #include "Characters/Player/BagActor.h"
 #include "Components/PanelWidget.h"
 #include "Components/UniformGridPanel.h"
+#include "Components/Character/BagComponent.h"
 #include "Items/PickupItem.h"
 #include "UI/Bag/BagItemTile.h"
 
-TMap<TSubclassOf<APickupItem>, UBagItemTile*> UBagUI::SetupBagUI(ABagActor* BagActor, TMap<TSubclassOf<APickupItem>, int32>* PawnItemsPtr)
+TArray<UBagItemTile*>& UBagUI::Setup(ABagActor* BagActor, UBagComponent* BagComponent)
 {
+	GridSize = BagComponent->GetBagGridSize();
 	BagItemsPanel->ClearChildren();
-	int BagSize = BagActor->SlotsGridSize
-	TMap<TSubclassOf<APickupItem>, UBagItemTile*> BagItemTiles;
-	
-	TArray<TSubclassOf<APickupItem>> ItemClasses;
-	if (PawnItemsPtr != nullptr)
+
+	for (FBagSlot& BagSlot: BagComponent->GetItems())
 	{
-		PawnItemsPtr->GetKeys(ItemClasses);
-	}
-	for (const TSubclassOf<APickupItem>& ItemClass : ItemClasses)
-	{
-		const int* ItemAmountPtr = PawnItemsPtr->Find(ItemClass);
-		if (ItemAmountPtr == nullptr)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to add new item tile: Item amount not found!"))
-			continue;
-		}
-		UBagItemTile* BagItemTile = CreateNewItemTile(ItemClass, *ItemAmountPtr);
-		BagItemTile->SpawnPickupItem();
-		BagItemTiles.Add(ItemClass, BagItemTile);
+		UBagItemTile* BagItemTile = CreateNewBagTile(BagSlot);
+		BagItemTiles.Add(BagItemTile);
 	}
 
 	return BagItemTiles;
@@ -52,61 +40,23 @@ TArray<APickupItem*> UBagUI::GetAllSpawnedActors() const
 	return SpawnedActors;
 }
 
-// void UBagUI::ChangePage(int Direction)
-// {
-// 	const int MaxPage = FMath::CeilToInt32(BagItemsPanel->GetChildrenCount() / 3.0);
-// 	const int NewPage = FMath::Clamp(CurrentPage + Direction, 0, MaxPage - 1);
-// 	// Destroy all visible items
-// 	if (NewPage != CurrentPage)
-// 	{
-// 		const int StartIdx = CurrentPage * 3;
-// 		for (int Idx = StartIdx; Idx < StartIdx+3; Idx++)
-// 		{
-// 			UBagItemTile* BagItemTile = Cast<UBagItemTile>(BagItemsPanel->GetChildAt(Idx));
-// 			if (BagItemTile == nullptr)
-// 			{
-// 				continue;
-// 			}
-// 			BagItemTile->DestroyPickupItem();
-// 		}
-// 	}
-// 	
-// 	CurrentPage = NewPage;
-//
-// 	// Spawn new items from page
-// 	const int StartIdx = CurrentPage * 3;
-// 	for (int Idx = StartIdx; Idx < StartIdx+3; Idx++)
-// 	{
-// 		UBagItemTile* BagItemTile = Cast<UBagItemTile>(BagItemsPanel->GetChildAt(Idx));
-// 		if (BagItemTile == nullptr || BagItemTile->GetPickupItemClass() == nullptr)
-// 		{
-// 			continue;
-// 		}
-// 		BagItemTile->SpawnPickupItem();
-// 	}
-// }
-
-UBagItemTile* UBagUI::CreateNewItemTile(TSubclassOf<APickupItem> ItemClass, int32 Amount)
+UBagItemTile* UBagUI::CreateNewBagTile(FBagSlot& BagSlot)
 {
 	UBagItemTile* BagItemTile = CreateWidget<UBagItemTile>(GetWorld(), BagItemWidgetClass);
-	BagItemTile->SetPickupItemClass(ItemClass);
-	BagItemTile->SetItemAmountTextBlock(Amount);
+	BagItemTile->SetBagSlot(&BagSlot);
 
-	if (UUniformGridPanel* Grid = Cast<UUniformGridPanel>(BagItemsPanel))
-	{
-		const int ColIdx = BagItemsPanel->GetChildrenCount() % 3;
-		const int RowIdx = FMath::FloorToInt(BagItemsPanel->GetChildrenCount() / 3.0);
-		Grid->AddChildToUniformGrid(BagItemsPanel, RowIdx, ColIdx);		
-	}
-	else
-	{
-		BagItemsPanel->AddChild(BagItemTile);
-	}
+	const int ColIdx = BagSlot.Index % (int)GridSize.X;
+	const int RowIdx = BagSlot.Index / (GridSize.Y+1.0f);
+
+	BagItemsPanel->AddChildToUniformGrid(BagItemTile, RowIdx, ColIdx);		
+	BagItemTile->UpdateVisualData();
+
+	UE_LOG(LogTemp, Display, TEXT("%i Added: %i, %i"), BagItemsPanel->GetChildrenCount(), ColIdx, RowIdx);
 	
-	if (OnNewItemTileCreated.IsBound())
-	{
-		OnNewItemTileCreated.Broadcast(BagItemTile);
-	}
+	// if (OnNewItemTileCreated.IsBound())
+	// {
+	// 	OnNewItemTileCreated.Broadcast(BagItemTile);
+	// }
 	
 	return BagItemTile;
 }
