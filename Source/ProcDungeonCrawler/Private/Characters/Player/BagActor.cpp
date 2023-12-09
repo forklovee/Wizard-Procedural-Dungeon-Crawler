@@ -67,10 +67,14 @@ FVector ABagActor::GetSlotLocation(const FBagSlot* BagSlot) const
 	{
 		return FVector::ZeroVector;
 	}
-	const float ItemActorsOffset = 23.0f;
+
+	UE_LOG(LogTemp, Display, TEXT("(%f, %f)"), BagSlot->TilePos.X, BagSlot->TilePos.Y)
+	
+	const float ItemActorsOffset = 25.0f;
 	return BagWidget->GetComponentLocation() -
 		(BagWidget->GetForwardVector() * 50.f) +
-		(FVector::UpVector * GridSize.Y * .5f * -12.f) +
+		(FVector::UpVector * GridSize.Y * .5f * -10.f) +
+		-(FVector::UpVector * 5.f * BagSlot->TilePos.Y) +
 		(BagWidget->GetRightVector() * GridSize.X * .5f * 18.f) +
 		-(BagWidget->GetRightVector() * ItemActorsOffset * BagSlot->TilePos.X);
 }
@@ -97,35 +101,25 @@ void ABagActor::OnTargetTileChanged(UBagItemTile* HoveredTile, bool bIsHovered)
 		return;
 	}
 
-	UE_LOG(LogTemp, Display, TEXT("Hovered Tile: %s"), *HoveredTile->GetName())
-	
-	if (HoveredItemTile == HoveredTile && !bIsHovered)
-	{
-		HoveredItemTile = nullptr;
-		return;
-	}
+	UE_LOG(LogTemp, Display, TEXT("%i Hovered Tile: %s"), bIsHovered, *HoveredTile->GetName())
 
 	FBagSlot* HoveredBagSlot = HoveredTile->GetBagSlot();
 	if (bIsHovered)
 	{
+		HoveredTile->LastBagSlotData = *HoveredBagSlot;
 		HoveredBagSlot->ItemClass = GrabbedItemData.ItemClass;
 		HoveredBagSlot->Amount = GrabbedItemData.Amount;
-		HoveredTile->UpdateVisualData();
+		HoveredItemTile = HoveredTile;
+		HoveredItemTile->UpdateVisualData();
 	}
 	else
 	{
-		if (LastHoveredItemTile.IsValid())
-		{
-			FBagSlot* HoveredBagSlot_LastItemTile = LastHoveredItemTile->GetBagSlot();
-			HoveredBagSlot_LastItemTile->ItemClass = LastHoveredItemTile->LastBagSlotData.ItemClass;
-			HoveredBagSlot_LastItemTile->Amount = LastHoveredItemTile->LastBagSlotData.Amount;
-			LastHoveredItemTile->UpdateVisualData();
-		}
+		FBagSlot* HoveredBagSlot_LastItemTile = HoveredTile->GetBagSlot();
+		HoveredBagSlot_LastItemTile->ItemClass = HoveredTile->LastBagSlotData.ItemClass;
+		HoveredBagSlot_LastItemTile->Amount = HoveredTile->LastBagSlotData.Amount;
 		LastHoveredItemTile = HoveredTile;
+		LastHoveredItemTile->UpdateVisualData();
 	}
-	
-	LastHoveredItemTile = HoveredItemTile;
-	HoveredItemTile = HoveredTile;
 }
 
 // Item actors management
@@ -214,14 +208,14 @@ void ABagActor::BeginItemGrab(UPrimitiveComponent* GrabComponent, AActor* Actor)
 	}
 
 	// Grabbed item out of inventory
-	if (Bag->HasItem(ItemClass))
-	{
-		UBagItemTile* GrabbedItemTile = GetBagItemTileByItemClass(ItemClass);
-		GrabbedItemData = *GrabbedItemTile->GetBagSlot();
-		
-		Bag->RemoveItem(ItemClass, GrabbedItemData.Amount);
-		GrabbedItemTile->UpdateVisualData();
-	}
+	// if (Bag->HasItem(ItemClass))
+	// {
+	// 	UBagItemTile* GrabbedItemTile = GetBagItemTileByItemClass(ItemClass);
+	// 	GrabbedItemData = *GrabbedItemTile->GetBagSlot();
+	// 	
+	// 	Bag->RemoveItem(ItemClass, GrabbedItemData.Amount);
+	// 	GrabbedItemTile->UpdateVisualData();
+	// }
 	
 	GrabbedItemActor = Cast<APickupItem>(Actor);
 }
@@ -273,6 +267,7 @@ void ABagActor::CommitGrabbedItemAction(UPrimitiveComponent* GrabComponent, AAct
 		BagItemTile->OnHoverChanged.RemoveDynamic(this, &ABagActor::OnTargetTileChanged);
 	}
 	HoveredItemTile = nullptr;
+	LastHoveredItemTile = nullptr;
 	
 	// if (!GrabbedItemActor.IsValid())
 	// {
