@@ -1,10 +1,10 @@
 {
     "Version": "1.2",
     "Data": {
-        "Source": "c:\\users\\porlo\\documents\\unreal projects\\procdungeoncrawler 5.3 - 2\\plugins\\developer\\riderlink\\source\\rd\\thirdparty\\thirdparty.cpp",
+        "Source": "c:\\users\\porlo\\documents\\unreal projects\\wizard-procedural-dungeon-crawler\\plugins\\developer\\riderlink\\source\\rd\\thirdparty\\thirdparty.cpp",
         "ProvidedModule": "",
         "Includes": [
-            "c:\\users\\porlo\\documents\\unreal projects\\procdungeoncrawler 5.3 - 2\\plugins\\developer\\riderlink\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\rd\\definitions.h"
+            "c:\\users\\porlo\\documents\\unreal projects\\wizard-procedural-dungeon-crawler\\plugins\\developer\\riderlink\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\rd\\definitions.h"
         ],
         "ImportedModules": [],
         "ImportedHeaderUnits": []

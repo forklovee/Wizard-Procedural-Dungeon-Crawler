@@ -8,6 +8,7 @@
 #include "Interface/PropInteractionInterface.h"
 #include "Door.generated.h"
 
+class UBoxComponent;
 class UPhysicsConstraintComponent;
 class UActorSequenceComponent;
 
@@ -51,7 +52,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
 	UStaticMeshComponent* FrameMesh;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	UBoxComponent* PCGDoorMarker;
 private:
 	int OpenDirection = 0;
 	int LastOpenDirection = 0;

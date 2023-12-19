@@ -6,6 +6,6 @@
 /NAME:"UnrealEditor-RiderShaderInfo.dll"
 /IGNORE:4221
 /NODEFAULTLIB
-"C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\Module.RiderShaderInfo.cpp.obj"
-"C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\Default.rc2.res"
-/OUT:"C:\Users\porlo\Documents\Unreal Projects\ProcDungeonCrawler 5.3 - 2\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\UnrealEditor-RiderShaderInfo.lib"
+"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\Module.RiderShaderInfo.cpp.obj"
+"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\Default.rc2.res"
+/OUT:"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderShaderInfo\UnrealEditor-RiderShaderInfo.lib"

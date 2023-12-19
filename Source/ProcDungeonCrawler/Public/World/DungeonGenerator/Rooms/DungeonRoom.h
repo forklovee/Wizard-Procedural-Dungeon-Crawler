@@ -7,7 +7,7 @@
 #include "DungeonRoom.generated.h"
 
 class USplineComponent;
-class UPCGComponent;
+// class UPCGComponent;
 
 USTRUCT()
 struct FWallRange
@@ -157,8 +157,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	USplineComponent* RoomBaseSpline;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
-	UPCGComponent* PCGComponent;
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	// UPCGComponent* PCGComponent;
 	
 private:
 	FTimerHandle BuildTimerHandle;

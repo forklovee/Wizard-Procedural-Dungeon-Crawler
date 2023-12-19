@@ -1,6 +1,5 @@
 #include "World/DungeonGenerator/Generators/DungeonGenerator.h"
 
-#include "PCGComponent.h"
 #include "Characters/Player/WizardPlayer.h"
 #include "Characters/Wizard/WizardCharacter.h"
 #include "Components/Character/BagComponent.h"
@@ -10,14 +9,10 @@
 #include "World/DungeonGenerator/DataAssets/DungeonRoomDictionary.h"
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 
-#include "PCG/Public/PCGGraph.h"
-#include "PCG/Public/PCGVolume.h"
 #include "Spell/RuneCast.h"
 #include "Spell/SpellCast.h"
-#include "Tools/SplineTools.h"
 #include "World/DungeonGenerator/Actors/Obstacles/Obstacle.h"
 #include "World/DungeonGenerator/Path/WalkthroughPath.h"
-#include "World/DungeonGenerator/Rooms/RoomPCGGlobalVolume.h"
 
 ADungeonGenerator::ADungeonGenerator()
 {

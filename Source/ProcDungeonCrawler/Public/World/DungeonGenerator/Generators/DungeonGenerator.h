@@ -15,7 +15,7 @@ class AWizardPlayer;
 class ADungeonObstacle;
 class AWalkthroughPath;
 class ARoomPCGGlobalVolume;
-class UPCGGraph;
+// class UPCGGraph;
 struct FWallRange;
 class UDungeonRoomDictionary;
 class UDungeonConfig;

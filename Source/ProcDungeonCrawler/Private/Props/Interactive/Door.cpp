@@ -1,5 +1,7 @@
 
 #include "Props/Interactive/Door.h"
+
+#include "Components/BoxComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 ADoor::ADoor()
@@ -21,6 +23,11 @@ ADoor::ADoor()
 	DoorConstraint->SetConstrainedComponents(DoorMesh, FName("None"), FrameMesh, FName("None"));
 	
 	DoorOpenFinalYaw = 150.f;
+
+	PCGDoorMarker = CreateDefaultSubobject<UBoxComponent>(FName("PCGMarker"));
+	PCGDoorMarker->SetupAttachment(RootComponent);
+	PCGDoorMarker->SetCollisionProfileName(FName("NoCollision"));
+	PCGDoorMarker->ComponentTags.Add(FName("DoorMarker"));
 }
 
 FText ADoor::GetPropNameText_Implementation()

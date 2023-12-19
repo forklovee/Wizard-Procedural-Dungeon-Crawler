@@ -24,11 +24,11 @@
 			]
 		},
 		{
-			"Name": "PCG",
+			"Name": "NiagaraFluids",
 			"Enabled": true
 		},
 		{
-			"Name": "NiagaraFluids",
+			"Name": "PCG",
 			"Enabled": true
 		}
 	]
