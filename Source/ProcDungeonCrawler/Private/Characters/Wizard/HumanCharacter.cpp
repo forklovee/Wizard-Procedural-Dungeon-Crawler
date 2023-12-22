@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Characters/Player/WizardPlayerController.h"
 #include "Characters/Wizard/WizardCharacter.h"
 
 #include "Components/Character/PawnStats.h"
@@ -40,6 +41,21 @@ void AWizardCharacter::BeginPlay()
 
 	SpellBook->OnValidRuneSequenceCasted.AddDynamic(this, &AWizardCharacter::PrepareSpell);
 	SpellBook->OnSpellCasted.AddDynamic(WizardStats, &UPawnStats::UseMana);
+
+	if (AWizardPlayerController* PlayerController = Cast<AWizardPlayerController>(GetController()))
+	{
+		PlayerController->OnMoveAroundInput.AddDynamic(this, &AWizardCharacter::MoveAround);
+		PlayerController->OnLookAroundInput.AddDynamic(this, &AWizardCharacter::LookAround);
+
+		PlayerController->OnSprintToggled.AddDynamic(this, &AWizardCharacter::SetSprinting);
+		PlayerController->OnCrouchToggled.AddDynamic(this, &AWizardCharacter::SetCrouch);
+		PlayerController->OnJumpActionInput.AddDynamic(this, &AWizardCharacter::Jump);
+
+		PlayerController->OnPrimaryHandActionInput.AddDynamic(this, &AWizardCharacter::UseWeapon);
+		PlayerController->OnInteractActionInput.AddDynamic(this, &AWizardCharacter::Interact);
+		
+		PlayerController->OnRuneSlotSelected.AddDynamic(SpellBook, &USpellbookComponent::CastRuneOfIdx);
+	}
 }
 
 // Movement
@@ -55,8 +71,8 @@ void AWizardCharacter::LookAround(const FVector2D& LookOffset)
 {
 	if (Controller == nullptr) return;
 
+	AddControllerPitchInput(LookOffset.Y);
 	AddControllerYawInput(LookOffset.X);
-	AddControllerPitchInput(-LookOffset.Y);
 }
 
 void AWizardCharacter::SetSprinting(const bool bNewIsSprinting)

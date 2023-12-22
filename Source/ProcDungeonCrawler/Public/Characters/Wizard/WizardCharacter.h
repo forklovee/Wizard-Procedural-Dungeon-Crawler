@@ -24,8 +24,15 @@ protected:
 	virtual void BeginPlay() override;
 	
 	// Interaction
-	void PrimaryHandAction();
+	void UseWeapon();
+	void UseItem(TSubclassOf<APickupItem> Item, int ItemAmount);
+	void Interact();
+	void Interact(TWeakObjectPtr<AActor> Actor);
 
+	void Grab();
+	void Grab(TWeakObjectPtr<APickupItem> PickupItem);
+	void Release();
+	
 	// Movement
 	void MoveAround(const FVector2D& MoveOffset);
 	void LookAround(const FVector2D& LookOffset);

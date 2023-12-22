@@ -11,21 +11,6 @@ UPawnStats::UPawnStats()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UPawnStats::UpdateUIStats()
-{
-	Health = StartingHealth;
-	Mana = StartingMana;
-	
-	if (OnHeal.IsBound())
-	{
-		OnHeal.Broadcast(Health, 0.f);
-	}
-	if (OnManaUsage.IsBound())
-	{
-		OnManaUsage.Broadcast(Mana, 0.f);
-	}
-}
-
 void UPawnStats::BeginPlay()
 {
 	Super::BeginPlay();

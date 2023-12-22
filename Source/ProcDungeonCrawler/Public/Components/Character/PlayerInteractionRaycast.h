@@ -58,14 +58,14 @@ public:
 	bool Interact();
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	UPrimitiveComponent* Grab();
+	void GrabInteractionTarget();
 	bool CanGrabTarget() const;
 	FTransform GetGrabTargetTransform() const;
 	bool IsGrabbingItem() const;
 	AActor* GetGrabbedActor() const;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	bool Release();
+	void Release();
 	
 	UFUNCTION()
 	void SetGrabbedActorPositionOverride(FVector NewPosition);

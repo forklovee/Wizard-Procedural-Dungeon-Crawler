@@ -42,9 +42,11 @@ URuneCast* URuneCastSlot::UseRune()
 {
 	if (IsEmpty()) return nullptr;
 
-	if (OnRuneUsed.IsBound()) {
-		OnRuneUsed.Broadcast(RuneIndex);
+	// Broadcasts to trigger 
+	if (OnTriggerSlotAnimation.IsBound()) {
+		OnTriggerSlotAnimation.Broadcast(RuneIndex);
 	}
+	
 	return RuneCast;
 }
 

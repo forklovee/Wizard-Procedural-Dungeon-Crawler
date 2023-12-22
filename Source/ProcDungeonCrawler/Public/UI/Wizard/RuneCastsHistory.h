@@ -16,6 +16,9 @@ class PROCDUNGEONCRAWLER_API URuneCastsHistory : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION()
+	void UpdateRuneCastHistory(const TArray<URuneCast*>& CastedRunes);
+	
+	UFUNCTION()
 	void AddRuneToCastHistory(const URuneCast* RuneCast) const;
 	UFUNCTION()
 	void ClearCastHistory();

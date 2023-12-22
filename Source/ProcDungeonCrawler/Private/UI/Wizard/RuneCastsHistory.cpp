@@ -7,6 +7,11 @@
 #include "Spell/RuneCast.h"
 #include "UI/Wizard/RuneIcon.h"
 
+void URuneCastsHistory::UpdateRuneCastHistory(const TArray<URuneCast*>& CastedRunes)
+{
+	
+}
+
 void URuneCastsHistory::AddRuneToCastHistory(const URuneCast* RuneCast) const
 {
 	if(URuneIcon* RuneIcon = WidgetTree->ConstructWidget<URuneIcon>(URuneIcon::StaticClass(), TEXT("aaa")))

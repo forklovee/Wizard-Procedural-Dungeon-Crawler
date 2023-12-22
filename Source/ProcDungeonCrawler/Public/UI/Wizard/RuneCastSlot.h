@@ -12,7 +12,7 @@ class UImage;
 class AWizardCharacter;
 class URuneCast;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneUsed, int, RuneIdx);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTriggerSlotAnimation, int, RuneIdx);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API URuneCastSlot : public UUserWidget
@@ -21,7 +21,7 @@ class PROCDUNGEONCRAWLER_API URuneCastSlot : public UUserWidget
 
 public:
 	UPROPERTY(BlueprintAssignable)
-	FOnRuneUsed OnRuneUsed;
+	FOnTriggerSlotAnimation OnTriggerSlotAnimation;
 
 	UFUNCTION(BlueprintCallable)
 	void SetRuneData(URuneCast* RuneCast);

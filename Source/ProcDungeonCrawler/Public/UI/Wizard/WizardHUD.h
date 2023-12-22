@@ -30,7 +30,7 @@ public:
 	FOnPlayerManaUsage_ManaUpdate OnPlayerManaUsage_ManaUpdate;
 	
 	UFUNCTION()
-	void UseRuneOfIdx(int Idx);
+	void OnRuneCasted(int RuneIdx, URuneCast* RuneCast, TArray<URuneCast*>& CastedRunes);
 
 	bool IsSlotEmpty(int SlotIdx) const;
 	UFUNCTION()

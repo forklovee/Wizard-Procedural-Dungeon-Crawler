@@ -26,15 +26,14 @@ void UWizardHUD::NativeConstruct()
 	}
 }
 
-void UWizardHUD::UseRuneOfIdx(int Idx)
+void UWizardHUD::OnRuneCasted(int RuneIdx, URuneCast* RuneCast, TArray<URuneCast*>& CastedRunes)
 {
-	if (RuneSlots == nullptr || Idx < 0 || Idx > RuneCastSlots.Num()-1) return;
+	if (RuneSlots == nullptr || RuneIdx < 0 || RuneIdx > RuneCastSlots.Num()-1) return;
 
-	URuneCastSlot* RuneCastSlot = RuneCastSlots[Idx];
-	if (URuneCast* RuneCast = RuneCastSlot->UseRune())
-	{
-		CastedRuneHistory->AddRuneToCastHistory(RuneCast);
-	}
+	URuneCastSlot* RuneCastSlot = RuneCastSlots[RuneIdx];
+	RuneCastSlot->UseRune();
+	
+	CastedRuneHistory->UpdateRuneCastHistory(CastedRunes);
 }
 
 bool UWizardHUD::IsSlotEmpty(int SlotIdx) const
