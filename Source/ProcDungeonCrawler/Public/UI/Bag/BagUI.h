@@ -6,11 +6,10 @@
 #include "Blueprint/UserWidget.h"
 #include "BagUI.generated.h"
 
-class UBagComponent;
-struct FBagSlot;
+class UInventoryComponent;
+struct FInvSlot;
 class UBagItemTile;
-class ABagActor;
-class APickupItem;
+class AItem;
 class UScrollBox;
 class UUniformGridPanel;
 
@@ -26,12 +25,12 @@ public:
 	FOnNewItemTileCreated OnNewItemTileCreated;
 	FOnNewItemTileRemoved OnNewItemTileRemoved;
 	
-	TArray<UBagItemTile*>& Setup(ABagActor* BagActor, UBagComponent* BagComponent);
+	TArray<UBagItemTile*>& Setup(UInventoryComponent* BagComponent);
 	
-	TArray<APickupItem*> GetAllSpawnedActors() const;
+	TArray<AItem*> GetAllSpawnedActors() const;
 
 private:
-	UBagItemTile* CreateNewBagTile(FBagSlot& BagSlot);
+	UBagItemTile* CreateNewBagTile(FInvSlot& BagSlot);
 
 protected:
 	UPROPERTY(EditAnywhere)

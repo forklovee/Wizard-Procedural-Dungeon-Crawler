@@ -4,13 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Spell/RuneCast.h"
+#include "..\..\Spell\Rune.h"
 #include "RuneCastSlot.generated.h"
 
 class UTextBlock;
 class UImage;
-class AWizardCharacter;
-class URuneCast;
+class URune;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTriggerSlotAnimation, int, RuneIdx);
 
@@ -24,12 +23,12 @@ public:
 	FOnTriggerSlotAnimation OnTriggerSlotAnimation;
 
 	UFUNCTION(BlueprintCallable)
-	void SetRuneData(URuneCast* RuneCast);
+	void SetRuneData(URune* RuneCast);
 	void ClearRuneData();
 	void SetSlotIndex(int Index);
 
 	UFUNCTION(BlueprintCallable)
-	URuneCast* UseRune();
+	URune* UseRune();
 	
 	UFUNCTION(BlueprintCallable)
 	bool IsEmpty();
@@ -46,7 +45,7 @@ public:
 
 private:
 	UPROPERTY()
-	URuneCast* RuneCast;
+	URune* RuneCast;
 	
 	TSoftObjectPtr<UTexture2D> RuneIcon;
 	FText RuneName;

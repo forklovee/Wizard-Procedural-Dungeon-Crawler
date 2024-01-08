@@ -4,15 +4,15 @@
 #include "UI/Wizard/RuneCastsHistory.h"
 
 #include "Blueprint/WidgetTree.h"
-#include "Spell/RuneCast.h"
+#include "..\..\..\Public\Spell\Rune.h"
 #include "UI/Wizard/RuneIcon.h"
 
-void URuneCastsHistory::UpdateRuneCastHistory(const TArray<URuneCast*>& CastedRunes)
+void URuneCastsHistory::UpdateRuneCastHistory(const TArray<URune*>& CastedRunes)
 {
 	
 }
 
-void URuneCastsHistory::AddRuneToCastHistory(const URuneCast* RuneCast) const
+void URuneCastsHistory::AddRuneToCastHistory(const URune* RuneCast) const
 {
 	if(URuneIcon* RuneIcon = WidgetTree->ConstructWidget<URuneIcon>(URuneIcon::StaticClass(), TEXT("aaa")))
 	{

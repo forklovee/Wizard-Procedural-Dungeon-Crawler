@@ -1,11 +1,11 @@
 
-#include "..\..\..\Public\UI\Wizard\RuneCastSlot.h"
+#include "UI/Wizard/RuneCastSlot.h"
 
+#include "Spell/Rune.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
-#include "Spell/RuneCast.h"
 
-void URuneCastSlot::SetRuneData(URuneCast* NewRuneCast)
+void URuneCastSlot::SetRuneData(URune* NewRuneCast)
 {
 	RuneCast = NewRuneCast;
 	RuneIcon = RuneCast->RuneIcon;
@@ -38,7 +38,7 @@ void URuneCastSlot::SetSlotIndex(int Index)
 	RuneNameTextBlock->SetText(RuneName);
 }
 
-URuneCast* URuneCastSlot::UseRune()
+URune* URuneCastSlot::UseRune()
 {
 	if (IsEmpty()) return nullptr;
 

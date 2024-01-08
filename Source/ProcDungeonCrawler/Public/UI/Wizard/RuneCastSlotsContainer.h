@@ -7,7 +7,7 @@
 #include "RuneCastSlotsContainer.generated.h"
 
 class UHorizontalBox;
-class URuneCast;
+class URune;
 class URuneCastSlot;
 /**
  * 
@@ -21,7 +21,7 @@ public:
 	virtual void PostLoad() override;
 	
 	UFUNCTION(BlueprintCallable)
-	void AddNewRune(URuneCast* RuneCast);
+	void AddNewRune(URune* RuneCast);
 	
 	UFUNCTION(BlueprintCallable)
 	void RegisterAllRunCastSlots();

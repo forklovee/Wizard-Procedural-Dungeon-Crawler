@@ -1,16 +1,14 @@
 #include "World/DungeonGenerator/Generators/DungeonGenerator.h"
 
-#include "Characters/Player/WizardPlayer.h"
-#include "Characters/Wizard/WizardCharacter.h"
-#include "Components/Character/BagComponent.h"
+#include "Characters/Human/Player/PlayerPawn.h"
+#include "Components/Character/InventoryComponent.h"
 #include "Components/Character/SpellbookComponent.h"
-#include "Items/PickupItem.h"
+#include "Spell/Rune.h"
+#include "Spell/Spell.h"
 #include "World/DungeonGenerator/DataAssets/DungeonConfig.h"
 #include "World/DungeonGenerator/DataAssets/DungeonRoomDictionary.h"
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 
-#include "Spell/RuneCast.h"
-#include "Spell/SpellCast.h"
 #include "World/DungeonGenerator/Actors/Obstacles/Obstacle.h"
 #include "World/DungeonGenerator/Path/WalkthroughPath.h"
 
@@ -24,7 +22,7 @@ void ADungeonGenerator::BeginPlay()
 	Super::BeginPlay();
 }
 
-bool ADungeonGenerator::GenerateDungeon(AWizardPlayer* Player)
+bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
 {
 	if (Player == nullptr)
 	{
@@ -539,10 +537,10 @@ FRoomData* ADungeonGenerator::SetSolverAndObstacleRoom(FRoomData& ObstacleRoom,
 
 	if (ObstacleData->RequiredSpellCast != nullptr)
 	{
-		TArray<URuneCast*> MissingRunes;
+		TArray<URune*> MissingRunes;
 		if (!PlayerSpellBook->CanSpellBeCasted(ObstacleData->RequiredSpellCast, MissingRunes))
 		{
-			for (const URuneCast* RuneCast: MissingRunes)
+			for (const URune* RuneCast: MissingRunes)
 			{
 				ObstacleSolverRoom->RequiredAssetsToSpawn.Add(RuneCast->GetClass());
 			}
@@ -587,7 +585,7 @@ FObstacleData* ADungeonGenerator::GetObstacleData(TArray<FObstacleData*> Possibl
 	{
 		// Prioritize Obstacle Solver with SpellCast!
 		// Check if Player has needed runes
-		TArray<URuneCast*> MissingRunes;
+		TArray<URune*> MissingRunes;
 		if (ObstacleData->RequiredSpellCast != nullptr &&
 			!PlayerSpellBook->CanSpellBeCasted(ObstacleData->RequiredSpellCast, MissingRunes)
 			)
@@ -600,11 +598,11 @@ FObstacleData* ADungeonGenerator::GetObstacleData(TArray<FObstacleData*> Possibl
 			}
 		}
 		
-		// Check if Player has pickup item
-		if (ObstacleData->RequiredPickup != nullptr && PlayerBag->GetItemByClass(ObstacleData->RequiredPickup) == nullptr)
-		{
-			BestObstacleData = ObstacleData;
-		}
+		// Check if Player has pickup item TODO: Fix this shit
+		// if (ObstacleData->RequiredPickup != nullptr && PlayerBag->GetItemByClass(ObstacleData->RequiredPickup) == nullptr)
+		// {
+		// 	BestObstacleData = ObstacleData;
+		// }
 	}
 
 	// If no obstacle solver was found, choose random one

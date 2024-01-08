@@ -2,11 +2,11 @@
 
 
 #include "UI/Bag/BagItemTile.h"
-#include "Items/PickupItem.h"
+#include "..\..\..\Public\Items\Item.h"
 
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
-#include "Components/Character/BagComponent.h"
+#include "..\..\..\Public\Components\Character\InventoryComponent.h"
 
 void UBagItemTile::NativeConstruct()
 {
@@ -50,22 +50,22 @@ void UBagItemTile::SetCanBeTargeted(bool bNewCanBeTargeted)
 	}
 }
 
-void UBagItemTile::SetBagSlot(FBagSlot* NewBagSlot)
+void UBagItemTile::SetBagSlot(FInvSlot* NewBagSlot)
 {
 	BagSlot = NewBagSlot;
 }
 
-FBagSlot* UBagItemTile::GetBagSlot() const
+FInvSlot* UBagItemTile::GetBagSlot() const
 {
 	return BagSlot;
 }
 
-void UBagItemTile::SetPickupItemActor(APickupItem* PickupItem)
+void UBagItemTile::SetPickupItemActor(AItem* PickupItem)
 {
 	PickupItemActor = PickupItem;
 }
 
-APickupItem* UBagItemTile::GetPickupItemActor() const
+AItem* UBagItemTile::GetPickupItemActor() const
 {
 	return PickupItemActor.Get();
 }

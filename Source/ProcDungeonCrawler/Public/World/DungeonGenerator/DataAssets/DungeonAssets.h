@@ -5,8 +5,8 @@
 #include "DungeonAssets.generated.h"
 
 class AObstacle;
-class APickupItem;
-class ASpellCast;
+class AItem;
+class ASpell;
 
 UENUM(BlueprintType)
 enum class EAssetType: uint8
@@ -140,11 +140,11 @@ struct FObstacleData: public FTableRowBase
 	TSubclassOf<AObstacle> PreferredObstacle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<APickupItem> RequiredPickup;
+	TSubclassOf<AItem> RequiredPickup;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="RequiredPickup == nullptr"))
 	FName SolverRequiredTag;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<ASpellCast> RequiredSpellCast;
+	TSubclassOf<ASpell> RequiredSpellCast;
 };

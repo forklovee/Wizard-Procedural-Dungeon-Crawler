@@ -6,27 +6,15 @@
 #include "Components/SceneComponent.h"
 #include "PlayerInteractionRaycast.generated.h"
 
+class AItem;
 class AWeapon;
-class URuneCast;
-class APickupItem;
+class URune;
 
-UENUM(BlueprintType)
-enum class EInteractionType
-{
-	E_None = 0,
-	E_Pickup = 1 << 1,
-	E_Grab = 1 << 2,
-	E_Interact = 1 << 3,
-};
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnNewInteractionTarget, FText, ActorName, EInteractionType, OnClickInteractionType, bool, bCanBeGrabbed);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnNewInteractionTarget, FText, ActorName, FName, InteractionType, bool, bCanBeGrabbed);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponPickedUp, TSubclassOf<AWeapon>, WeaponClass);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, TSubclassOf<APickupItem>, ItemClass, int32, Amount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRunePickedUp, URuneCast*, RuneCast);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPropGrabbed, UPrimitiveComponent*, GrabComponent, AActor*, Actor);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPropReleased, UPrimitiveComponent*, GrabComponent, AActor*, Actor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, TSubclassOf<AItem>, ItemClass, int32, Amount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRunePickedUp, URune*, RuneCast);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UPlayerInteractionRaycast : public USceneComponent
@@ -44,11 +32,6 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnWeaponPickedUp OnWeaponPickedUp;
 	
-	UPROPERTY(BlueprintAssignable)
-	FOnPropGrabbed OnPropGrabbed;
-	UPROPERTY(BlueprintAssignable)
-	FOnPropReleased OnPropReleased;
-	
 	UPlayerInteractionRaycast();
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
@@ -57,27 +40,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	bool Interact();
 
-	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	void GrabInteractionTarget();
-	bool CanGrabTarget() const;
-	FTransform GetGrabTargetTransform() const;
-	bool IsGrabbingItem() const;
-	AActor* GetGrabbedActor() const;
-	
-	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	void Release();
-	
-	UFUNCTION()
-	void SetGrabbedActorPositionOverride(FVector NewPosition);
-	UFUNCTION()
-	void ClearGrabbedActorPositionOverride();
 private:
 	void CastRaycast(FHitResult& OutHitResult) const;
 	void ClearInteractionTarget() const;
 	
-	bool PickUpItem(AActor* Target) const;
-	
-	EInteractionType GetOnClickInteractionType(const AActor* Actor) const;
+	bool PickUpItem(AItem* Item) const;
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")

@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/Character/BagComponent.h"
+#include "..\..\Components\Character\InventoryComponent.h"
 #include "BagItemTile.generated.h"
 
-struct FBagSlot;
+struct FInvSlot;
 class UTextBlock;
 class UButton;
-class APickupItem;
+class AItem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHoverChanged, UBagItemTile*, HoveredTile, bool, bIsHovered);
 
@@ -26,11 +26,11 @@ public:
 
 	void SetCanBeTargeted(bool bIsTargetable);
 	
-	void SetBagSlot(FBagSlot* NewBagSlot);
-	FBagSlot* GetBagSlot() const;
+	void SetBagSlot(FInvSlot* NewBagSlot);
+	FInvSlot* GetBagSlot() const;
 	
-	void SetPickupItemActor(APickupItem* PickupItem);
-	APickupItem* GetPickupItemActor() const;
+	void SetPickupItemActor(AItem* PickupItem);
+	AItem* GetPickupItemActor() const;
 
 	void SetItemAmountTextBlock(int32 ItemAmount);
 
@@ -53,14 +53,14 @@ public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UTextBlock* ItemAmountTextBlock;
 
-	FBagSlot LastBagSlotData;
+	FInvSlot LastBagSlotData;
 	bool bItemActorGrabChangeEventConnected = false;
 protected:
 	FSlateBrush DefaultButtonBrush;
 	FSlateBrush HoverButtonBrush;
 	
-	FBagSlot* BagSlot = nullptr;
-	TWeakObjectPtr<APickupItem> PickupItemActor;
+	FInvSlot* BagSlot = nullptr;
+	TWeakObjectPtr<AItem> PickupItemActor;
 
 	bool bCanBeTargeted = false;
 	bool bIsTargeted = false;

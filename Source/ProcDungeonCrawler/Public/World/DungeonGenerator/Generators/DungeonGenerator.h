@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Items/PickupItem.h"
+#include "..\..\..\Items\Item.h"
 #include "World/DungeonGenerator/DataAssets/DungeonRuleDictionary.h"
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
 
+class UInventoryComponent;
 class UBagComponent;
-class USpellbookComponent;
-class AWizardPlayer;
+class USpellBookComponent;
 class ADungeonObstacle;
 class AWalkthroughPath;
 class ARoomPCGGlobalVolume;
@@ -136,8 +136,8 @@ struct FDungeonObstacle
 	}
 	
 	FDungeonObstacle(TSubclassOf<AActor> NewObstacleClass,
-		TSubclassOf<APickupItem> NewRequiredPickup, FName NewSolverRequiredTag,
-		TSubclassOf<ASpellCast> NewRequiredSpellCast)
+		TSubclassOf<AItem> NewRequiredPickup, FName NewSolverRequiredTag,
+		TSubclassOf<ASpell> NewRequiredSpellCast)
 	{
 		ObstacleClass = NewObstacleClass;
 		RequiredPickup = NewRequiredPickup;
@@ -146,10 +146,10 @@ struct FDungeonObstacle
 	}
 
 	TSubclassOf<AActor> ObstacleClass;
-	TSubclassOf<APickupItem> RequiredPickup;
+	TSubclassOf<AItem> RequiredPickup;
 	FName SolverRequiredTag;
 	
-	TSubclassOf<ASpellCast> RequiredSpellCast;
+	TSubclassOf<ASpell> RequiredSpellCast;
 };
 
 UCLASS()
@@ -161,7 +161,7 @@ public:
 	ADungeonGenerator();
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
-	bool GenerateDungeon(AWizardPlayer* Player);
+	bool GenerateDungeon(APlayerPawn* Player);
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
 	bool BuildDungeon();
@@ -199,8 +199,8 @@ protected:
 
 	TMap<TSubclassOf<AObstacle>, FObstacleData*> ObstacleSolverMap;
 
-	TWeakObjectPtr<UBagComponent> PlayerBag;
-	TWeakObjectPtr<USpellbookComponent> PlayerSpellBook;
+	TWeakObjectPtr<UInventoryComponent> PlayerBag;
+	TWeakObjectPtr<USpellBookComponent> PlayerSpellBook;
 
 private:
 	int CurrentGeneratedLevel = 0;

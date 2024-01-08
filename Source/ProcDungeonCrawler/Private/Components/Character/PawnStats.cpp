@@ -3,7 +3,7 @@
 
 #include "Components/Character/PawnStats.h"
 
-#include "Spell/SpellCast.h"
+#include "..\..\..\Public\Spell\Spell.h"
 #include "StatusEffect/StatusEffect.h"
 
 UPawnStats::UPawnStats()
@@ -57,7 +57,7 @@ void UPawnStats::TakeDamage(AActor* DamagedActor, float Damage, const UDamageTyp
 	}
 }
 
-void UPawnStats::UseMana(ASpellCast* SpellCast, float ManaCost)
+void UPawnStats::UseMana(ASpell* SpellCast, float ManaCost)
 {
 	Mana = FMath::Clamp(Mana - ManaCost, 0.f, MaxMana);
 	if (OnManaUsage.IsBound())

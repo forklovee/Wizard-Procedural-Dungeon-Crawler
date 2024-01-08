@@ -6,12 +6,12 @@
 #include "Components/ActorComponent.h"
 #include "PawnStats.generated.h"
 
-class ASpellCast;
+class ASpell;
 class UStatusEffect;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHeal, float, Health, float, HealAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaUsage, float, Mana, float, ManaUsed);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt, AActor*, DamageCauser, float, Damage, UDamageType*, DamageType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt, AActor*, DamageCauser, float, Damage, const UDamageType*, DamageType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatusEffectApplied, UStatusEffect*, StatusEffect);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -30,9 +30,6 @@ public:
 	FOnStatusEffectApplied OnStatusEffectApplied;
 	
 	UPawnStats();
-
-	UFUNCTION(BlueprintCallable)
-	void UpdateUIStats();
 	
 	UFUNCTION(BlueprintCallable)
 	float GetMaxHealth() const;
@@ -54,7 +51,7 @@ public:
 	void Heal(float HealAmount);
 
 	UFUNCTION(BlueprintCallable)
-	void UseMana(ASpellCast* SpellCast, float ManaCost);
+	void UseMana(ASpell* SpellCast, float ManaCost);
 
 	UFUNCTION(BlueprintCallable)
 	void ApplyStatusEffect(TSubclassOf<UStatusEffect> StatusEffect);

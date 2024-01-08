@@ -29,7 +29,7 @@ public:
 	void ClearInteractionPrompt();
 
 	UFUNCTION()
-	void UpdateInteractionPrompt(FText ActorNameText, EInteractionType OnClickInteractionType, bool bCanBeGrabbed);
+	void UpdateInteractionPrompt(FText ActorNameText, FName InteractionName, bool bCanBeGrabbed);
 
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UTextBlock* InteractionActorNameText;

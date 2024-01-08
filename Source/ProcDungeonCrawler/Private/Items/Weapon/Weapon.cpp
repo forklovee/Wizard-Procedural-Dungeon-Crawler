@@ -2,12 +2,14 @@
 
 
 #include "Items/Weapon/Weapon.h"
-#include "Characters/Wizard/WizardCharacter.h"
+
+#include "Characters/Human/Human.h"
 #include "Engine/DamageEvents.h"
 
 AWeapon::AWeapon(): Super()
 {
-	
+	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
+	RootComponent->SetupAttachment(WeaponMesh);
 }
 
 void AWeapon::BeginPlay()
@@ -16,7 +18,7 @@ void AWeapon::BeginPlay()
 }
 
 
-void AWeapon::SetAsPawnWeapon(AWizardCharacter* WizardCharacter)
+void AWeapon::SetWeaponOwner(AHuman* WizardCharacter)
 {
 	WeaponOwner = WizardCharacter;
 
@@ -45,18 +47,6 @@ void AWeapon::SetCanDealDamage(bool bNewCanDealDamage)
 	{
 		Tags.Remove(DamageDealerTag);
 	}
-}
-
-TSubclassOf<AActor> AWeapon::Pickup_Implementation(APawn* Pawn)
-{
-	const TSubclassOf<AActor> ItemClass = GetClass();
-	
-	return ItemClass;
-}
-
-void AWeapon::Grab_Implementation()
-{
-	Super::Grab_Implementation();
 }
 
 void AWeapon::DealDamage(APawn* DamagedPawn)

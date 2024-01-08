@@ -6,21 +6,22 @@
 #include "Components/ActorComponent.h"
 #include "SpellbookComponent.generated.h"
 
-class AWizardCharacter;
-class URuneCast;
+class AHuman;
+class URune;
+class ASpell;
+
 struct FInputActionValue;
-class ASpellCast;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRuneAdded, int, RuneIdx, URuneCast*, RuneCast);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRuneCasted, int, RuneIdx, URuneCast*, RuneCast, TArray<URuneCast*>&, CastedRunes);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnValidRuneSequenceCasted, TSubclassOf<ASpellCast>, SpellCast, float, ManaCost);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRuneAdded, int, RuneIdx, URune*, RuneCast);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRuneCasted, int, RuneIdx, URune*, RuneCast, TArray<URune*>&, CastedRunes);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnValidRuneSequenceCasted, TSubclassOf<ASpell>, SpellCast, float, ManaCost);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSpellCasted, ASpellCast*, SpellCast, float, ManaCost);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSpellCasted, ASpell*, SpellCast, float, ManaCost);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastedRunesCleared);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class PROCDUNGEONCRAWLER_API USpellbookComponent : public USceneComponent
+class PROCDUNGEONCRAWLER_API USpellBookComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -33,35 +34,33 @@ public:
 	
 	FOnSpellCasted OnSpellCasted;
 	
-	USpellbookComponent();
+	USpellBookComponent();
 
 	// Runes
 	UFUNCTION()
-	void AddRune(URuneCast* NewRuneCast);
+	void AddRune(URune* NewRuneCast);
 
-	URuneCast* GetRuneOfIdx(int Idx);
-	void CastRune(URuneCast* RuneCast);
+	URune* GetRuneOfIdx(int Idx);
+	void CastRune(URune* RuneCast);
 	UFUNCTION()
 	void CastRuneOfIdx(int Idx);
 	
-	TSubclassOf<ASpellCast> GetSpellCastClass(TArray<URuneCast*>& RuneSequence, float& OutManaCost) const;
-	TArray<URuneCast*> GetRequiredRunesForSpell(TSubclassOf<ASpellCast> SpellCastClass) const;
-	bool CanSpellBeCasted(TSubclassOf<ASpellCast> SpellCastClass, TArray<URuneCast*>& OutMissingRunes) const;
+	TSubclassOf<ASpell> GetSpellCastClass(TArray<URune*>& RuneSequence, float& OutManaCost) const;
+	TArray<URune*> GetRequiredRunesForSpell(TSubclassOf<ASpell> SpellCastClass) const;
+	bool CanSpellBeCasted(TSubclassOf<ASpell> SpellCastClass, TArray<URune*>& OutMissingRunes) const;
 	
 	void ClearCastedRunes();
 	
 	// Spells
 	bool IsSpellPrepared() const;
-	ASpellCast* GetPreparedSpell(float& OutManaCost) const;
-	void PrepareSpell(TSubclassOf<ASpellCast> SpellCastClass, float ManaCost);
+	void PrepareSpell(TSubclassOf<ASpell> SpellCastClass, float ManaCost);
 
-	void CastPreparedSpell(AWizardCharacter* WizardCharacter);
+	void CastPreparedSpell(AHuman* Human);
 
-	static float GetRuneSequenceManaCost(TArray<URuneCast*>& RuneSequence);
+	static float GetRuneSequenceManaCost(TArray<URune*>& RuneSequence);
 	
 protected:
 	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
 	UPROPERTY(EditAnywhere, Category= "Spells")
@@ -69,17 +68,17 @@ public:
 
 private:
 	// Spell oriented variables
-	TTuple<TWeakObjectPtr<ASpellCast>, float> PreparedSpell;
+	TTuple<TWeakObjectPtr<ASpell>, float> PreparedSpell;
 	TArray<FHitResult> SpellTargets;
 	
 	// Obtained Runes
-	TArray<URuneCast*> Runes;
+	TArray<URune*> Runes;
 
 	// Runes casted
-	TArray<URuneCast*> CastedRunes;
+	TArray<URune*> CastedRunes;
 	FTimerHandle ClearCastedRunesTimerHandle;
 
-	TMap<TArray<URuneCast*>, TSubclassOf<ASpellCast>> SpellBook;
+	TMap<TArray<URune*>, TSubclassOf<ASpell>> SpellBook;
 	
 	bool bIsCastingSpell = false;
 };

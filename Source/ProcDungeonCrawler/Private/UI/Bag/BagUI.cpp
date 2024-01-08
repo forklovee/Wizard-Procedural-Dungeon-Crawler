@@ -3,35 +3,35 @@
 
 #include "UI/Bag/BagUI.h"
 
-#include "Characters/Player/BagActor.h"
+#include "UI/Bag/BagItemTile.h"
+#include "Components/Character/InventoryComponent.h"
+#include "Items/Item.h"
+
 #include "Components/PanelWidget.h"
 #include "Components/UniformGridPanel.h"
-#include "Components/Character/BagComponent.h"
-#include "Items/PickupItem.h"
-#include "UI/Bag/BagItemTile.h"
 
-TArray<UBagItemTile*>& UBagUI::Setup(ABagActor* BagActor, UBagComponent* BagComponent)
+TArray<UBagItemTile*>& UBagUI::Setup(UInventoryComponent* BagComponent)
 {
-	GridSize = BagComponent->GetBagGridSize();
-	BagItemsPanel->ClearChildren();
-
-	for (FBagSlot& BagSlot: BagComponent->GetItems())
-	{
-		UBagItemTile* BagItemTile = CreateNewBagTile(BagSlot);
-		BagItemTiles.Add(BagItemTile);
-	}
+	// GridSize = BagComponent->GetBagGridSize();
+	// BagItemsPanel->ClearChildren();
+	//
+	// for (FBagSlot& BagSlot: BagComponent->GetItems())
+	// {
+	// 	UBagItemTile* BagItemTile = CreateNewBagTile(BagSlot);
+	// 	BagItemTiles.Add(BagItemTile);
+	// }
 
 	return BagItemTiles;
 }
 
-TArray<APickupItem*> UBagUI::GetAllSpawnedActors() const
+TArray<AItem*> UBagUI::GetAllSpawnedActors() const
 {
-	TArray<APickupItem*> SpawnedActors;
+	TArray<AItem*> SpawnedActors;
 	for (UWidget* Widget : BagItemsPanel->GetAllChildren())
 	{
 		if (const UBagItemTile* BagItemTile = Cast<UBagItemTile>(Widget))
 		{
-			if (APickupItem* PickupItem = BagItemTile->GetPickupItemActor())
+			if (AItem* PickupItem = BagItemTile->GetPickupItemActor())
 			{
 				SpawnedActors.Add(PickupItem);
 			}
@@ -40,7 +40,7 @@ TArray<APickupItem*> UBagUI::GetAllSpawnedActors() const
 	return SpawnedActors;
 }
 
-UBagItemTile* UBagUI::CreateNewBagTile(FBagSlot& BagSlot)
+UBagItemTile* UBagUI::CreateNewBagTile(FInvSlot& BagSlot)
 {
 	UBagItemTile* BagItemTile = CreateWidget<UBagItemTile>(GetWorld(), BagItemWidgetClass);
 	BagItemTile->SetBagSlot(&BagSlot);

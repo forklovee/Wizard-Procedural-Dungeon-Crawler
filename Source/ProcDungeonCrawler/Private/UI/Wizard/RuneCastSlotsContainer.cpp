@@ -14,7 +14,7 @@ void URuneCastSlotsContainer::PostLoad()
 	RegisterAllRunCastSlots();
 }
 
-void URuneCastSlotsContainer::AddNewRune(URuneCast* RuneCast)
+void URuneCastSlotsContainer::AddNewRune(URune* RuneCast)
 {
 	if (RuneCastAvailableSlotIds.Num() == 0)
 	{

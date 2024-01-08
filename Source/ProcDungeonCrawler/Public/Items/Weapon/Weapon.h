@@ -3,15 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Items/PickupItem.h"
+#include "Items/Item.h"
 #include "Weapon.generated.h"
 
-
+class AHuman;
 class UStatusEffect;
-class AWizardCharacter;
 
 UCLASS()
-class PROCDUNGEONCRAWLER_API AWeapon : public APickupItem
+class PROCDUNGEONCRAWLER_API AWeapon : public AItem
 {
 	GENERATED_BODY()
 
@@ -19,13 +18,11 @@ public:
 	AWeapon();
 	
 	UFUNCTION()
-	void SetAsPawnWeapon(AWizardCharacter* WizardCharacter);
+	void SetWeaponOwner(AHuman* WizardCharacter);
 	
 	UFUNCTION()
 	void SetCanDealDamage(bool bNewCanDealDamage);
 
-	virtual TSubclassOf<AActor> Pickup_Implementation(APawn* Pawn) override;
-	virtual void Grab_Implementation() override;
 protected:
 	virtual void BeginPlay() override;
 
@@ -35,6 +32,9 @@ protected:
 	UFUNCTION()
 	void DealDamage(APawn* DamagedPawn);
 
+	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess="true"), Category="Weapon")
+	USkeletalMeshComponent* WeaponMesh;
+	
 private:
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess="true"))
 	float Damage = 10.f;
@@ -42,7 +42,7 @@ private:
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess="true"))
 	TArray<UStatusEffect*> OnPawnHitStatusEffects;
 	
-	TWeakObjectPtr<AWizardCharacter> WeaponOwner;
+	TWeakObjectPtr<AHuman> WeaponOwner;
 	bool bCanDealDamage = false;
 
 	bool bItemMeshComponentHitConnected = false;

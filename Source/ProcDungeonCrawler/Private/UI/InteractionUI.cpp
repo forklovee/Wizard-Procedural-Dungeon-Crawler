@@ -10,45 +10,24 @@
 
 void UInteractionUI::ClearInteractionPrompt()
 {
-	UpdateInteractionPrompt(FText::FromString(""), EInteractionType::E_None, false);
+	UpdateInteractionPrompt(FText::FromString(""), FName(""), false);
 }
 
-void UInteractionUI::UpdateInteractionPrompt(FText ActorNameText, EInteractionType OnClickInteractionType, bool bCanBeGrabbed)
+void UInteractionUI::UpdateInteractionPrompt(FText ActorNameText, FName InteractionName, bool bCanBeGrabbed)
 {
 	InteractionActorNameText->SetText(ActorNameText);
-	if (OnClickInteractionType == EInteractionType::E_None && !bCanBeGrabbed)
-	{
-		InteractionPromptPanel->SetVisibility(ESlateVisibility::Collapsed);
-		GrabPromptPanel->SetVisibility(ESlateVisibility::Collapsed);
+	InteractionPromptText->SetText(FText::FromString(InteractionName.ToString()));
 
-		if (OnInteractionItemLost.IsBound()){
-			OnInteractionItemLost.Broadcast();
-		}
+	InteractionPromptPanel->SetVisibility(ESlateVisibility::Collapsed);
+	
+	if (InteractionName == FName("Interact") || InteractionName == FName("Pickup"))
+	{
+		InteractionPromptPanel->SetVisibility(ESlateVisibility::Visible);
 	}
 	else
 	{
-		switch (OnClickInteractionType)
-		{
-		case EInteractionType::E_None:
-			InteractionPromptPanel->SetVisibility(ESlateVisibility::Collapsed);
-			break;
-		case EInteractionType::E_Interact:
-			InteractionPromptPanel->SetVisibility(ESlateVisibility::Visible);
-			InteractionPromptText->SetText(FText::FromString("Interact"));
-			break;
-		case EInteractionType::E_Pickup:
-			InteractionPromptPanel->SetVisibility(ESlateVisibility::Visible);
-			InteractionPromptText->SetText(FText::FromString("Pickup"));
-			break;
-		default:
-			InteractionPromptPanel->SetVisibility(ESlateVisibility::Collapsed);
-			break;
-		}
-
-		GrabPromptPanel->SetVisibility(bCanBeGrabbed ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-
-		if (OnNewInteractionItem.IsBound()){
-			OnNewInteractionItem.Broadcast(ActorNameText, bCanBeGrabbed);
-		}
+		InteractionPromptPanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
+
+	GrabPromptPanel->SetVisibility(bCanBeGrabbed ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }

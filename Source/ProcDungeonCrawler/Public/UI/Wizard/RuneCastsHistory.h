@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "RuneCastsHistory.generated.h"
 
+class URune;
 class URuneIcon;
 /**
  * 
@@ -16,10 +17,10 @@ class PROCDUNGEONCRAWLER_API URuneCastsHistory : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION()
-	void UpdateRuneCastHistory(const TArray<URuneCast*>& CastedRunes);
+	void UpdateRuneCastHistory(const TArray<URune*>& CastedRunes);
 	
 	UFUNCTION()
-	void AddRuneToCastHistory(const URuneCast* RuneCast) const;
+	void AddRuneToCastHistory(const URune* RuneCast) const;
 	UFUNCTION()
 	void ClearCastHistory();
 
