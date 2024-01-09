@@ -11,10 +11,9 @@ class UPlayerHUD;
 
 enum class EInputContextType : uint8
 {
-	None = 0,
-	Gameplay = 1 << 0,
-	UI = 1 << 1,
-	GameplayAndUI = Gameplay | UI
+	Movement = 0,
+	Interaction = 1,
+	UI = 2,
 };
 
 class AWeapon;
@@ -99,83 +98,99 @@ private:
 	void SetInteractionInput(bool bState) const;
 	void SetCharacterMovementInput(bool bState) const;
 
-	// Interaction Input
-	UFUNCTION()
-	void OnPrimaryHandAction(const FInputActionValue& Value);
-	UFUNCTION()
-	void OnInteractAction(const FInputActionValue& Value);
-	UFUNCTION()
-	void OnGrabItemAction(const FInputActionValue& Value);
-	UFUNCTION()
-	void OnReleaseItemAction(const FInputActionValue& Value);
-
 	// Movement Input
 	UFUNCTION()
-	void OnMoveAroundAction(const FInputActionValue& Value);
+	void OnLookAroundInputAction(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnLookAroundAction(const FInputActionValue& Value);
+	void OnMoveAroundInputAction(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnSetSprintAction(const FInputActionValue& Value);
+	void OnSetSprintInputAction(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnSetCrouchAction(const FInputActionValue& Value);
+	void OnJumpInputAction(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnJumpAction(const FInputActionValue& Value);
+	void OnSetCrouchInputAction(const FInputActionValue& Value);
 	
-	// Bag Input
+	// Interaction Input
 	UFUNCTION()
-	void OnToggleBagAction(const FInputActionValue& Value);
-
-	// SpellBook Input
+	void OnUseWeaponInputAction(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnRuneSlotKeyPressed(const FInputActionValue& Value);
+	void OnCastPreparedSpellInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnUseItemInHandInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnCastRuneFromSlotInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnInteractionInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnGrabItemInputAction(const FInputActionValue& Value);
+	
+	// UI Input
+	UFUNCTION()
+	void OnToggleInventoryInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnToggleSpellBookInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnTogglePauseMenuInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnToggleMapInputAction(const FInputActionValue& Value);
 
 public:
-	// Input
-	UPROPERTY(EditAnywhere, Category= "Input")
-	TSoftObjectPtr<UInputMappingContext> Gameplay_InputContext;
-	UPROPERTY(EditAnywhere, Category= "Input")
-	TSoftObjectPtr<UInputMappingContext> UI_InputContext;
+	// Movement Input
+	UPROPERTY(EditAnywhere, Category= "Input|Movement")
+	TSoftObjectPtr<UInputMappingContext> Movement_InputContext;
 	
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
+	UPROPERTY(EditAnywhere, Category= "Input|Movement")
+	TSoftObjectPtr<UInputAction> MoveAround_InputAction;
+	
+	UPROPERTY(EditAnywhere, Category= "Input|Movement")
 	TSoftObjectPtr<UInputAction> LookAround_InputAction;
-	
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
-	TSoftObjectPtr<UInputAction> Movement_InputAction;
 
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
+	UPROPERTY(EditAnywhere, Category= "Input|Movement")
 	TSoftObjectPtr<UInputAction> Jump_InputAction;
 
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
-	TSoftObjectPtr<UInputAction> Sprint_InputAction;
-	
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Common")
+	UPROPERTY(EditAnywhere, Category= "Input|Movement")
 	TSoftObjectPtr<UInputAction> Crouch_InputAction;
+	
+	UPROPERTY(EditAnywhere, Category= "Input|Movement")
+	TSoftObjectPtr<UInputAction> Sprint_InputAction;
 
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
+	// Interaction Input
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
+	TSoftObjectPtr<UInputMappingContext> Interaction_InputContext;
+	
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
+	TSoftObjectPtr<UInputAction> UseWeapon_InputAction;
+
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
+	TSoftObjectPtr<UInputAction> CastPreparedSpell_InputAction;
+	
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
+	TSoftObjectPtr<UInputAction> UseItemInHand_InputAction;
+
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
+	TSoftObjectPtr<UInputAction> CastRuneFromSlot_InputAction;
+
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
 	TSoftObjectPtr<UInputAction> Interaction_InputAction;
 
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
-	TSoftObjectPtr<UInputAction> GrabItemBegin_InputAction;
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
-	TSoftObjectPtr<UInputAction> GrabItemEnd_InputAction;
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
+	TSoftObjectPtr<UInputAction> GrabItem_InputAction;
+
+	// UI Input
+	UPROPERTY(EditAnywhere, Category= "Input|UI")
+	TSoftObjectPtr<UInputMappingContext> UI_InputContext;
 	
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Interaction")
-	TSoftObjectPtr<UInputAction> PrimaryAction_InputAction;
-
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Magic")
-	TSoftObjectPtr<UInputAction> RuneCast_InputAction;
-
-	UPROPERTY(EditAnywhere, Category= "Input|Actions|Magic")
-	TSoftObjectPtr<UInputAction> ChangeSpellSlot_InputAction;
+	UPROPERTY(EditAnywhere, Category= "Input|UI")
+	TSoftObjectPtr<UInputAction> ToggleInventory_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|UI")
-	TSoftObjectPtr<UInputAction> OpenBag_InputAction;
+	TSoftObjectPtr<UInputAction> ToggleSpellBook_InputAction;
+	
+	UPROPERTY(EditAnywhere, Category= "Input|UI")
+	TSoftObjectPtr<UInputAction> TogglePauseMenu_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|UI")
-	TSoftObjectPtr<UInputAction> OpenMap_InputAction;
-
-	UPROPERTY(EditAnywhere, Category= "Input|UI")
-	TSoftObjectPtr<UInputAction> OpenSpellBook_InputAction;
+	TSoftObjectPtr<UInputAction> ToggleMap_InputAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
 	TSubclassOf<UPlayerHUD> WizardHUDClass;
