@@ -11,21 +11,36 @@
 
 APlayerPawn::APlayerPawn(): Super()
 {
-	CameraArmComponent = CreateDefaultSubobject<USpringArmComponent>("CameraArmComponent");
-	CameraArmComponent->SetupAttachment(RootComponent);
-	
-	CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
-	CameraComponent->SetupAttachment(CameraArmComponent);
-	
+	FP_RootComponent = CreateDefaultSubobject<USceneComponent>(FName("FP_Root"));
+	FP_RootComponent->SetupAttachment(RootComponent);
+
+	//Arms
+	ArmsSpringComponent = CreateDefaultSubobject<USpringArmComponent>(FName("ArmsSpring"));
+	ArmsSpringComponent->SetupAttachment(FP_RootComponent);
+
+	ArmsOffsetComponent = CreateDefaultSubobject<USceneComponent>(FName("ArmsOffset"));
+	ArmsOffsetComponent->SetupAttachment(ArmsSpringComponent);
+
 	ArmsMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>("HandsMeshComponent");
-	ArmsMeshComponent->SetupAttachment(CameraArmComponent, NAME_None);
+	ArmsMeshComponent->SetupAttachment(ArmsOffsetComponent);
 	ArmsMeshComponent->bCastDynamicShadow = false;
 	ArmsMeshComponent->CastShadow = false;
 	ArmsMeshComponent->SetOnlyOwnerSee(true);
 
-	PlayerInteraction = CreateDefaultSubobject<UPlayerInteractionRaycast>(FName("PlayerInteraction"));
-	PlayerInteraction->SetupAttachment(CameraArmComponent);
+	//Camera
+	CameraSpringComponent = CreateDefaultSubobject<USpringArmComponent>(FName("CameraSpring"));
+	CameraSpringComponent->SetupAttachment(FP_RootComponent);
+
+	CameraSkeletonComponent = CreateDefaultSubobject<USkeletalMeshComponent>("CameraSkeleton");
+	CameraSkeletonComponent->SetupAttachment(CameraSpringComponent);
 	
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
+	CameraComponent->SetupAttachment(CameraSkeletonComponent, "Camera");
+
+	PlayerInteraction = CreateDefaultSubobject<UPlayerInteractionRaycast>(FName("PlayerInteraction"));
+	PlayerInteraction->SetupAttachment(CameraComponent);
+
+	// Enable auto possession
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 	PrimaryActorTick.bCanEverTick = true;
 }

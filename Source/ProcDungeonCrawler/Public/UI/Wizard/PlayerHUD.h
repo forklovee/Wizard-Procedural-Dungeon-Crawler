@@ -48,15 +48,15 @@ public:
 protected:
 	virtual void NativeConstruct() override;
 
-public:
-	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	UHorizontalBox* RuneSlots;
-
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	URuneCastsHistory* CastedRuneHistory;
-
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UInteractionUI* InteractionUI;
+// public:
+// 	UPROPERTY(EditAnywhere, meta=(BindWidget))
+// 	UHorizontalBox* RuneSlots;
+//
+// 	UPROPERTY(EditAnywhere, meta = (BindWidget))
+// 	URuneCastsHistory* CastedRuneHistory;
+//
+// 	UPROPERTY(EditAnywhere, meta = (BindWidget))
+// 	UInteractionUI* InteractionUI;
 
 protected:
 	TArray<URuneCastSlot*> RuneCastSlots;

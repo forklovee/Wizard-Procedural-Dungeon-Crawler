@@ -41,18 +41,29 @@ protected:
 	
 public:
 	// Components
-	UPROPERTY(EditAnywhere)
-	class UCameraComponent* CameraComponent;
-	UPROPERTY(EditAnywhere)
-	USpringArmComponent* CameraArmComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	USceneComponent* FP_RootComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	USpringArmComponent* ArmsSpringComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	USceneComponent* ArmsOffsetComponent;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
 	USkeletalMeshComponent* ArmsMeshComponent;
-	UPROPERTY(EditAnywhere)
-	UPlayerInteractionRaycast* PlayerInteraction;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UWidgetInteractionComponent* WidgetInteractionComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	USpringArmComponent* CameraSpringComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	USkeletalMeshComponent* CameraSkeletonComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	class UCameraComponent* CameraComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	UPlayerInteractionRaycast* PlayerInteraction;
 	
 protected:
 	TWeakObjectPtr<AWeapon> CurrentWeapon;

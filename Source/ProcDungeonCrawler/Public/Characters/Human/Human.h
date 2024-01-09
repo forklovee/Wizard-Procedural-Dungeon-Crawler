@@ -44,9 +44,9 @@ protected:
 	void Release();
 	
 	// Movement
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void MoveAround(const FVector2D& MoveOffset);
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void LookAround(const FVector2D& LookOffset);
 	UFUNCTION()
 	void SetSprinting(const bool bNewIsSprinting);

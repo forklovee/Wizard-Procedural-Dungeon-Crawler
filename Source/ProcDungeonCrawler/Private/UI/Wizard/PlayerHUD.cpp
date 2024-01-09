@@ -14,26 +14,26 @@ void UPlayerHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (RuneSlots != nullptr) {
-		int ChildIdx = 0;
-		for (UWidget* ChildWidget : RuneSlots->GetAllChildren()) {
-			if (URuneCastSlot* RuneCastSlot = Cast<URuneCastSlot>(ChildWidget)) {
-				RuneCastSlot->SetSlotIndex(ChildIdx);
-				RuneCastSlots.Add(RuneCastSlot);
-				ChildIdx++;
-			}
-		}
-	}
+	// if (RuneSlots != nullptr) {
+	// 	int ChildIdx = 0;
+	// 	for (UWidget* ChildWidget : RuneSlots->GetAllChildren()) {
+	// 		if (URuneCastSlot* RuneCastSlot = Cast<URuneCastSlot>(ChildWidget)) {
+	// 			RuneCastSlot->SetSlotIndex(ChildIdx);
+	// 			RuneCastSlots.Add(RuneCastSlot);
+	// 			ChildIdx++;
+	// 		}
+	// 	}
+	// }
 }
 
 void UPlayerHUD::OnRuneCasted(int RuneIdx, URune* RuneCast, TArray<URune*>& CastedRunes)
 {
-	if (RuneSlots == nullptr || RuneIdx < 0 || RuneIdx > RuneCastSlots.Num()-1) return;
-
-	URuneCastSlot* RuneCastSlot = RuneCastSlots[RuneIdx];
-	RuneCastSlot->UseRune();
-	
-	CastedRuneHistory->UpdateRuneCastHistory(CastedRunes);
+	// if (RuneSlots == nullptr || RuneIdx < 0 || RuneIdx > RuneCastSlots.Num()-1) return;
+	//
+	// URuneCastSlot* RuneCastSlot = RuneCastSlots[RuneIdx];
+	// RuneCastSlot->UseRune();
+	//
+	// CastedRuneHistory->UpdateRuneCastHistory(CastedRunes);
 }
 
 bool UPlayerHUD::IsSlotEmpty(int SlotIdx) const

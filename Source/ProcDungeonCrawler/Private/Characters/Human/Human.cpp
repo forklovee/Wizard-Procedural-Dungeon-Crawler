@@ -18,7 +18,7 @@ AHuman::AHuman()
 	SpellBook = CreateDefaultSubobject<USpellBookComponent>(FName("SpellBook"));
 
 	// Pawn Stats
-	Stats = CreateDefaultSubobject<UPawnStats>(FName("WizardStats"));
+	Stats = CreateDefaultSubobject<UPawnStats>(FName("PawnStats"));
 
 	Bag = CreateDefaultSubobject<UInventoryComponent>(FName("Bag"));
 	
