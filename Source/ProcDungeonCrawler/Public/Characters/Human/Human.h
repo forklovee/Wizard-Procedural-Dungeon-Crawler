@@ -7,6 +7,16 @@
 
 #include "Human.generated.h"
 
+UENUM(Blueprintable, BlueprintType)
+enum class EArmorTarget: uint8
+{
+	Head,
+	Chest,
+	Feet
+};
+
+class AClothes;
+class AWeapon;
 class UInventoryComponent;
 class USpellBookComponent;
 class ASpellCast;
@@ -29,20 +39,7 @@ public:
 protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
-	
-	// Interaction
-	UFUNCTION()
-	void UseWeapon();
-	UFUNCTION()
-	void UseItem(TSubclassOf<AItem> Item, int ItemAmount);
-	UFUNCTION()
-	void Interact();
 
-	UFUNCTION()
-	void Grab(TWeakObjectPtr<AItem> PickupItem = nullptr);
-	UFUNCTION()
-	void Release();
-	
 	// Movement
 	UFUNCTION()
 	void MoveAround(const FVector2D& MoveOffset);
@@ -50,10 +47,24 @@ protected:
 	void LookAround(const FVector2D& LookOffset);
 	UFUNCTION()
 	void SetSprinting(const bool bNewIsSprinting);
-	
-	bool IsCrouching() const { return bIsCrouching; }
 	UFUNCTION()
-	void SetCrouch(const bool bNewIsCrounching);
+	void ToggleCrouch();
+	
+	// Interaction
+	UFUNCTION()
+	void PrimaryAction();
+	UFUNCTION()
+	void UseItem(TSubclassOf<AItem> Item, int ItemAmount);
+	UFUNCTION()
+	void Interact();
+	UFUNCTION()
+	void Grab();
+	UFUNCTION()
+	void Release();
+
+	void SetItemGrab(AItem* NewGrabItem);
+	void SetWeapon(AWeapon* NewWeapon);
+	void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget);
 
 	UFUNCTION()
 	void SetCombatMode(bool bNewInCombatMode);
@@ -71,10 +82,15 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	UPawnStats* Stats;
-	
+
+protected:
+	TWeakObjectPtr<AItem> GrabbedItem;
+	TWeakObjectPtr<AWeapon> Weapon;
+
+	TWeakObjectPtr<AClothes> HeadArmor;
+	TWeakObjectPtr<AClothes> ChestArmor;
+	TWeakObjectPtr<AClothes> FeetArmor;
 private:
-	bool bInCombatMode = false;
-	
 	bool bIsCrouching = false;
 	bool bBlockMovement = false;
 	bool bIsSprinting = false;

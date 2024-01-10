@@ -9,6 +9,10 @@
 #include "Components/Character/SpellbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+#include "Items/Item.h"
+#include "Items/Weapon/Weapon.h"
+#include "Items/Clothes/Clothes.h"
+
 AHuman::AHuman()
 {
 	AutoPossessPlayer = EAutoReceiveInput::Disabled;
@@ -35,6 +39,10 @@ void AHuman::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Initialize standing and save crouch state
+	UnCrouch();
+	bIsCrouching = false;
+	
 	MovementSpeed = WalkingSpeed;
 	
 	OnTakeAnyDamage.AddDynamic(Stats, &UPawnStats::TakeDamage);
@@ -42,22 +50,25 @@ void AHuman::BeginPlay()
 	// SpellBook->OnValidRuneSequenceCasted.AddDynamic(this, &AHuman::PrepareSpell);
 	SpellBook->OnSpellCasted.AddDynamic(Stats, &UPawnStats::UseMana);
 
+	// Register to player input
 	if (ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController()))
 	{
-		PlayerController->OnMoveAroundInput.AddDynamic(this, &AHuman::MoveAround);
-		PlayerController->OnLookAroundInput.AddDynamic(this, &AHuman::LookAround);
+		// Movement context
+		PlayerController->OnMoveAroundAction.AddDynamic(this, &AHuman::MoveAround);
+		PlayerController->OnLookAroundAction.AddDynamic(this, &AHuman::LookAround);
+		PlayerController->OnSprintToggledAction.AddDynamic(this, &AHuman::SetSprinting);
+		PlayerController->OnCrouchToggledAction.AddDynamic(this, &AHuman::ToggleCrouch);
+		PlayerController->OnJumpAction.AddDynamic(this, &AHuman::Jump);
 
-		PlayerController->OnSprintToggled.AddDynamic(this, &AHuman::SetSprinting);
-		PlayerController->OnCrouchToggled.AddDynamic(this, &AHuman::SetCrouch);
-		PlayerController->OnJumpActionInput.AddDynamic(this, &AHuman::Jump);
-
-		PlayerController->OnPrimaryHandActionInput.AddDynamic(this, &AHuman::UseWeapon);
-		PlayerController->OnInteractActionInput.AddDynamic(this, &AHuman::Interact);
-		PlayerController->OnRuneSlotSelected.AddDynamic(SpellBook, &USpellBookComponent::CastRuneOfIdx);
+		// Interaction context
+		PlayerController->OnPrimaryAction.AddDynamic(this, &AHuman::PrimaryAction);
+		PlayerController->OnInteractAction.AddDynamic(this, &AHuman::Interact);
+		PlayerController->OnGrabbedAction.AddDynamic(this, &AHuman::Grab);
+		PlayerController->OnReleasedAction.AddDynamic(this, &AHuman::Release);
 	}
 }
 
-void AHuman::UseWeapon()
+void AHuman::PrimaryAction()
 {
 	UE_LOG(LogTemp, Display, TEXT("chujDupa"));
 
@@ -84,14 +95,42 @@ void AHuman::Interact()
 	
 }
 
-void AHuman::Grab(TWeakObjectPtr<AItem> PickupItem)
+void AHuman::Grab()
 {
 	
 }
 
 void AHuman::Release()
 {
+	SetItemGrab(nullptr);
 }
+
+void AHuman::SetItemGrab(AItem* Item)
+{
+	
+}
+
+void AHuman::SetWeapon(AWeapon* NewWeapon)
+{
+	Weapon = NewWeapon;
+}
+
+void AHuman::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
+{
+	switch (ArmorTarget)
+	{
+		case EArmorTarget::Head:
+			HeadArmor = NewClothes;
+			break;
+		case EArmorTarget::Chest:
+			ChestArmor = NewClothes;
+			break;
+		case EArmorTarget::Feet:
+			FeetArmor = NewClothes;
+			break;
+	}
+}
+
 
 // Movement
 void AHuman::MoveAround(const FVector2D& MoveOffset)
@@ -118,10 +157,10 @@ void AHuman::SetSprinting(const bool bNewIsSprinting)
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 }
 
-void AHuman::SetCrouch(const bool bNewIsCrouching)
+void AHuman::ToggleCrouch()
 {
-	bIsCrouching = bNewIsCrouching;
-	if (bNewIsCrouching)
+	bIsCrouching = !bIsCrouching;
+	if (!bIsCrouching)
 	{
 		Crouch();
 	}
@@ -129,21 +168,4 @@ void AHuman::SetCrouch(const bool bNewIsCrouching)
 	{
 		UnCrouch();
 	}
-}
-
-void AHuman::SetCombatMode(bool bNewInCombatMode)
-{
-	bInCombatMode = bNewInCombatMode;
-}
-
-void AHuman::PrepareSpell(TSubclassOf<ASpell> SpellCastClass, float ManaCost)
-{
-	// if (Stats->HasRequiredMana(ManaCost))
-	// {
-	// 	SpellBook->PrepareSpell(SpellCastClass, ManaCost);
-	// }
-	// else
-	// {
-	// 	SpellBook->ClearCastedRunes();
-	// }
 }

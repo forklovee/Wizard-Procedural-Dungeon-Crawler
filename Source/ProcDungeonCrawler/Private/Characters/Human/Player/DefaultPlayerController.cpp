@@ -9,6 +9,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Characters/Human/Human.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/Wizard/PlayerHUD.h"
 
 
 void ADefaultPlayerController::BeginPlay()
@@ -103,74 +104,6 @@ void ADefaultPlayerController::SetInputContext(EInputContextType InputContext, b
 	}
 }
 
-void ADefaultPlayerController::SetInteractionInput(bool bState) const
-{
-	
-}
-
-void ADefaultPlayerController::SetCharacterMovementInput(bool bState) const
-{
-	
-}
-
-void ADefaultPlayerController::OnPrimaryHandAction(const FInputActionValue& Value)
-{
-	if (OnPrimaryHandActionInput.IsBound())
-	{
-		OnPrimaryHandActionInput.Broadcast();
-	}
-}
-
-void ADefaultPlayerController::OnInteractAction(const FInputActionValue& Value)
-{
-	if (OnInteractActionInput.IsBound())
-	{
-		OnInteractActionInput.Broadcast();
-	}
-}
-
-void ADefaultPlayerController::OnGrabItemAction(const FInputActionValue& Value)
-{
-	if (OnGrabbedActionInput.IsBound())
-	{
-		OnGrabbedActionInput.Broadcast();
-	}
-}
-
-void ADefaultPlayerController::OnReleaseItemAction(const FInputActionValue& Value)
-{
-	if (OnReleasedActionInput.IsBound())
-	{
-		OnReleasedActionInput.Broadcast();
-	}
-}
-
-void ADefaultPlayerController::OnJumpAction(const FInputActionValue& Value)
-{
-	if (OnJumpActionInput.IsBound())
-	{
-		OnJumpActionInput.Broadcast();
-	}
-}
-
-void ADefaultPlayerController::OnToggleBagAction(const FInputActionValue& Value)
-{
-	if (OnToggleBagRequest.IsBound())
-	{
-		OnToggleBagRequest.Broadcast();
-	}
-}
-
-void ADefaultPlayerController::OnRuneSlotKeyPressed(const FInputActionValue& Value)
-{
-	int RuneSlotIdx = static_cast<int>(Value.Get<float>());
-	
-	if (OnRuneSlotSelected.IsBound())
-	{
-		OnRuneSlotSelected.Broadcast(RuneSlotIdx);
-	}
-}
-
 void ADefaultPlayerController::SetupDefaultInput(UEnhancedInputComponent* PlayerInputComponent)
 {
 	const ULocalPlayer* LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetLocalPlayer();
@@ -190,10 +123,8 @@ void ADefaultPlayerController::SetupDefaultInput(UEnhancedInputComponent* Player
 	PlayerInputComponent->BindAction(Crouch_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnSetCrouchInputAction);
 
 	// set interaction inputs
-	PlayerInputComponent->BindAction(UseWeapon_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnUseWeaponInputAction);
-	PlayerInputComponent->BindAction(CastPreparedSpell_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnCastPreparedSpellInputAction);
-	PlayerInputComponent->BindAction(UseItemInHand_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnUseItemInHandInputAction);
-	PlayerInputComponent->BindAction(CastRuneFromSlot_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnCastRuneFromSlotInputAction);
+	PlayerInputComponent->BindAction(PrimaryAction_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnPrimaryInputAction);
+	PlayerInputComponent->BindAction(OnRuneSlotSelected_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnRuneSlotSelectedInputAction);
 	PlayerInputComponent->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnInteractionInputAction);
 	PlayerInputComponent->BindAction(GrabItem_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnGrabItemInputAction);
 	
@@ -204,14 +135,31 @@ void ADefaultPlayerController::SetupDefaultInput(UEnhancedInputComponent* Player
 	PlayerInputComponent->BindAction(ToggleMap_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnToggleMapInputAction);
 }
 
+UPlayerHUD* ADefaultPlayerController::SetupWizardHud()
+{
+	if (WizardHUD)
+	{
+		WizardHUD->RemoveFromParent();
+	}
+	if (PlayerHUDClass)
+	{
+		WizardHUD = Cast<UPlayerHUD>(CreateWidget<UUserWidget>(this, PlayerHUDClass));
+		if (WizardHUD)
+		{
+			WizardHUD->AddToViewport();
+		}
+	}
+	return WizardHUD;
+}
 
+// input actions handling
 void ADefaultPlayerController::OnLookAroundInputAction(const FInputActionValue& Value)
 {
 	const FVector2D LookOffset = Value.Get<FVector2D>();
 
-	if (OnLookAroundInput.IsBound())
+	if (OnLookAroundAction.IsBound())
 	{
-		OnLookAroundInput.Broadcast(LookOffset);
+		OnLookAroundAction.Broadcast(LookOffset);
 	}
 }
 
@@ -219,9 +167,9 @@ void ADefaultPlayerController::OnMoveAroundInputAction(const FInputActionValue& 
 {
 	const FVector2D MoveOffset = Value.Get<FVector2D>();
 
-	if (OnMoveAroundInput.IsBound())
+	if (OnMoveAroundAction.IsBound())
 	{
-		OnMoveAroundInput.Broadcast(MoveOffset);
+		OnMoveAroundAction.Broadcast(MoveOffset);
 	}
 }
 
@@ -230,59 +178,100 @@ void ADefaultPlayerController::OnMoveAroundInputAction(const FInputActionValue& 
 void ADefaultPlayerController::OnSetSprintInputAction(const FInputActionValue& Value)
 {
 	const bool bIsPressed = Value.Get<bool>();
-	if (OnSprintToggled.IsBound())
+	if (OnSprintToggledAction.IsBound())
 	{
-		OnSprintToggled.Broadcast(bIsPressed);
+		OnSprintToggledAction.Broadcast(bIsPressed);
 	}
 }
 
 void ADefaultPlayerController::OnJumpInputAction(const FInputActionValue& Value)
 {
-	const bool bIsPressed = Value.Get<bool>();
-	bool bNewIsCrouching = false;
-
-	if (const AHuman* WizardCharacter = Cast<AHuman>(GetPawn()))
+	if (OnJumpAction.IsBound())
 	{
-		bNewIsCrouching = !WizardCharacter->bIsCrouched;
-	}
-	
-	if (OnCrouchToggled.IsBound())
-	{
-		OnCrouchToggled.Broadcast(bNewIsCrouching);
+		OnJumpAction.Broadcast();
 	}
 }
 
 void ADefaultPlayerController::OnSetCrouchInputAction(const FInputActionValue& Value)
 {
-	const bool bIsPressed = Value.Get<bool>();
-	bool bNewIsCrouching = false;
-
-	if (const AHuman* WizardCharacter = Cast<AHuman>(GetPawn()))
+	if (OnCrouchToggledAction.IsBound())
 	{
-		bNewIsCrouching = !WizardCharacter->bIsCrouched;
-	}
-	
-	if (OnCrouchToggled.IsBound())
-	{
-		OnCrouchToggled.Broadcast(bNewIsCrouching);
+		OnCrouchToggledAction.Broadcast();
 	}
 }
 
-UPlayerHUD* ADefaultPlayerController::SetupWizardHud()
+void ADefaultPlayerController::OnPrimaryInputAction(const FInputActionValue& Value)
 {
-	if (WizardHUD)
+	if (OnPrimaryAction.IsBound())
 	{
-		WizardHUD->RemoveFromParent();
+		OnPrimaryAction.Broadcast();
 	}
-	
-	if (WizardHUDClass)
-	{
-		WizardHUD = Cast<UPlayerHUD>(CreateWidget<UUserWidget>(this, WizardHUDClass));
-		if (WizardHUD)
-		{
-			WizardHUD->AddToViewport();
-		}
-	}
+}
 
-	return WizardHUD;
+void ADefaultPlayerController::OnRuneSlotSelectedInputAction(const FInputActionValue& Value)
+{
+	const int SlotIndex = static_cast<int>(Value.Get<float>());
+	
+	if (OnRuneSlotSelectedAction.IsBound())
+	{
+		OnCrouchToggledAction.Broadcast();
+	}
+}
+
+void ADefaultPlayerController::OnInteractionInputAction(const FInputActionValue& Value)
+{
+	if (OnInteractAction.IsBound())
+	{
+		OnInteractAction.Broadcast();
+	}
+}
+
+void ADefaultPlayerController::OnGrabItemInputAction(const FInputActionValue& Value)
+{
+	if (OnGrabbedAction.IsBound())
+	{
+		OnGrabbedAction.Broadcast();
+	}
+}
+
+void ADefaultPlayerController::OnReleasedItemInputAction(const FInputActionValue& Value)
+{
+	if (OnReleasedAction.IsBound())
+	{
+		OnReleasedAction.Broadcast();
+	}
+}
+
+void ADefaultPlayerController::OnToggleInventoryInputAction(const FInputActionValue& Value)
+{
+	if (OnToggleInventoryAction.IsBound())
+	{
+		OnToggleInventoryAction.Broadcast();
+	}
+}
+
+void ADefaultPlayerController::OnToggleSpellBookInputAction(const FInputActionValue& Value)
+{
+	bool bIsPressed = Value.Get<bool>();
+	
+	if (OnToggleSpellBookAction.IsBound())
+	{
+		OnToggleSpellBookAction.Broadcast(bIsPressed);
+	}
+}
+
+void ADefaultPlayerController::OnTogglePauseMenuInputAction(const FInputActionValue& Value)
+{
+	if (OnTogglePauseMenuAction.IsBound())
+	{
+		OnTogglePauseMenuAction.Broadcast();
+	}
+}
+
+void ADefaultPlayerController::OnToggleMapInputAction(const FInputActionValue& Value)
+{
+	if (OnToggleMapAction.IsBound())
+	{
+		OnToggleMapAction.Broadcast();
+	}
 }

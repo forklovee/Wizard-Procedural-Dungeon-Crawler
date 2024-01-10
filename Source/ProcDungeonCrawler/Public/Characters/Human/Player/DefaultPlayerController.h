@@ -21,22 +21,25 @@ struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLookAroundInput, const FVector2D&, LookOffset);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMoveAroundInput, const FVector2D&, MoveOffset);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSprintToggled, bool, bIsSprinting);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrouchToggled, bool, bIsCrouching);
+// Movement
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLookAroundAction, const FVector2D&, LookOffset);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMoveAroundAction, const FVector2D&, MoveOffset);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSprintToggledAction, bool, bIsPressed);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCrouchToggledAction);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnJumpActionInput);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPrimaryHandActionInput);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractActionInput);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGrabbedActionInput);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReleasedActionInput);
+// Interaction
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPrimaryAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneSlotSelectedAction, const int&, SlotIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGrabbedAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReleasedAction);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUILeftRightInput, int, Direction);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnToggleBagRequest);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneSlotSelected, int, RuneIdx);
+// UI
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnToggleInventoryAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToggleSpellBookAction, bool, bIsPressed);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTogglePauseMenuAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnToggleMapAction);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API ADefaultPlayerController : public APlayerController
@@ -46,34 +49,37 @@ class PROCDUNGEONCRAWLER_API ADefaultPlayerController : public APlayerController
 public:
 	// Movement
 	UPROPERTY(BlueprintAssignable)
-	FOnLookAroundInput OnMoveAroundInput;
+	FOnLookAroundAction OnLookAroundAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnLookAroundInput OnLookAroundInput;
-	
+	FOnMoveAroundAction OnMoveAroundAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnSprintToggled OnSprintToggled;
+	FOnSprintToggledAction OnSprintToggledAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnCrouchToggled OnCrouchToggled;
+	FOnCrouchToggledAction OnCrouchToggledAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnJumpActionInput OnJumpActionInput;
+	FOnJumpActionInput OnJumpAction;
 
 	// Interaction
 	UPROPERTY(BlueprintAssignable)
-	FOnPrimaryHandActionInput OnPrimaryHandActionInput;
+	FOnPrimaryAction OnPrimaryAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnInteractActionInput OnInteractActionInput;
+	FOnRuneSlotSelectedAction OnRuneSlotSelectedAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnGrabbedActionInput OnGrabbedActionInput;
+	FOnInteractAction OnInteractAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnReleasedActionInput OnReleasedActionInput;
-	
+	FOnGrabbedAction OnGrabbedAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnUILeftRightInput OnUILeftRightInput;
+	FOnReleasedAction OnReleasedAction;
 
+	// UI
 	UPROPERTY(BlueprintAssignable)
-	FOnToggleBagRequest OnToggleBagRequest;
+	FOnToggleInventoryAction OnToggleInventoryAction;
 	UPROPERTY(BlueprintAssignable)
-	FOnRuneSlotSelected OnRuneSlotSelected;
+	FOnToggleSpellBookAction OnToggleSpellBookAction;
+	UPROPERTY(BlueprintAssignable)
+	FOnTogglePauseMenuAction OnTogglePauseMenuAction;
+	UPROPERTY(BlueprintAssignable)
+	FOnTogglePauseMenuAction OnToggleMapAction;
 
 	void SetupDefaultInput(UEnhancedInputComponent* PlayerInputComponent);
 	void SetInputContext(EInputContextType InputContext, bool bState = true);
@@ -95,9 +101,6 @@ protected:
 	virtual void OnUnPossess() override;
 	
 private:
-	void SetInteractionInput(bool bState) const;
-	void SetCharacterMovementInput(bool bState) const;
-
 	// Movement Input
 	UFUNCTION()
 	void OnLookAroundInputAction(const FInputActionValue& Value);
@@ -112,17 +115,15 @@ private:
 	
 	// Interaction Input
 	UFUNCTION()
-	void OnUseWeaponInputAction(const FInputActionValue& Value);
+	void OnPrimaryInputAction(const FInputActionValue& Value);
 	UFUNCTION()
-	void OnCastPreparedSpellInputAction(const FInputActionValue& Value);
-	UFUNCTION()
-	void OnUseItemInHandInputAction(const FInputActionValue& Value);
-	UFUNCTION()
-	void OnCastRuneFromSlotInputAction(const FInputActionValue& Value);
+	void OnRuneSlotSelectedInputAction(const FInputActionValue& Value);
 	UFUNCTION()
 	void OnInteractionInputAction(const FInputActionValue& Value);
 	UFUNCTION()
 	void OnGrabItemInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnReleasedItemInputAction(const FInputActionValue& Value);
 	
 	// UI Input
 	UFUNCTION()
@@ -159,16 +160,10 @@ public:
 	TSoftObjectPtr<UInputMappingContext> Interaction_InputContext;
 	
 	UPROPERTY(EditAnywhere, Category= "Input|Action")
-	TSoftObjectPtr<UInputAction> UseWeapon_InputAction;
+	TSoftObjectPtr<UInputAction> PrimaryAction_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|Action")
-	TSoftObjectPtr<UInputAction> CastPreparedSpell_InputAction;
-	
-	UPROPERTY(EditAnywhere, Category= "Input|Action")
-	TSoftObjectPtr<UInputAction> UseItemInHand_InputAction;
-
-	UPROPERTY(EditAnywhere, Category= "Input|Action")
-	TSoftObjectPtr<UInputAction> CastRuneFromSlot_InputAction;
+	TSoftObjectPtr<UInputAction> OnRuneSlotSelected_InputAction;
 
 	UPROPERTY(EditAnywhere, Category= "Input|Action")
 	TSoftObjectPtr<UInputAction> Interaction_InputAction;
@@ -193,7 +188,7 @@ public:
 	TSoftObjectPtr<UInputAction> ToggleMap_InputAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
-	TSubclassOf<UPlayerHUD> WizardHUDClass;
+	TSubclassOf<UPlayerHUD> PlayerHUDClass;
 
 	UPROPERTY(EditAnywhere)
 	UPlayerHUD* WizardHUD;
