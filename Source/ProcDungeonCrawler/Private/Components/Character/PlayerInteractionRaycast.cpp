@@ -4,7 +4,7 @@
 #include "Items/Clothes/Clothes.h"
 #include "Items/Clothes/RuneRing.h"
 #include "Spell/Rune.h"
-#include "Items/Weapon/Weapon.h"
+#include "Items/Weapon.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 UPlayerInteractionRaycast::UPlayerInteractionRaycast()
@@ -16,10 +16,10 @@ void UPlayerInteractionRaycast::UpdateInteractionTarget(FVector NewForwardVector
 {
 	ForwardVector = NewForwardVector;
 	
-	if (bInteractionDisabled && bGrabDisabled)
-	{
-		return;
-	}
+	// if (bInteractionDisabled && bGrabDisabled)
+	// {
+	// 	return;
+	// }
 	
 	FHitResult NewInteractionTarget;
 	CastRaycast(NewInteractionTarget);
@@ -28,11 +28,11 @@ void UPlayerInteractionRaycast::UpdateInteractionTarget(FVector NewForwardVector
 	{
 		return;
 	}
+	InteractionTarget = NewInteractionTarget;
 	
-	AItem* NewItem = Cast<AItem>(NewInteractionTarget.GetActor());
-	if (NewItem != nullptr) // new target is an item
+	if (AItem* NewItem = Cast<AItem>(NewInteractionTarget.GetActor())) // new target is an item
 	{
-		InteractionTarget = NewInteractionTarget;
+		UE_LOG(LogTemp, Display, TEXT("New Interaction Target! %s"), *NewItem->GetName())
 
 		if (OnNewInteractionTarget.IsBound())
 		{
@@ -44,8 +44,6 @@ void UPlayerInteractionRaycast::UpdateInteractionTarget(FVector NewForwardVector
 	
 	if (Cast<UInteractionShapeComponent>(NewInteractionTarget.GetComponent()) != nullptr) // new interaction target
 	{
-		InteractionTarget = NewInteractionTarget;
-
 		if (OnNewInteractionTarget.IsBound())
 		{
 			OnNewInteractionTarget.Broadcast(FText::FromString(NewInteractionTarget.GetActor()->GetName()), FName("Interact"), false);
@@ -55,10 +53,16 @@ void UPlayerInteractionRaycast::UpdateInteractionTarget(FVector NewForwardVector
 	}
 	
 	NewInteractionTarget = FHitResult();
+	UE_LOG(LogTemp, Display, TEXT("Clear Interaction Target!"))
 	if (OnNewInteractionTarget.IsBound())
 	{
 		OnNewInteractionTarget.Broadcast(FText::FromString(""), FName(), false);
 	}
+}
+
+AActor* UPlayerInteractionRaycast::GetInteractionTarget() const
+{
+	return InteractionTarget.GetActor();
 }
 
 bool UPlayerInteractionRaycast::Interact()
@@ -85,17 +89,43 @@ bool UPlayerInteractionRaycast::Interact()
 
 void UPlayerInteractionRaycast::CastRaycast(FHitResult& OutHitResult) const
 {
+	FHitResult VisibilityCollisionHitResult;
+	UKismetSystemLibrary::SphereTraceSingle(
+			GetWorld(),
+			GetComponentLocation(),
+			GetComponentLocation() + ForwardVector * RaycastLength,
+			RaycastRadius,
+			UEngineTypes::ConvertToTraceType(ECC_Visibility),
+			false,
+			{GetOwner()},
+			EDrawDebugTrace::None,
+			VisibilityCollisionHitResult,
+			true,
+			FLinearColor::Gray,
+		FLinearColor::Blue,
+		1.f
+		);
+
+	if (VisibilityCollisionHitResult.GetActor() != nullptr)
+	{
+		OutHitResult = VisibilityCollisionHitResult;
+		return;
+	}
+	
 	UKismetSystemLibrary::SphereTraceSingle(
 		GetWorld(),
 		GetComponentLocation(),
 		GetComponentLocation() + ForwardVector * RaycastLength,
 		RaycastRadius,
-		UEngineTypes::ConvertToTraceType(ECC_Visibility),
+		UEngineTypes::ConvertToTraceType(ECC_EngineTraceChannel2),
 		false,
-		{},
-		EDrawDebugTrace::None,
+		{GetOwner()},
+		EDrawDebugTrace::ForOneFrame,
 		OutHitResult,
-		true
+		true,
+		FLinearColor::Red,
+		FLinearColor::Green,
+		1.f
 	);
 }
 

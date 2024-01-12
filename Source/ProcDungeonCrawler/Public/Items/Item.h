@@ -6,29 +6,29 @@
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
 
+class UCapsuleComponent;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPickedUp);
+
 UCLASS()
 class AItem : public AActor
 {
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(BlueprintAssignable)
+	FOnPickedUp OnPickedUp;
+	
 	AItem();
 	
 	UFUNCTION(BlueprintCallable, Category = "Pickup")
 	virtual TSubclassOf<AActor> Pickup(APawn* Pawn);
 
-	UFUNCTION(BlueprintCallable, Category = "Physics")
-	void SetSimulatePhysics(const bool bNewSimulatePhysics);
-
-public:
-	UPROPERTY(EditAnywhere, Category="ItemName")
-	FName ItemName = "Item";
-	
-	UPROPERTY(EditAnywhere, Category="Components")
-	UStaticMeshComponent* ItemMesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	UCapsuleComponent* PickupCollision;
 	
 protected:
-	virtual void BeginPlay() override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Item")
+	FName ItemName = "Item";
 	
 	FTimerHandle DestroyTimerHandle;
 };

@@ -8,9 +8,8 @@
 #include "Components/Character/PawnStats.h"
 #include "Components/Character/SpellbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include "Items/Weapon.h"
 #include "Items/Item.h"
-#include "Items/Weapon/Weapon.h"
 #include "Items/Clothes/Clothes.h"
 
 AHuman::AHuman()
@@ -27,6 +26,23 @@ AHuman::AHuman()
 	Bag = CreateDefaultSubobject<UInventoryComponent>(FName("Bag"));
 	
 	PrimaryActorTick.bCanEverTick = true;
+}
+
+void AHuman::EquipWeapon(AWeapon* NewWeapon, USceneComponent* EquipTargetComponent, FName SocketName)
+{
+	if (NewWeapon == nullptr)
+	{
+		return;
+	}
+	
+	if (Weapon.IsValid())
+	{
+		Weapon->UnEquip();
+		Weapon = nullptr;
+	}
+	
+	Weapon = NewWeapon;
+	Weapon->Equip(this, EquipTargetComponent, SocketName);
 }
 
 void AHuman::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -92,7 +108,6 @@ void AHuman::UseItem(TSubclassOf<AItem> Item, int ItemAmount)
 
 void AHuman::Interact()
 {
-	
 }
 
 void AHuman::Grab()

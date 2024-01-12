@@ -38,6 +38,9 @@ public:
 	void UpdateInteractionTarget(FVector NewForwardVector);
 	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	AActor* GetInteractionTarget() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	bool Interact();
 
 private:

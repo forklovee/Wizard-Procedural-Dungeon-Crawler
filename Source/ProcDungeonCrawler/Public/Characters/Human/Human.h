@@ -35,6 +35,9 @@ public:
 	FOnWeaponAttack OnWeaponAttack;
 	
 	AHuman();
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void EquipWeapon(AWeapon* NewWeapon, USceneComponent* EquipTargetComponent, FName SocketName = "");
 	
 protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -56,7 +59,7 @@ protected:
 	UFUNCTION()
 	void UseItem(TSubclassOf<AItem> Item, int ItemAmount);
 	UFUNCTION()
-	void Interact();
+	virtual void Interact();
 	UFUNCTION()
 	void Grab();
 	UFUNCTION()
@@ -66,12 +69,9 @@ protected:
 	void SetWeapon(AWeapon* NewWeapon);
 	void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget);
 
-	UFUNCTION()
-	void SetCombatMode(bool bNewInCombatMode);
-
-private:
-	UFUNCTION()
-	void PrepareSpell(TSubclassOf<ASpell> SpellCastClass, float ManaCost);
+// private:
+	// UFUNCTION()
+	// void PrepareSpell(TSubclassOf<ASpell> SpellCastClass, float ManaCost);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
@@ -90,6 +90,7 @@ protected:
 	TWeakObjectPtr<AClothes> HeadArmor;
 	TWeakObjectPtr<AClothes> ChestArmor;
 	TWeakObjectPtr<AClothes> FeetArmor;
+
 private:
 	bool bIsCrouching = false;
 	bool bBlockMovement = false;

@@ -8,6 +8,7 @@
 #include "Characters/Human/Player/DefaultPlayerController.h"
 #include "Components/Character/PlayerInteractionRaycast.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Items/Weapon.h"
 
 APlayerPawn::APlayerPawn(): Super()
 {
@@ -27,6 +28,9 @@ APlayerPawn::APlayerPawn(): Super()
 	ArmsMeshComponent->CastShadow = false;
 	ArmsMeshComponent->SetOnlyOwnerSee(true);
 
+	WeaponSocket = CreateDefaultSubobject<USceneComponent>(FName("WeaponSocket"));
+	WeaponSocket->SetupAttachment(ArmsMeshComponent, FName("WeaponSocket"));
+	
 	//Camera
 	CameraSpringComponent = CreateDefaultSubobject<USpringArmComponent>(FName("CameraSpring"));
 	CameraSpringComponent->SetupAttachment(FP_RootComponent);
@@ -68,8 +72,6 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	{
 		PlayerController->SetupDefaultInput(PlayerEnhancedInputComponent);
 		
-		PlayerController->OnMoveAroundInput.AddDynamic(this, &APlayerPawn::MoveAround);
-		PlayerController->OnLookAroundInput.AddDynamic(this, &APlayerPawn::LookAround);
 		
 		// Setup WizardHUD
 		// if (UWizardHUD* WizardHUD = PlayerController->GetWizardHud())
@@ -90,7 +92,8 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		PlayerInteraction->OnItemPickedUp.AddDynamic(this, &APlayerPawn::UseItem);
 		// PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
 		
-		PlayerController->SetInputContext(EInputContextType::Gameplay, true);
+		PlayerController->SetInputContext(EInputContextType::Movement, true);
+		PlayerController->SetInputContext(EInputContextType::Interaction, true);
 	}
 }
 
@@ -98,6 +101,23 @@ void APlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
 }
+
+void APlayerPawn::Interact()
+{
+	Super::Interact();
+
+	AActor* InteractionTarget = PlayerInteraction->GetInteractionTarget();
+	if (InteractionTarget == nullptr)
+	{
+		return;
+	}
+
+	if (AWeapon* NewWeapon = Cast<AWeapon>(InteractionTarget))
+	{
+		EquipWeapon(NewWeapon, ArmsMeshComponent, FName("WeaponSocket"));
+	}
+}
+
 //
 // void APlayerPawn::UpdateSpellBookInputContext(bool IsSpellBookOpen)
 // {

@@ -38,7 +38,8 @@ public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 protected:
 	virtual void BeginPlay() override;
-	
+
+	virtual void Interact() override;
 public:
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
@@ -64,6 +65,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
 	UPlayerInteractionRaycast* PlayerInteraction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
+	USceneComponent* WeaponSocket;
 	
 protected:
 	TWeakObjectPtr<AWeapon> CurrentWeapon;

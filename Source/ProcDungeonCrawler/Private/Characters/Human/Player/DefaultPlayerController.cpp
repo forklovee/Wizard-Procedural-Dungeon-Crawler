@@ -62,7 +62,6 @@ void ADefaultPlayerController::SetInputContext(EInputContextType InputContext, b
 	case EInputContextType::Movement:
 		if (!Movement_InputContext.IsNull() && !Movement_InputContext.IsValid())
 		{
-			UE_LOG(LogTemp, Display, TEXT("Dupa movement"));
 			TargetInputContext = Movement_InputContext.LoadSynchronous();
 		}
 		else
@@ -73,7 +72,6 @@ void ADefaultPlayerController::SetInputContext(EInputContextType InputContext, b
 	case EInputContextType::Interaction:
 		if (!Interaction_InputContext.IsNull() && !Interaction_InputContext.IsValid())
 		{
-			UE_LOG(LogTemp, Display, TEXT("Dupa interaction"));
 			TargetInputContext = Interaction_InputContext.LoadSynchronous();
 		}
 		else
@@ -84,7 +82,6 @@ void ADefaultPlayerController::SetInputContext(EInputContextType InputContext, b
 	case EInputContextType::UI:
 		if (!UI_InputContext.IsNull() && !UI_InputContext.IsValid())
 		{
-			UE_LOG(LogTemp, Display, TEXT("Dupa ui"))
 			TargetInputContext = UI_InputContext.LoadSynchronous();
 		}
 		else
