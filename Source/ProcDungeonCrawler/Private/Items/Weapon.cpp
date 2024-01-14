@@ -54,7 +54,7 @@ void AWeapon::UnEquip()
 		return;
 	}
 	
-	AttachToActor(WeaponOwner->GetParentActor(), FAttachmentTransformRules::KeepWorldTransform);
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	PickupCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponOwner = nullptr;
 	

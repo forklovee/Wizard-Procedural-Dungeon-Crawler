@@ -56,7 +56,7 @@ void UPawnStats::TakeDamage(AActor* DamagedActor, float Damage, const UDamageTyp
 		OnHurt.Broadcast(DamageCauser, Damage, DamageType);
 	}
 }
-
+ 
 void UPawnStats::UseMana(ASpell* SpellCast, float ManaCost)
 {
 	Mana = FMath::Clamp(Mana - ManaCost, 0.f, MaxMana);
@@ -76,13 +76,62 @@ void UPawnStats::Heal(float HealAmount)
 	}
 }
 
-void UPawnStats::ApplyStatusEffect(TSubclassOf<UStatusEffect> StatusEffect)
+void UPawnStats::AddStatusEffect(TSubclassOf<AStatusEffect> StatusEffectClass)
 {
-	UStatusEffect* NewStatusEffect = NewObject<UStatusEffect>(this, StatusEffect);
-	NewStatusEffect->ApplyEffect(OwnerPawn.Get());
+	AStatusEffect* NewStatusEffect = GetWorld()->SpawnActor<AStatusEffect>(StatusEffectClass);
+	NewStatusEffect->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
 
-	if (OnStatusEffectApplied.IsBound())
+	NewStatusEffect->OnTimedApplyEffect.AddDynamic(this, &UPawnStats::ApplyStatusEffect);
+	
+	if (OnNewStatusEffectAdded.IsBound())
 	{
-		OnStatusEffectApplied.Broadcast(NewStatusEffect);
+		OnNewStatusEffectAdded.Broadcast(NewStatusEffect);
+	}
+}
+
+void UPawnStats::ApplyStatusEffect(AStatusEffect* StatusEffect)
+{
+	switch (StatusEffect->EffectType)
+	{
+		default:
+		case EEffectType::Heal:
+		{
+			Heal(StatusEffect->Strength);
+			break;
+		}
+			
+		case EEffectType::Hurt:
+		{
+			TakeDamage(GetOwner(), StatusEffect->Strength, nullptr, nullptr, StatusEffect);
+		}
+		
+		case EEffectType::Fire:
+		{
+			break;
+		}
+		case EEffectType::Water:
+		{
+			break;
+		}
+		case EEffectType::Stun:
+		{
+			break;
+		}
+		case EEffectType::Shock:
+		{
+			break;
+		}
+		case EEffectType::Freeze:
+		{
+			break;
+		}
+		case EEffectType::SlowDown:
+		{
+			break;
+		}
+		case EEffectType::SpeedUp:
+		{
+			break;
+		}
 	}
 }

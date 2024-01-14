@@ -19,10 +19,18 @@ public:
 	FOnPickedUp OnPickedUp;
 	
 	AItem();
+
+	UFUNCTION(BlueprintCallable, Category = "Equip")
+	virtual void Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FName SocketName);
+	UFUNCTION(BlueprintCallable, Category = "Equip")
+	virtual void UnEquip();
 	
 	UFUNCTION(BlueprintCallable, Category = "Pickup")
 	virtual TSubclassOf<AActor> Pickup(APawn* Pawn);
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	USceneComponent* WeaponRoot;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	UCapsuleComponent* PickupCollision;
 	

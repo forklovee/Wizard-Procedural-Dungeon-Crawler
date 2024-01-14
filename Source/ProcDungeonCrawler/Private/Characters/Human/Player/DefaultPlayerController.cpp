@@ -132,7 +132,7 @@ void ADefaultPlayerController::SetupDefaultInput(UEnhancedInputComponent* Player
 	PlayerInputComponent->BindAction(ToggleMap_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnToggleMapInputAction);
 }
 
-UPlayerHUD* ADefaultPlayerController::SetupWizardHud()
+UPlayerHUD* ADefaultPlayerController::AddHudToViewport()
 {
 	if (WizardHUD)
 	{

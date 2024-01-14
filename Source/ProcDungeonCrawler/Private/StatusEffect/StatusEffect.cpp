@@ -3,6 +3,23 @@
 
 #include "StatusEffect/StatusEffect.h"
 
-void UStatusEffect::ApplyEffect(APawn* Pawn)
+void AStatusEffect::BeginPlay()
 {
+	Super::BeginPlay();
+
+	GetWorld()->GetTimerManager().SetTimer(
+		EffectApplyTimerHandle,
+		this,
+		&AStatusEffect::ApplyEffect,
+		TickRate,
+		true,
+		0.f);
+}
+
+void AStatusEffect::ApplyEffect()
+{
+	if (OnTimedApplyEffect.IsBound())
+	{
+		OnTimedApplyEffect.Broadcast(this);
+	}
 }

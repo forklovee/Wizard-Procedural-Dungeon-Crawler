@@ -90,8 +90,8 @@ public:
 	// UFUNCTION()
 	// void UpdateMapInputContext(bool IsMapOpenOpen);
 	
-	UPlayerHUD* SetupWizardHud();
-	UPlayerHUD* GetWizardHud() const { return WizardHUD; }
+	UPlayerHUD* AddHudToViewport();
+	UPlayerHUD* GetHud() const { return WizardHUD; }
 	
 protected:
 	virtual void BeginPlay() override;

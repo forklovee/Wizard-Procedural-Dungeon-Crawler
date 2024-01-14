@@ -4,6 +4,8 @@
 #include "Characters/Human/Human.h"
 
 #include "Characters/Human/Player/DefaultPlayerController.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/TimelineComponent.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/PawnStats.h"
 #include "Components/Character/SpellbookComponent.h"
@@ -11,6 +13,7 @@
 #include "Items/Weapon.h"
 #include "Items/Item.h"
 #include "Items/Clothes/Clothes.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 AHuman::AHuman()
 {
@@ -146,7 +149,6 @@ void AHuman::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
 	}
 }
 
-
 // Movement
 void AHuman::MoveAround(const FVector2D& MoveOffset)
 {
@@ -164,6 +166,11 @@ void AHuman::LookAround(const FVector2D& LookOffset)
 	AddControllerYawInput(LookOffset.X);
 }
 
+void AHuman::Jump()
+{
+	Super::Jump();
+}
+
 void AHuman::SetSprinting(const bool bNewIsSprinting)
 {
 	bIsSprinting = bNewIsSprinting;
@@ -175,12 +182,8 @@ void AHuman::SetSprinting(const bool bNewIsSprinting)
 void AHuman::ToggleCrouch()
 {
 	bIsCrouching = !bIsCrouching;
-	if (!bIsCrouching)
+	if (OnCrouchStateChanged.IsBound())
 	{
-		Crouch();
-	}
-	else
-	{
-		UnCrouch();
+		OnCrouchStateChanged.Broadcast(bIsCrouching);
 	}
 }

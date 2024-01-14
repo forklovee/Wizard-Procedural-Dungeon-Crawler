@@ -12,7 +12,8 @@ enum class EArmorTarget: uint8
 {
 	Head,
 	Chest,
-	Feet
+	Feet,
+	Hands
 };
 
 class AClothes;
@@ -24,6 +25,7 @@ class UPawnStats;
 class AItem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponAttack);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrouchStateChanged, bool, bCrouchState);
 
 UCLASS(Blueprintable, BlueprintType)
 class PROCDUNGEONCRAWLER_API AHuman : public ACharacter
@@ -33,6 +35,9 @@ class PROCDUNGEONCRAWLER_API AHuman : public ACharacter
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnWeaponAttack OnWeaponAttack;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnCrouchStateChanged OnCrouchStateChanged;
 	
 	AHuman();
 
@@ -48,6 +53,9 @@ protected:
 	void MoveAround(const FVector2D& MoveOffset);
 	UFUNCTION()
 	void LookAround(const FVector2D& LookOffset);
+	
+	void Jump() override;
+	
 	UFUNCTION()
 	void SetSprinting(const bool bNewIsSprinting);
 	UFUNCTION()
@@ -65,9 +73,9 @@ protected:
 	UFUNCTION()
 	void Release();
 
-	void SetItemGrab(AItem* NewGrabItem);
-	void SetWeapon(AWeapon* NewWeapon);
-	void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget);
+	virtual void SetItemGrab(AItem* NewGrabItem);
+	virtual void SetWeapon(AWeapon* NewWeapon);
+	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget);
 
 // private:
 	// UFUNCTION()
@@ -90,6 +98,7 @@ protected:
 	TWeakObjectPtr<AClothes> HeadArmor;
 	TWeakObjectPtr<AClothes> ChestArmor;
 	TWeakObjectPtr<AClothes> FeetArmor;
+	TArray<TWeakObjectPtr<AClothes>> Rings;
 
 private:
 	bool bIsCrouching = false;

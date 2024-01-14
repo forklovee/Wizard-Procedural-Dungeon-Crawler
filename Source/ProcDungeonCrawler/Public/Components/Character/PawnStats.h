@@ -7,12 +7,12 @@
 #include "PawnStats.generated.h"
 
 class ASpell;
-class UStatusEffect;
+class AStatusEffect;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHeal, float, Health, float, HealAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaUsage, float, Mana, float, ManaUsed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt, AActor*, DamageCauser, float, Damage, const UDamageType*, DamageType);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatusEffectApplied, UStatusEffect*, StatusEffect);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewStatusEffectAdded, AStatusEffect*, StatusEffect);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UPawnStats : public UActorComponent
@@ -27,7 +27,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnHurt OnHurt;
 	UPROPERTY(BlueprintAssignable)
-	FOnStatusEffectApplied OnStatusEffectApplied;
+	FOnNewStatusEffectAdded OnNewStatusEffectAdded;
 	
 	UPawnStats();
 	
@@ -52,12 +52,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UseMana(ASpell* SpellCast, float ManaCost);
-
-	UFUNCTION(BlueprintCallable)
-	void ApplyStatusEffect(TSubclassOf<UStatusEffect> StatusEffect);
 	
 protected:
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void AddStatusEffect(TSubclassOf<AStatusEffect> StatusEffectClass);
+
+private:
+	void ApplyStatusEffect(AStatusEffect* StatusEffect);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats | Health")
@@ -77,5 +80,4 @@ protected:
 	
 	float Health = 0.f;
 	float Mana = 0.f;
-	TArray<UStatusEffect*> StatusEffects;
 };

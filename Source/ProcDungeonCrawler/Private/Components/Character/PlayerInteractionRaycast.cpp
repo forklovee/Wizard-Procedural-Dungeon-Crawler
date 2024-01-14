@@ -120,7 +120,7 @@ void UPlayerInteractionRaycast::CastRaycast(FHitResult& OutHitResult) const
 		UEngineTypes::ConvertToTraceType(ECC_EngineTraceChannel2),
 		false,
 		{GetOwner()},
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		OutHitResult,
 		true,
 		FLinearColor::Red,

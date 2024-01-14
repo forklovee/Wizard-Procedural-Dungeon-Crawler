@@ -32,8 +32,8 @@ public:
 	/* Only broadcasts OnAttack delegate */
 	void Attack();
 
-	void Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FName SocketName = "");
-	void UnEquip();
+	virtual void Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FName SocketName = "") override;
+	virtual void UnEquip() override;
 	
 protected:
 	bool CanAttack() const { return bCanAttack; }

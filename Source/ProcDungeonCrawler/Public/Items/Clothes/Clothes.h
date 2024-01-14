@@ -14,6 +14,8 @@ class PROCDUNGEONCRAWLER_API AClothes : public AItem
 public:
 	AClothes();
 
+	
+	
 protected:
 	virtual void BeginPlay() override;
 };

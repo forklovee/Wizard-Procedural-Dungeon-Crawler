@@ -6,9 +6,12 @@
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Characters/Human/Player/DefaultPlayerController.h"
+#include "Components/Character/PawnStats.h"
 #include "Components/Character/PlayerInteractionRaycast.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Items/Weapon.h"
+#include "Items/Clothes/RuneRing.h"
+#include "UI/Wizard/PlayerHUD.h"
 
 APlayerPawn::APlayerPawn(): Super()
 {
@@ -74,20 +77,22 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		
 		
 		// Setup WizardHUD
-		// if (UWizardHUD* WizardHUD = PlayerController->GetWizardHud())
-		// {
-		// 	// Bind stat changes to hud
-		// 	Stats->OnHurt.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerHurt);
-		// 	Stats->OnHeal.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerHeal);
-		// 	Stats->OnManaUsage.AddDynamic(WizardHUD, &UWizardHUD::OnPlayerManaUsage);
-		// 	Stats->Heal(0.f);
-		// 	Stats->UseMana(nullptr, 0.f);
-		//
-		// 	PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
-		// 	
-		// 	SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
-		// 	SpellBook->OnRuneCasted.AddDynamic(WizardHUD, &UWizardHUD::OnRuneCasted);
-		// }
+		if (UPlayerHUD* PlayerHUD = PlayerController->AddHudToViewport())
+		{
+			UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
+			// Bind stat changes to hud
+			Stats->OnHurt.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHurt);
+			Stats->OnHeal.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHeal);
+			Stats->OnManaUsage.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerManaUsage);
+			Stats->Heal(0.f);
+			Stats->UseMana(nullptr, 0.f);
+		
+			// PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
+			
+			// SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
+			// SpellBook->OnRuneCasted.AddDynamic(WizardHUD, &UWizardHUD::OnRuneCasted);
+		}
+		
 		// Bind interaction system
 		PlayerInteraction->OnItemPickedUp.AddDynamic(this, &APlayerPawn::UseItem);
 		// PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
@@ -116,6 +121,21 @@ void APlayerPawn::Interact()
 	{
 		EquipWeapon(NewWeapon, ArmsMeshComponent, FName("WeaponSocket"));
 	}
+}
+
+void APlayerPawn::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
+{
+	if (ARuneRing* RuneRing = Cast<ARuneRing>(NewClothes))
+	{
+		
+		return;
+	}
+	if (ArmorTarget == EArmorTarget::Hands)
+	{
+		
+	}
+	
+	Super::SetArmor(NewClothes, ArmorTarget);
 }
 
 //

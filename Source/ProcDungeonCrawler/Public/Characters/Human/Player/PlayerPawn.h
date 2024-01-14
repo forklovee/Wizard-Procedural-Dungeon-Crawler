@@ -40,6 +40,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void Interact() override;
+	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget) override;
 public:
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
