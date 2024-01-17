@@ -26,7 +26,7 @@ AHuman::AHuman()
 	// Pawn Stats
 	Stats = CreateDefaultSubobject<UPawnStats>(FName("PawnStats"));
 
-	Bag = CreateDefaultSubobject<UInventoryComponent>(FName("Bag"));
+	Inventory = CreateDefaultSubobject<UInventoryComponent>(FName("Bag"));
 	
 	PrimaryActorTick.bCanEverTick = true;
 }

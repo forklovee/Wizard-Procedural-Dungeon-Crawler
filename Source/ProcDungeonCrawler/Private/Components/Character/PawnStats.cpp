@@ -17,8 +17,6 @@ void UPawnStats::BeginPlay()
 
 	Health = StartingHealth;
 	Mana = StartingMana;
-	
-	OwnerPawn = Cast<APawn>(GetOwner());
 }
 
 float UPawnStats::GetMaxHealth() const

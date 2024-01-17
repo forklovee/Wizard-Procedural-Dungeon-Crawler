@@ -1,6 +1,7 @@
 
 #include "Components/Character/PlayerInteractionRaycast.h"
 #include "Components/Props/InteractionShapeComponent.h"
+#include "Items/PickupItem.h"
 #include "Items/Clothes/Clothes.h"
 #include "Items/Clothes/RuneRing.h"
 #include "Spell/Rune.h"

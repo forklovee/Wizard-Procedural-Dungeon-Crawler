@@ -43,6 +43,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void EquipWeapon(AWeapon* NewWeapon, USceneComponent* EquipTargetComponent, FName SocketName = "");
+
+	UFUNCTION()
+	void UseItem(TSubclassOf<AItem> Item, int ItemAmount);
 	
 protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -65,8 +68,6 @@ protected:
 	UFUNCTION()
 	void PrimaryAction();
 	UFUNCTION()
-	void UseItem(TSubclassOf<AItem> Item, int ItemAmount);
-	UFUNCTION()
 	virtual void Interact();
 	UFUNCTION()
 	void Grab();
@@ -86,7 +87,7 @@ public:
 	USpellBookComponent* SpellBook;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
-	UInventoryComponent* Bag;
+	UInventoryComponent* Inventory;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	UPawnStats* Stats;

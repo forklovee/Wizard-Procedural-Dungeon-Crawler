@@ -10,20 +10,18 @@
 class AWeapon;
 class AWizardPlayer;
 
-USTRUCT()
-struct FInvSlot
+USTRUCT(BlueprintType)
+struct FInventorySlot
 {
 	GENERATED_BODY()
 
-	FInvSlot() = default;
-	
-	FInvSlot(int NewIndex, FVector2D NewTilePos)
+	FInventorySlot()
 	{
-		Index = NewIndex;
-		TilePos = NewTilePos;
+		ItemClass = nullptr;
+		Amount = 0;
 	}
 
-	FInvSlot(TSubclassOf<AItem> NewItemClass, int32 NewAmount)
+	FInventorySlot(TSubclassOf<AItem> NewItemClass, int32 NewAmount)
 	{
 		ItemClass = NewItemClass;
 		Amount = NewAmount;
@@ -39,16 +37,14 @@ struct FInvSlot
 	{
 		return ItemClass == nullptr;
 	}
-
-	int Index = -1;
+	
 	FVector2D TilePos;
 	TSubclassOf<AItem> ItemClass;
 	int32 Amount = 0;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewItemAdded, FInvSlot, BagSlot);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, FInvSlot, BagSlot);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInvSlotUpdated, FInvSlot, BagSlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemAdded, FInventorySlot, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, FInventorySlot, InventorySlot);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UInventoryComponent : public UActorComponent
@@ -56,30 +52,35 @@ class PROCDUNGEONCRAWLER_API UInventoryComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	FOnNewItemAdded OnNewItemAdded;
+	FOnItemAdded OnItemAdded;
 	FOnItemRemoved OnItemRemoved;
-	FOnInvSlotUpdated OnInvSlotUpdated;
 	
 	UInventoryComponent();
-	
-	UFUNCTION()
-	void AddItem(TSubclassOf<AItem> ItemClass, int32 Amount = 1);
-	UFUNCTION()
-	void RemoveItem(TSubclassOf<AItem> ItemClass, int32 Amount = 1);
 
+	UFUNCTION(BlueprintCallable)
+	TArray<FInventorySlot>& GetItems();
+	
+	UFUNCTION(BlueprintCallable)
+	void AddItem(TSubclassOf<AItem> ItemClass, int32 Amount = 1);
+	UFUNCTION(BlueprintCallable)
+	void RemoveItem(TSubclassOf<AItem> ItemClass, int32 Amount = 1);
+	
+	UFUNCTION(BlueprintCallable)
+	bool HasItem(TSubclassOf<AItem> ItemClass);
+	UFUNCTION(BlueprintCallable)
+	int GetItemAmount(TSubclassOf<AItem> ItemClass);
+
+	UFUNCTION(BlueprintCallable)
+	bool IsTileFree(FVector2D TilePos);
+
+	FVector2D GetInventorySize() const { return InventorySize; }
 protected:
 	virtual void BeginPlay() override;
-
-	UFUNCTION()
-	void UpdateItemSlot(FInvSlot BagSlotOverride);
 	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bag", meta=(AllowPrivateAccess = "true"))
-	FVector2D BagGridSize = FVector2D(4, 3);
+	FVector2D InventorySize = FVector2D(6, 15);
 	
-	TWeakObjectPtr<AWizardPlayer> BagOwner;
 private:
-	TSubclassOf<AWeapon> WeaponClass;
-	
-	TArray<FInvSlot> Items;
+	TArray<FInventorySlot> Items;
 };

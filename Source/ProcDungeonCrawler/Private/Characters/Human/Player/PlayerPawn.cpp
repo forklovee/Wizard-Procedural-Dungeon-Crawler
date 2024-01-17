@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Characters/Human/Player/DefaultPlayerController.h"
+#include "Components/Character/InventoryComponent.h"
 #include "Components/Character/PawnStats.h"
 #include "Components/Character/PlayerInteractionRaycast.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -74,12 +75,18 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	if (ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController()))
 	{
 		PlayerController->SetupDefaultInput(PlayerEnhancedInputComponent);
-		
+		PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
 		
 		// Setup WizardHUD
 		if (UPlayerHUD* PlayerHUD = PlayerController->AddHudToViewport())
 		{
+			PlayerHUD->Player = this;
+			
 			UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
+
+			PlayerController->OnToggleInventoryAction.AddDynamic(PlayerHUD, &UPlayerHUD::ToggleInventoryVisibility);
+			PlayerInteraction->OnNewInteractionTarget.AddDynamic(PlayerHUD, &UPlayerHUD::OnNewInteractionTarget);
+			
 			// Bind stat changes to hud
 			Stats->OnHurt.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHurt);
 			Stats->OnHeal.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHeal);
@@ -99,6 +106,7 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		
 		PlayerController->SetInputContext(EInputContextType::Movement, true);
 		PlayerController->SetInputContext(EInputContextType::Interaction, true);
+		PlayerController->SetInputContext(EInputContextType::UI, true);
 	}
 }
 

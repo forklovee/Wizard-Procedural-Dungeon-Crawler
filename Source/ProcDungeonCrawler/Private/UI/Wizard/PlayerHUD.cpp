@@ -4,26 +4,92 @@
 #include "..\..\..\Public\UI\Wizard\PlayerHUD.h"
 
 #include "Blueprint/WidgetTree.h"
+#include "Characters/Human/Player/PlayerPawn.h"
 #include "UI/Wizard/RuneCastSlot.h"
 
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
+#include "Components/UniformGridPanel.h"
+#include "Components/Character/InventoryComponent.h"
+#include "UI/Inventory/ItemTile.h"
 #include "UI/Wizard/RuneCastsHistory.h"
 
 void UPlayerHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
+	
+	InventorySize = Player->Inventory->GetInventorySize();
+	for (int X = 0; X < static_cast<int>(InventorySize.X); X++)
+	{
+		for (int Y = 0; Y < static_cast<int>(InventorySize.Y); Y++)
+		{
+			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
+			ItemTiles.Add(ItemTile);
+			
+			InventoryGrid->AddChildToUniformGrid(ItemTile, X, Y);
+		}
+	}
+}
 
-	// if (RuneSlots != nullptr) {
-	// 	int ChildIdx = 0;
-	// 	for (UWidget* ChildWidget : RuneSlots->GetAllChildren()) {
-	// 		if (URuneCastSlot* RuneCastSlot = Cast<URuneCastSlot>(ChildWidget)) {
-	// 			RuneCastSlot->SetSlotIndex(ChildIdx);
-	// 			RuneCastSlots.Add(RuneCastSlot);
-	// 			ChildIdx++;
-	// 		}
-	// 	}
-	// }
+void UPlayerHUD::UpdateInventoryData()
+{
+	for (FInventorySlot& InventorySlot : Player->Inventory->GetItems())
+	{
+		if (InventorySlot.ItemClass == nullptr) continue;
+		
+		UItemTile* ItemTile = GetItemTileAtPosition(InventorySlot.TilePos);
+		ItemTile->UpdateData(InventorySlot);
+	}
+}
+
+UItemTile* UPlayerHUD::GetItemTileAtPosition(FVector2D TilePos) const
+{
+	const int TileIdx = TilePos.X + (TilePos.Y * InventorySize.X);
+	if (TileIdx < 0 || TileIdx > ItemTiles.Num()-1) return nullptr;
+
+	return ItemTiles[TileIdx];
+}
+
+void UPlayerHUD::ToggleInventoryVisibility()
+{
+	SetInventoryVisible(!bIsVisible);
+}
+
+void UPlayerHUD::SetInventoryVisible(bool bNewIsVisible)
+{
+	bIsVisible = bNewIsVisible;
+	SetVisibility(!bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+
+	if (OnInventoryVisibilityChanged.IsBound())
+	{
+		OnInventoryVisibilityChanged.Broadcast();
+	}
+
+	if (!bIsVisible)
+	{
+		return;
+	}
+
+	for (FInventorySlot& InventorySlot : Player->Inventory->GetItems())
+	{
+		if (InventorySlot.ItemClass == nullptr) continue;
+		
+		UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
+		ItemTile->UpdateData(InventorySlot);
+		ItemTile->OnUseItemRequest.AddDynamic(Player, &APlayerPawn::UseItem);
+		ItemTile->OnUseItemRequest.AddDynamic(Player->Inventory, &UInventoryComponent::RemoveItem);
+		// ItemTile->OnInspectItemRequest.AddDynamic(this, &UPlayerHUD::OnInspectItemRequest);
+		// ItemTile->OnDropItemRequest.AddDynamic(this, &UPlayerHUD::OnDropItemRequest);
+		InventoryGrid->AddChildToUniformGrid(ItemTile, InventorySlot.TilePos.X, InventorySlot.TilePos.Y);
+	}
+}
+
+void UPlayerHUD::OnNewInteractionTarget(FText ActorName, FName InteractionType, bool bCanBeGrabbed)
+{
+	if (OnInteractionTargetChanged.IsBound())
+	{
+		OnInteractionTargetChanged.Broadcast(ActorName, InteractionType, bCanBeGrabbed);
+	}
 }
 
 void UPlayerHUD::OnRuneCasted(int RuneIdx, URune* RuneCast, TArray<URune*>& CastedRunes)

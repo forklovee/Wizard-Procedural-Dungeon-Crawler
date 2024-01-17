@@ -29,7 +29,7 @@ bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
 		UE_LOG(LogTemp, Error, TEXT("GameMode: Failed to fetch player pawn"));
 		return false;
 	}
-	PlayerBag = Player->Bag;
+	PlayerBag = Player->Inventory;
 	PlayerSpellBook = Player->SpellBook;
 	
 	if (!LoadAndSetDungeonData())

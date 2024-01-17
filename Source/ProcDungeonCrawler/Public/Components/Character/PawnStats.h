@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
 #include "PawnStats.generated.h"
 
 class ASpell;
@@ -12,6 +13,7 @@ class AStatusEffect;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHeal, float, Health, float, HealAmount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaUsage, float, Mana, float, ManaUsed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt, AActor*, DamageCauser, float, Damage, const UDamageType*, DamageType);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewStatusEffectAdded, AStatusEffect*, StatusEffect);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -75,9 +77,8 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats | Combat")
 	float Strength = 1.f;
-protected:
-	TWeakObjectPtr<APawn> OwnerPawn;
 	
+protected:
 	float Health = 0.f;
 	float Mana = 0.f;
 };
