@@ -5,6 +5,7 @@
 
 #include "Blueprint/WidgetTree.h"
 #include "Characters/Human/Player/PlayerPawn.h"
+#include "Components/CanvasPanel.h"
 #include "UI/Wizard/RuneCastSlot.h"
 
 #include "Components/HorizontalBox.h"
@@ -14,21 +15,9 @@
 #include "UI/Inventory/ItemTile.h"
 #include "UI/Wizard/RuneCastsHistory.h"
 
-void UPlayerHUD::NativeConstruct()
+void UPlayerHUD::NativeOnInitialized()
 {
-	Super::NativeConstruct();
-	
-	InventorySize = Player->Inventory->GetInventorySize();
-	for (int X = 0; X < static_cast<int>(InventorySize.X); X++)
-	{
-		for (int Y = 0; Y < static_cast<int>(InventorySize.Y); Y++)
-		{
-			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
-			ItemTiles.Add(ItemTile);
-			
-			InventoryGrid->AddChildToUniformGrid(ItemTile, X, Y);
-		}
-	}
+	Super::NativeOnInitialized();
 }
 
 void UPlayerHUD::UpdateInventoryData()
@@ -50,6 +39,30 @@ UItemTile* UPlayerHUD::GetItemTileAtPosition(FVector2D TilePos) const
 	return ItemTiles[TileIdx];
 }
 
+void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
+{
+	InventoryGrid->ClearChildren();
+	
+	if (PlayerPawn == nullptr)
+	{
+		UE_LOG(LogTemp, Display, TEXT("PlayerPawn is null"))
+		return;
+	}
+	Player = PlayerPawn;
+	
+	InventorySize = Player->Inventory->GetInventorySize();
+	for (int X = 0; X < static_cast<int>(InventorySize.X); X++)
+	{
+		for (int Y = 0; Y < static_cast<int>(InventorySize.Y); Y++)
+		{
+			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
+			ItemTiles.Add(ItemTile);
+			
+			InventoryGrid->AddChildToUniformGrid(ItemTile, X, Y);
+		}
+	}
+}
+
 void UPlayerHUD::ToggleInventoryVisibility()
 {
 	SetInventoryVisible(!bIsVisible);
@@ -58,8 +71,10 @@ void UPlayerHUD::ToggleInventoryVisibility()
 void UPlayerHUD::SetInventoryVisible(bool bNewIsVisible)
 {
 	bIsVisible = bNewIsVisible;
-	SetVisibility(!bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
-
+	
+	InventoryCanvas->SetVisibility(!bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	// HudCanvas->SetVisibility(bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	
 	if (OnInventoryVisibilityChanged.IsBound())
 	{
 		OnInventoryVisibilityChanged.Broadcast();
@@ -140,6 +155,8 @@ void UPlayerHUD::OnPlayerManaUsage(float Mana, float ManaUsage)
 		OnPlayerManaUsage_ManaUpdate.Broadcast(Mana, ManaUsage);
 	}
 }
+
+
 
 void UPlayerHUD::BindRuneToSlot(int SlotIdx, URune* RuneCast)
 {

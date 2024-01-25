@@ -7,14 +7,21 @@
 #include "Components/TextBlock.h"
 #include "Components/Character/InventoryComponent.h"
 
+void UItemTile::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	if (Button != nullptr)
+	{
+		Button->OnPressed.AddDynamic(this, &UItemTile::UseItem);
+	}
+}
+
  void UItemTile::NativeConstruct()
 {
 	Super::NativeConstruct();
 
- 	if (Button != nullptr)
- 	{
- 		Button->OnPressed.AddDynamic(this, &UItemTile::UseItem);
- 	}
+ 	
 }
 
 void UItemTile::UpdateData(FInventorySlot InventorySlot)

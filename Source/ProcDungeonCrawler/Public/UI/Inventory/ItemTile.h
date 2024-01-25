@@ -38,11 +38,13 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnDropItemRequest OnDropItemRequest;
 
+	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	
 	void UpdateData(FInventorySlot InventorySlot);
 
 protected:
+	UFUNCTION()
 	void UseItem();
 	void InspectItem();
 	void DropItem();

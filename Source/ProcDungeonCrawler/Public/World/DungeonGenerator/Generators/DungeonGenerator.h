@@ -165,10 +165,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
 	bool BuildDungeon();
+
+	UFUNCTION(BlueprintCallable, Category="Dungeon")
+	void BuildRoomById(int Id);
 	
 protected:
 	virtual void BeginPlay() override;
-
+	
+	void BuildRoom(FRoomData& RoomData, FVector& BranchDirection);
+	
 	bool LoadAndSetDungeonData();
 	bool ExtendFloorRoomTree(FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
 	TArray<FRoomData*> ConnectRuleCollectionToRooms(int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection, const bool bIsMainWalkthroughPath = false);
@@ -204,4 +209,8 @@ protected:
 
 private:
 	int CurrentGeneratedLevel = 0;
+
+	int LastBuiltRoomId = -1;
+
+	FTimerHandle BuildRoomTimerHandle;
 };

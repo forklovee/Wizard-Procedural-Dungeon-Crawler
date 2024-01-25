@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUD.generated.h"
 
+class UCanvasPanel;
 class UItemTile;
 class UUniformGridPanel;
 class APlayerPawn;
@@ -42,6 +43,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerManaUsage_ManaUpdate OnPlayerManaUsage_ManaUpdate;
 
+	void SetupInventory(APlayerPawn* PlayerPawn);
+	
 	UFUNCTION(BlueprintCallable)
 	void ToggleInventoryVisibility();
 	
@@ -68,18 +71,24 @@ public:
 	void OnPlayerManaUsage(float Mana, float ManaUsage);
 
 protected:
-	virtual void NativeConstruct() override;
+	virtual void NativeOnInitialized() override;
 
 	void UpdateInventoryData();
 	UItemTile* GetItemTileAtPosition(FVector2D TilePos) const;
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UItemTile> ItemTileClass;
-	
 	UPROPERTY()
 	APlayerPawn* Player;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UItemTile> ItemTileClass;
 
-	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UCanvasPanel* HudCanvas;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UCanvasPanel* InventoryCanvas;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UUniformGridPanel* InventoryGrid;
 	
 // public:

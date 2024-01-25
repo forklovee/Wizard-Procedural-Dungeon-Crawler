@@ -75,12 +75,12 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	if (ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController()))
 	{
 		PlayerController->SetupDefaultInput(PlayerEnhancedInputComponent);
-		PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
+		// PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
 		
 		// Setup WizardHUD
 		if (UPlayerHUD* PlayerHUD = PlayerController->AddHudToViewport())
 		{
-			PlayerHUD->Player = this;
+			PlayerHUD->SetupInventory(this);
 			
 			UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
 
@@ -101,7 +101,7 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		}
 		
 		// Bind interaction system
-		PlayerInteraction->OnItemPickedUp.AddDynamic(this, &APlayerPawn::UseItem);
+		// PlayerInteraction->OnItemPickedUp.AddDynamic(this, &APlayerPawn::UseItem);
 		// PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
 		
 		PlayerController->SetInputContext(EInputContextType::Movement, true);

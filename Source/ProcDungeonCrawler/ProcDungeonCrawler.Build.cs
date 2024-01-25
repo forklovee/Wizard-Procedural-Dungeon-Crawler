@@ -9,7 +9,7 @@ public class ProcDungeonCrawler : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] 
-			{ "Core", "CoreUObject", "Engine", "InputCore", "UMG", "EnhancedInput", "Niagara", "ActorSequence" }
+			{ "Core", "CoreUObject", "Engine", "InputCore", "UMG", "PCG", "EnhancedInput", "Niagara", "ActorSequence" }
 		);
 		
 		PrivateDependencyModuleNames.AddRange( new string[] { "Slate", "SlateCore" });

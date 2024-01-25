@@ -170,126 +170,135 @@ bool ADungeonGenerator::BuildDungeon()
 		UE_LOG(LogTemp, Error, TEXT("Failed to load Dungeon Data!"));
 		return false;
 	}
-	if (WalkthroughPathClass == nullptr)
-	{
-		return false;
-	}
+	// if (WalkthroughPathClass == nullptr)
+	// {
+	// 	UE_LOG(LogTemp, Error, TEXT("WalkthroughPathClass is null!"));
+	// 	return false;
+	// }
 	//
-	const AWalkthroughPath* SplineGlobalWalkthough = GetWorld()->SpawnActor<AWalkthroughPath>(WalkthroughPathClass);
+	// const AWalkthroughPath* SplineGlobalWalkthough = GetWorld()->SpawnActor<AWalkthroughPath>(WalkthroughPathClass);
+
+	FRoomData& StartRoomData = Rooms[0];
+	FVector BranchDirection = FVector::ForwardVector;
 	for (int RoomIdx = 0; RoomIdx < Rooms.Num(); RoomIdx++)
 	{
-		// get generated room data
-		FRoomData& RoomData = Rooms[RoomIdx];
-	
-		//debug
-		UE_LOG(LogTemp, Warning, TEXT("Room %i: %s"), RoomData.Id, *UEnum::GetValueAsString(RoomData.RoomRules.RoomType));
-	
-		// get room class to spawn a premade room actor
-		FRoomResourceEntry RoomResource = DungeonRoomDictionary->GetRandomRoomClassOfType(RoomData.RoomRules.RoomType);
-		if (RoomResource.RoomClass == nullptr)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Room class is null!"));
-			return false;
-		}
-	
-		RoomData.RoomActor = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomResource.RoomClass.Get()));
-		if (!RoomData.RoomActor.IsValid())
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
-			return false;
-		}
-	
-		// Start room position isn't calculated
-		if (RoomData.ParentId == -1){
-			RoomData.RoomActor->SetActorLocation(-RoomData.RoomActor->GetRoomCenter());
-			continue;
-		}
-		
-		// get parent room data
-		const FRoomData& LastRoomData = Rooms[RoomData.ParentId];
-		if (!LastRoomData.RoomActor.IsValid())
-		{
-			UE_LOG(LogTemp, Error, TEXT("Parent Room of Id: %i, has no spawned room!"), LastRoomData.Id);
-			continue;
-		}
-		
-		// get current room walls data
-		TArray<FRoomWall> ThisRoomWalls = RoomData.RoomActor->GetRoomWalls();
-	
-		bool bCorrectLocationFound = false;
-		while (ThisRoomWalls.Num() > 0)
-		{
-			if (bCorrectLocationFound)
-			{
-				break;
-			}
-			const int RandomWallIndex = FMath::RandRange(0, ThisRoomWalls.Num()-1);
-			UE_LOG(LogTemp, Display, TEXT("\t Room %i Selected Random Wall of Idx %i out of %i"), RoomIdx, RandomWallIndex, ThisRoomWalls.Num());
-	
-			const FRoomWall& ThisRoomWall = ThisRoomWalls[RandomWallIndex];
-			const FVector ThisWallNormal = ThisRoomWall.GetWallNormal();
-			// invert current room random wall normal to get last room desired wall normal
-			FVector LastRoomDesiredWallNormal = -ThisWallNormal;
-	
-			TArray<FRoomWall> LastRoomWalls = LastRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
-			if (LastRoomWalls.Num() == 0)
-			{
-				ThisRoomWalls.RemoveAt(RandomWallIndex);
-				UE_LOG(LogTemp, Error, TEXT("No compatible walls found for new room!"));
-				continue;
-			}
-			
-			for (FRoomWall& LastRoomWall: LastRoomWalls)
-			{
-				FVector ThisWallStart = ThisRoomWall.StartPoint;
-				FVector ThisWallEnd = ThisRoomWall.EndPoint;
-				
-				// Check point directions from center to determine which point starts the wall - to the left
-				TArray<FVector> LastWallPointDirections = LastRoomWall.GetPointDirectionsFromWallCenter();
-				TArray<FVector> ThisWallPointDirections = ThisRoomWall.GetPointDirectionsFromWallCenter();
-				if (!LastWallPointDirections[0].Equals(ThisWallPointDirections[0], 0.1))
-				{
-					// invert wall start point
-					ThisWallStart = ThisRoomWall.EndPoint;
-					ThisWallEnd = ThisRoomWall.StartPoint;
-				}
-				
-				FVector ThisRoomLocation = LastRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
-				// ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
-				RoomData.RoomActor->SetActorLocation(ThisRoomLocation);
-				// Check this wall intersections with last room walls
-				bool bIsOverlapping = false;
-				for (FRoomWall& TestLastRoomWall: LastRoomData.RoomActor->GetRoomWalls())
-				{
-					if (RoomData.RoomActor->IsOverlappingWithRoom(ThisRoomWall, LastRoomData.RoomActor.Get(), LastRoomWall))
-					{
-						UE_LOG(LogTemp, Error, TEXT("Room %i is overlapping!"), RoomData.Id);
-						bIsOverlapping = true;
-						break;
-					}
-				}
-				
-				if (bIsOverlapping)
-				{
-					continue;
-				}
-
-				// Todo: Proper walkthrough path
-				// MainWalkthroughPath->SplineComponent->AddSplinePoint(LastRoomData->RoomActor->GetActorLocation() + LastRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
-				// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
-				// MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + ThisRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
-				// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
-				// MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + DungeonRoom->GetRoomCenter(), ESplineCoordinateSpace::Local, true);
-				// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
-				
-				// good!
-				bCorrectLocationFound = true;
-				break;
-			}
-		}
+		BuildRoom(Rooms[RoomIdx], BranchDirection);
 	}
 	
 	return true;
+}
+
+void ADungeonGenerator::BuildRoomById(int Id)
+{
+	// BuildRoom(Rooms[Id]);
+}
+
+void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Room %i: %s"), RoomData.Id, *UEnum::GetValueAsString(RoomData.RoomRules.RoomType));
+
+	// get room class to spawn a premade room actor
+	FRoomResourceEntry RoomResource = DungeonRoomDictionary->GetRandomRoomClassOfType(RoomData.RoomRules.RoomType);
+	if (RoomResource.RoomClass == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Room class is null!"));
+		return;
+	}
+
+	RoomData.RoomActor = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomResource.RoomClass.Get()));
+	if (!RoomData.RoomActor.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
+		return;
+	}
+
+	// Start room position isn't calculated
+	if (RoomData.ParentId == -1){
+		RoomData.RoomActor->SetActorLocation(-RoomData.RoomActor->GetRoomCenter());
+		return;
+	}
+	
+	// get parent room data
+	const FRoomData& ParentRoomData = Rooms[RoomData.ParentId];
+	if (!ParentRoomData.RoomActor.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Parent Room of Id: %i, has no spawned room!"), ParentRoomData.Id);
+		return;
+	}
+	
+	// get current room walls data
+	TArray<FRoomWall> CurrentRoomWalls = RoomData.RoomActor->GetRoomWalls();
+
+	bool bCorrectLocationFound = false;
+	while (CurrentRoomWalls.Num() > 0)
+	{
+		if (bCorrectLocationFound)
+		{
+			break;
+		}
+		const int RandomWallIndex = FMath::RandRange(0, CurrentRoomWalls.Num()-1);
+
+		const FRoomWall& ThisRoomWall = CurrentRoomWalls[RandomWallIndex];
+		const FVector ThisWallNormal = ThisRoomWall.GetWallNormal();
+		// invert current room random wall normal to get last room desired wall normal
+		FVector LastRoomDesiredWallNormal = -ThisWallNormal;
+
+		TArray<FRoomWall> LastRoomWalls = ParentRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
+		if (LastRoomWalls.Num() == 0)
+		{
+			CurrentRoomWalls.RemoveAt(RandomWallIndex);
+			UE_LOG(LogTemp, Error, TEXT("No compatible walls found for new room!"));
+			continue;
+		}
+		
+		for (FRoomWall& LastRoomWall: LastRoomWalls)
+		{
+			FVector ThisWallStart = ThisRoomWall.StartPoint;
+			FVector ThisWallEnd = ThisRoomWall.EndPoint;
+			
+			// Check point directions from center to determine which point starts the wall - to the left
+			TArray<FVector> LastWallPointDirections = LastRoomWall.GetPointDirectionsFromWallCenter();
+			TArray<FVector> ThisWallPointDirections = ThisRoomWall.GetPointDirectionsFromWallCenter();
+			if (!LastWallPointDirections[0].Equals(ThisWallPointDirections[0], 0.1))
+			{
+				// invert wall start point
+				ThisWallStart = ThisRoomWall.EndPoint;
+				ThisWallEnd = ThisRoomWall.StartPoint;
+			}
+			
+			FVector ThisRoomLocation = ParentRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
+			// ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
+			RoomData.RoomActor->SetActorLocation(ThisRoomLocation);
+			// Check this wall intersections with last room walls
+			bool bIsOverlapping = false;
+			for (FRoomWall& TestLastRoomWall: ParentRoomData.RoomActor->GetRoomWalls())
+			{
+				if (RoomData.RoomActor->IsOverlappingWithRoom(ThisRoomWall, ParentRoomData.RoomActor.Get(), LastRoomWall))
+				{
+					UE_LOG(LogTemp, Error, TEXT("Room %i is overlapping!"), RoomData.Id);
+					bIsOverlapping = true;
+					break;
+				}
+			}
+			
+			if (bIsOverlapping)
+			{
+				continue;
+			}
+
+			// Todo: Proper walkthrough path
+			// MainWalkthroughPath->SplineComponent->AddSplinePoint(ParentRoomData->RoomActor->GetActorLocation() + LastRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
+			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
+			// MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + ThisRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
+			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
+			// MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + DungeonRoom->GetRoomCenter(), ESplineCoordinateSpace::Local, true);
+			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
+			
+			// good!
+			bCorrectLocationFound = true;
+			break;
+		}
+	}
 }
 
 bool ADungeonGenerator::LoadAndSetDungeonData()

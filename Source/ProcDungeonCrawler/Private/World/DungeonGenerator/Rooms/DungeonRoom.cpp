@@ -5,6 +5,7 @@
 #include "Components/SplineComponent.h"
 #include "Tools/SplineTools.h"
 
+#include "PCG/Public/PCGComponent.h"
 
 ADungeonRoom::ADungeonRoom()
 {
@@ -15,8 +16,11 @@ ADungeonRoom::ADungeonRoom()
 	RoomBaseSpline->ComponentTags.Add(FName("RoomBaseSpline"));
 	RoomBaseSpline->SetupAttachment(RootComponent);
 
-	// PCGComponent = CreateDefaultSubobject<UPCGComponent>(FName("PCGComponent"));
-	// PCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnLoad;
+	RoomWallsPCGComponent = CreateDefaultSubobject<UPCGComponent>(FName("RoomWallsPCG"));
+	RoomWallsPCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnLoad;
+	
+	AssetPlacerPCGComponent = CreateDefaultSubobject<UPCGComponent>(FName("AssetPlacerPCG"));
+	AssetPlacerPCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
 }
 
 void ADungeonRoom::BeginPlay()

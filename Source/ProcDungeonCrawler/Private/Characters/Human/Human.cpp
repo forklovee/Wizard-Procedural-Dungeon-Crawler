@@ -89,8 +89,6 @@ void AHuman::BeginPlay()
 
 void AHuman::PrimaryAction()
 {
-	UE_LOG(LogTemp, Display, TEXT("chujDupa"));
-
 	// No prepared spell.
 	if (!SpellBook->IsSpellPrepared())
 	{
