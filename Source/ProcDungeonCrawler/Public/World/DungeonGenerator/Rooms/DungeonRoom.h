@@ -49,16 +49,19 @@ struct FRoomWall
 
 	FVector StartPoint;
 	FVector EndPoint;
+	bool bIsUsed = false;
 
 	FRoomWall()
 	{
 		StartPoint = FVector::ZeroVector;
 		EndPoint = FVector::ZeroVector;
+		bIsUsed = false;
 	}
 	FRoomWall(FVector NewStartPoint, FVector NewEndPoint)
 	{
 		StartPoint = NewStartPoint;
 		EndPoint = NewEndPoint;
+		bIsUsed = false;
 	}
 
 	FORCEINLINE bool operator == (const FRoomWall& OtherRoomWall) const
@@ -136,17 +139,24 @@ class PROCDUNGEONCRAWLER_API ADungeonRoom : public AActor
 
 public:
 	ADungeonRoom();
+
+	void DrawDebugShapes();
 	
 	FVector GetRoomCenter() const;
 	
-	TArray<FRoomWall> GetRoomWalls() const;
-	TArray<FRoomWall> GetRoomWallsOfNormal(const FVector& WallNormal) const;
+	TArray<FRoomWall>& GetRoomWalls();
+	TArray<FRoomWall*> GetValidRoomWalls();
+	TArray<FRoomWall*> GetRoomWallsOfNormal(const FVector& WallNormal);
 
-	bool IsOverlappingWithRoom(const FRoomWall& ThisRoomWall, const ADungeonRoom* OtherRoom, const FRoomWall& OtherRoomWall) const;
+	TArray<FVector> GetRoomLocalPoints();
+
+	bool IsPointInsideRoom(const FVector& Point);
+	bool IsOverlappingWithRoom(ADungeonRoom* OtherRoom);
 	
 protected:
 	virtual void BeginPlay() override;
-
+	void GenerateRoomWalls();
+	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Room")
 	FName TargetRoomPCGTag = FName("Basic");
@@ -165,4 +175,6 @@ public:
 	
 private:
 	FTimerHandle BuildTimerHandle;
+
+	TArray<FRoomWall> RoomWalls;
 };

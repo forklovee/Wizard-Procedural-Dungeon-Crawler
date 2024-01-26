@@ -192,6 +192,9 @@ public:
 	
 protected:
 	TArray<FRoomData> Rooms;
+
+	TArray<ADungeonRoom*> RoomActors;
+	
 	TArray<FFloorData> Floors;
 	TArray<FRoomData*> MainWalkthroughPath;
 

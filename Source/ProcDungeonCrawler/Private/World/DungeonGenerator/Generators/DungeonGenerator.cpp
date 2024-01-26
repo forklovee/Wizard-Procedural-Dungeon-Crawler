@@ -206,6 +206,14 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 	}
 
 	RoomData.RoomActor = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomResource.RoomClass.Get()));
+	RoomActors.Add(RoomData.RoomActor.Get());
+
+	const FVector CheckPoint = FVector(2000.f, 500.f, 0.f);
+	RoomData.RoomActor->IsPointInsideRoom(CheckPoint);
+	DrawDebugCapsule(GetWorld(),
+		CheckPoint, 0.f, 100.f, FQuat::Identity,
+		FColor::Red, true, 100.f, 4, 5.f);
+	
 	if (!RoomData.RoomActor.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
@@ -214,7 +222,8 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 
 	// Start room position isn't calculated
 	if (RoomData.ParentId == -1){
-		RoomData.RoomActor->SetActorLocation(-RoomData.RoomActor->GetRoomCenter());
+		//todo: uncomment
+		// RoomData.RoomActor->SetActorLocation(-RoomData.RoomActor->GetRoomCenter());
 		return;
 	}
 	
@@ -227,8 +236,8 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 	}
 	
 	// get current room walls data
-	TArray<FRoomWall> CurrentRoomWalls = RoomData.RoomActor->GetRoomWalls();
-
+	TArray<FRoomWall*> CurrentRoomWalls = RoomData.RoomActor->GetValidRoomWalls();
+	
 	bool bCorrectLocationFound = false;
 	while (CurrentRoomWalls.Num() > 0)
 	{
@@ -238,12 +247,12 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 		}
 		const int RandomWallIndex = FMath::RandRange(0, CurrentRoomWalls.Num()-1);
 
-		const FRoomWall& ThisRoomWall = CurrentRoomWalls[RandomWallIndex];
-		const FVector ThisWallNormal = ThisRoomWall.GetWallNormal();
+		FRoomWall* ThisRoomWall = CurrentRoomWalls[RandomWallIndex];
+		const FVector ThisWallNormal = ThisRoomWall->GetWallNormal();
 		// invert current room random wall normal to get last room desired wall normal
 		FVector LastRoomDesiredWallNormal = -ThisWallNormal;
 
-		TArray<FRoomWall> LastRoomWalls = ParentRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
+		TArray<FRoomWall*> LastRoomWalls = ParentRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
 		if (LastRoomWalls.Num() == 0)
 		{
 			CurrentRoomWalls.RemoveAt(RandomWallIndex);
@@ -251,32 +260,35 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 			continue;
 		}
 		
-		for (FRoomWall& LastRoomWall: LastRoomWalls)
+		for (FRoomWall* LastRoomWall: LastRoomWalls)
 		{
-			FVector ThisWallStart = ThisRoomWall.StartPoint;
-			FVector ThisWallEnd = ThisRoomWall.EndPoint;
+			FVector ThisWallStart = ThisRoomWall->StartPoint;
+			FVector ThisWallEnd = ThisRoomWall->EndPoint;
 			
 			// Check point directions from center to determine which point starts the wall - to the left
-			TArray<FVector> LastWallPointDirections = LastRoomWall.GetPointDirectionsFromWallCenter();
-			TArray<FVector> ThisWallPointDirections = ThisRoomWall.GetPointDirectionsFromWallCenter();
+			TArray<FVector> LastWallPointDirections = LastRoomWall->GetPointDirectionsFromWallCenter();
+			TArray<FVector> ThisWallPointDirections = ThisRoomWall->GetPointDirectionsFromWallCenter();
 			if (!LastWallPointDirections[0].Equals(ThisWallPointDirections[0], 0.1))
 			{
 				// invert wall start point
-				ThisWallStart = ThisRoomWall.EndPoint;
-				ThisWallEnd = ThisRoomWall.StartPoint;
+				ThisWallStart = ThisRoomWall->EndPoint;
+				ThisWallEnd = ThisRoomWall->StartPoint;
 			}
 			
-			FVector ThisRoomLocation = ParentRoomData.RoomActor->GetActorLocation() + LastRoomWall.StartPoint - ThisWallStart;
+			FVector ThisRoomLocation = ParentRoomData.RoomActor->GetActorLocation() + LastRoomWall->StartPoint - ThisWallStart;
 			// ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
 			RoomData.RoomActor->SetActorLocation(ThisRoomLocation);
 			// Check this wall intersections with last room walls
+			
+			// todo: make collision check
 			bool bIsOverlapping = false;
-			for (FRoomWall& TestLastRoomWall: ParentRoomData.RoomActor->GetRoomWalls())
+			for (ADungeonRoom* OtherRoom: RoomActors)
 			{
-				if (RoomData.RoomActor->IsOverlappingWithRoom(ThisRoomWall, ParentRoomData.RoomActor.Get(), LastRoomWall))
+				if (OtherRoom == RoomData.RoomActor.Get()) continue;
+
+				bIsOverlapping = RoomData.RoomActor->IsOverlappingWithRoom(OtherRoom);
+				if (bIsOverlapping)
 				{
-					UE_LOG(LogTemp, Error, TEXT("Room %i is overlapping!"), RoomData.Id);
-					bIsOverlapping = true;
 					break;
 				}
 			}
@@ -295,9 +307,16 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
 			
 			// good!
+			ThisRoomWall->bIsUsed = true;
 			bCorrectLocationFound = true;
 			break;
 		}
+	}
+
+	for (ADungeonRoom* RoomActor: RoomActors)
+	{
+		UE_LOG(LogTemp, Display, TEXT("Dupa!"))
+		RoomActor->DrawDebugShapes();
 	}
 }
 

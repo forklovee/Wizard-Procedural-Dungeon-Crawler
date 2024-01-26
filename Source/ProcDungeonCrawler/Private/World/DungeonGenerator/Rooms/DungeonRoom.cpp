@@ -23,11 +23,56 @@ ADungeonRoom::ADungeonRoom()
 	AssetPlacerPCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
 }
 
+void ADungeonRoom::DrawDebugShapes()
+{
+	for (FRoomWall& RoomWall: RoomWalls)
+	{
+		const FVector WallCenter = GetActorLocation() + RoomWall.GetWallCenter();
+		const FVector WallStartPoint = GetActorLocation() + RoomWall.StartPoint;
+		const FVector WallEndPoint = GetActorLocation() + RoomWall.EndPoint;
+
+		DrawDebugLine(GetWorld(),
+			WallStartPoint,
+			WallEndPoint,
+			FColor::White, true, 100.f, 4, 10.f);
+		
+		DrawDebugDirectionalArrow(GetWorld(),
+			WallCenter,
+			GetActorLocation() + RoomWall.GetWallCenter() + RoomWall.GetWallNormal() * 100.f,
+			100.f, FColor::Blue, true, 100.f, 4, 15.f);
+	}
+}
+
 void ADungeonRoom::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GenerateRoomWalls();
+	
 	Tags.Add(TargetRoomPCGTag);
+}
+
+void ADungeonRoom::GenerateRoomWalls()
+{
+	const int SplinePointsAmount = RoomBaseSpline->GetNumberOfSplinePoints();
+	if (SplinePointsAmount < 2)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Invalid Room Spline! - less than 2 points!"))
+		return;
+	}
+
+	for (int PointId = 1; PointId < SplinePointsAmount; PointId++)
+	{
+		const FVector LastPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(PointId-1, ESplineCoordinateSpace::Local);
+		const FVector ThisPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(PointId, ESplineCoordinateSpace::Local);
+		FRoomWall NewRoomWall = FRoomWall(LastPointPosition, ThisPointPosition);
+		RoomWalls.Add(NewRoomWall);
+	}
+	
+	const FVector LastPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(SplinePointsAmount-1, ESplineCoordinateSpace::Local);
+	const FVector FirstPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Local);
+	FRoomWall NewRoomWall = FRoomWall(LastPointPosition, FirstPointPosition);
+	RoomWalls.Add(NewRoomWall);
 }
 
 FVector ADungeonRoom::GetRoomCenter() const
@@ -41,81 +86,117 @@ FVector ADungeonRoom::GetRoomCenter() const
 	return VectorSum / SplinePointsAmount;
 }
 
-TArray<FRoomWall> ADungeonRoom::GetRoomWalls() const
+TArray<FRoomWall>& ADungeonRoom::GetRoomWalls()
 {
-	TArray<FRoomWall> RoomWalls = TArray<FRoomWall>();
-
-	const int SplinePointsAmount = RoomBaseSpline->GetNumberOfSplinePoints();
-	if (SplinePointsAmount < 2)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Invalid Room Spline! - less than 2 points!"))
-		return RoomWalls;
-	}
-
-	for (int PointId = 1; PointId < SplinePointsAmount; PointId++)
-	{
-		const FVector LastPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(PointId-1, ESplineCoordinateSpace::Local);
-		const FVector ThisPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(PointId, ESplineCoordinateSpace::Local);
-		
-		RoomWalls.Add(FRoomWall(LastPointPosition, ThisPointPosition));
-	}
-	const FVector LastPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(SplinePointsAmount-1, ESplineCoordinateSpace::Local);
-	const FVector FirstPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Local);
-	RoomWalls.Add(FRoomWall(LastPointPosition, FirstPointPosition));
-	
 	return RoomWalls;
 }
 
-TArray<FRoomWall> ADungeonRoom::GetRoomWallsOfNormal(const FVector& WallNormal) const
+TArray<FRoomWall*> ADungeonRoom::GetValidRoomWalls()
 {
-	TArray<FRoomWall> RoomWalls = TArray<FRoomWall>();
-
-	const int SplinePointsAmount = RoomBaseSpline->GetNumberOfSplinePoints();
-	if (SplinePointsAmount < 2)
+	TArray<FRoomWall*> ValidRoomWalls;
+	for (FRoomWall& RoomWall: RoomWalls)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Invalid Room Spline! - less than 2 points!"))
-		return RoomWalls;
+		if (!RoomWall.bIsUsed)
+		{
+			ValidRoomWalls.Add(&RoomWall);
+		}
 	}
+	return ValidRoomWalls;
+}
 
-	for (int PointId = 1; PointId < SplinePointsAmount; PointId++)
+TArray<FRoomWall*> ADungeonRoom::GetRoomWallsOfNormal(const FVector& WallNormal)
+{
+	TArray<FRoomWall*> RoomWallsOfNormal;
+	for (FRoomWall& RoomWall: RoomWalls)
 	{
-		const FVector LastPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(PointId-1, ESplineCoordinateSpace::Local);
-		const FVector ThisPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(PointId, ESplineCoordinateSpace::Local);
-
-		FRoomWall RoomWall = FRoomWall(LastPointPosition, ThisPointPosition);
 		FVector RoomWallNormal = RoomWall.GetWallNormal();
 		if (RoomWallNormal.Equals(WallNormal, 0.1f))
 		{
-			RoomWalls.Add(RoomWall);
+			RoomWallsOfNormal.Add(&RoomWall);
 		}
 	}
-	// Connect last point to first point
-	const FVector LastPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(SplinePointsAmount-1, ESplineCoordinateSpace::Local);
-	const FVector FirstPointPosition = RoomBaseSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Local);
-	FRoomWall RoomWall = FRoomWall(LastPointPosition, FirstPointPosition);
-	FVector RoomWallNormal = RoomWall.GetWallNormal();
-	if (RoomWallNormal.Equals(WallNormal, 0.1f))
-	{
-		RoomWalls.Add(RoomWall);
-	}
-	
-	return RoomWalls;
+	return RoomWallsOfNormal;
 }
 
-bool ADungeonRoom::IsOverlappingWithRoom(const FRoomWall& ThisRoomWall, const ADungeonRoom* OtherRoom, const FRoomWall& OtherRoomWall) const
+TArray<FVector> ADungeonRoom::GetRoomLocalPoints()
 {
-	bool bWallsOverlapping = false;
-	FVector IntersectionPoint = FVector::ZeroVector;
-	if (USplineTools::AreLinesIntersecting(GetWorld(),
-		ThisRoomWall.StartPoint + GetActorLocation(), ThisRoomWall.EndPoint + GetActorLocation(),
-		OtherRoomWall.StartPoint + OtherRoom->GetActorLocation(), OtherRoomWall.EndPoint + OtherRoom->GetActorLocation(),
-		IntersectionPoint,
-		bWallsOverlapping,
-		true))
+	TArray<FVector> LocalPoints;
+	for (FRoomWall& RoomWall: RoomWalls)
 	{
-		DrawDebugBox(GetWorld(), IntersectionPoint, FVector(10.f, 10.f, 10.f), FColor::Red, true, 100.f, 0, 10.f);
+		LocalPoints.Add(RoomWall.StartPoint);
+	}
+	return LocalPoints;
+}
+
+bool ADungeonRoom::IsPointInsideRoom(const FVector& Point)
+{
+	for (FRoomWall& RoomWall: RoomWalls)
+	{
+		const FVector StartPoint = RoomWall.StartPoint + GetActorLocation();
+		const FVector EndPoint = RoomWall.EndPoint + GetActorLocation();
+		UE_LOG(LogTemp, Display, TEXT("Distances to: Start: %f, End: %f"), FVector::Distance(StartPoint, Point), FVector::Distance(EndPoint, Point))
+		if (FVector::Distance(StartPoint, Point) < 10.f || FVector::Distance(EndPoint, Point) < 10.f)
+		{
+			continue;
+		}
+		
+		const FVector WallNormal = RoomWall.GetWallNormal();
+		const FVector WallCenter = GetActorLocation() + RoomWall.GetWallCenter();
+		const FVector2D WallNormal2D = FVector2D(WallNormal.X, WallNormal.Y);
+		FVector2D DirectionToPoint2D = FVector2D(Point.X - WallCenter.X, Point.Y - WallCenter.Y).GetSafeNormal();
+		const float DotProduct = FVector2D::DotProduct(WallNormal2D, DirectionToPoint2D);
+
+		// DrawDebugDirectionalArrow(GetWorld(),
+		// 	WallCenter,
+		// 	WallCenter + FVector(DirectionToPoint2D.X, DirectionToPoint2D.Y, 0.f) * 100.f,
+		// 	100.f, FColor::Red, true, 100.f, 4, 15.f);
+		// UE_LOG(LogTemp, Display, TEXT("DotProduct: %f"), DotProduct);
+		
+		if (DotProduct < 0.f)
+		{
+			continue;
+		}
 		return true;
 	}
+	
+	return false;
+}
 
+bool ADungeonRoom::IsOverlappingWithRoom(ADungeonRoom* OtherRoom)
+{
+	// Check if OtherRoom's corners are inside this room
+	TArray<FVector> OtherRoomLocalPoints = OtherRoom->GetRoomLocalPoints();
+	for (FVector& OtherRoomLocalPoint: OtherRoomLocalPoints)
+	{
+		if (IsPointInsideRoom(OtherRoom->GetActorLocation() + OtherRoomLocalPoint))
+		{
+			return true;
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("Point not inside room."))
+	
+	// // OtherRoom's corners are not inside this room, check if any of the walls are overlapping
+	// for (FRoomWall& ThisRoomWall: RoomWalls)
+	// {
+	// 	const FVector ThisStartPoint = ThisRoomWall.StartPoint + GetActorLocation();
+	// 	const FVector ThisEndPoint = ThisRoomWall.EndPoint + GetActorLocation();
+	// 	for (FRoomWall& OtherRoomWall: OtherRoom->GetRoomWalls())
+	// 	{
+	// 		FVector OtherStartPoint = OtherRoomWall.StartPoint + OtherRoom->GetActorLocation();
+	// 		FVector OtherEndPoint = OtherRoomWall.EndPoint + OtherRoom->GetActorLocation();
+	// 		
+	// 		bool bWallsOverlapping = false;
+	// 		FVector IntersectionPoint = FVector::ZeroVector;
+	// 		if (USplineTools::AreLinesIntersecting(GetWorld(),
+	// 			ThisStartPoint, ThisEndPoint,
+	// 			OtherStartPoint, OtherEndPoint,
+	// 			IntersectionPoint,
+	// 			bWallsOverlapping,
+	// 			true))
+	// 		{
+	// 			return true;
+	// 		}
+	// 	}
+	// }
 	return false;
 }
