@@ -26,6 +26,12 @@ struct FWallRange
 		RangeEndLerpPoint = FMath::Clamp(_RangeEndLerpPoint, 0.0, 1.0);
 	}
 
+	FORCEINLINE bool operator == (const FWallRange& OtherWallRange) const
+	{
+		return this->StartLerpPoint == OtherWallRange.StartLerpPoint
+			&& this->RangeEndLerpPoint == OtherWallRange.RangeEndLerpPoint;
+	}
+	
 	bool IsLerpPointInRange(const float LerpPoint) const
 	{
 		return LerpPoint >= StartLerpPoint && LerpPoint <= RangeEndLerpPoint;
@@ -94,8 +100,6 @@ struct FRoomWall
 		return this->StartPoint == OtherRoomWall.StartPoint && this->EndPoint == OtherRoomWall.EndPoint;
 	}
 	
-	
-	
 	float GetWallLength() const
 	{
 		return FVector::Dist(StartPoint, EndPoint);
@@ -106,7 +110,7 @@ struct FRoomWall
 	}
 	FVector GetWallNormal() const
 	{
-		return GetStartToEndDirection().RotateAngleAxis(-90.f, FVector::UpVector);
+		return GetStartToEndDirection().RotateAngleAxis(-90.f, FVector::UpVector).GetSafeNormal();
 	}
 	FVector GetWallDirection() const
 	{

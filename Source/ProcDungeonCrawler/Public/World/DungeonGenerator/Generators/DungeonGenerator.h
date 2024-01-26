@@ -45,41 +45,6 @@ struct FRoomData
 		RoomActor = nullptr;
 		Obstacle_FromParent_Class = nullptr;
 	}
-	
-	bool IsWallRangeOccupied(const FVector& WallNormal, const float& StartPoint, const float& EndPoint) const
-	{
-		if (!OccupiedWallsRanges.Contains(WallNormal))
-		{
-			return false;
-		}
-		const TArray<FWallRange> WallOccupiedRanges = OccupiedWallsRanges[WallNormal];
-		return WallOccupiedRanges.ContainsByPredicate([=](const FWallRange& CheckWallOccupiedRange)
-		{
-			return (CheckWallOccupiedRange.StartPoint == StartPoint && CheckWallOccupiedRange.StartPoint == EndPoint) ||
-				   (CheckWallOccupiedRange.StartPoint == EndPoint && CheckWallOccupiedRange.StartPoint == StartPoint);
-		});
-	}
-	
-	bool OccupyWallRange(const FVector& WallNormal, const float& StartPoint, const float& EndPoint)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("OccupyWallRange: %f to %f"), StartPoint, EndPoint);
-	
-		if (!OccupiedWallsRanges.Contains(WallNormal))
-		{
-			OccupiedWallsRanges.Add(WallNormal, TArray<FWallRange>());
-		}
-
-		TArray<FWallRange>& WallOccupiedRanges = OccupiedWallsRanges[WallNormal];
-		if (IsWallRangeOccupied(WallNormal, StartPoint, EndPoint))
-		{
-			UE_LOG(LogTemp, Error, TEXT("Room Range of %f to %f already marked as occupied!"), StartPoint, EndPoint);
-			return false;
-		}
-
-		WallOccupiedRanges.Add( FWallRange(StartPoint, EndPoint) );
-	
-		return true;
-	}
 
 	bool bIsExit = false;
 	bool bIsOnMainWalkthroughPath = false;

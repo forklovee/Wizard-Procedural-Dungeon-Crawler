@@ -100,10 +100,8 @@ TArray<FRoomWall*> ADungeonRoom::GetValidRoomWalls()
 	TArray<FRoomWall*> ValidRoomWalls;
 	for (FRoomWall& RoomWall: RoomWalls)
 	{
-		if (!RoomWall.bIsUsed)
-		{
-			ValidRoomWalls.Add(&RoomWall);
-		}
+		//todo: implement wall range check
+		ValidRoomWalls.Add(&RoomWall);
 	}
 	return ValidRoomWalls;
 }

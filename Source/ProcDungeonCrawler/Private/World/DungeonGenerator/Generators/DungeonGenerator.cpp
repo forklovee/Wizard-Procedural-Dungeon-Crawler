@@ -233,45 +233,54 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 	}
 	
 	// get current room walls data
-	TArray<FRoomWall*> CurrentRoomWalls = RoomData.RoomActor->GetValidRoomWalls();
 	TMap<FVector, FRoomWall*> CurrentRoomWallsMap;
-	for (FRoomWall* RoomWall: CurrentRoomWalls)
+	TArray<FVector> SortedRoomWallNormals;
+	for (FRoomWall* RoomWall: RoomData.RoomActor->GetValidRoomWalls())
 	{
-		CurrentRoomWallsMap.Add(RoomWall->GetWallNormal(), RoomWall);
+		const FVector WallNormal = RoomWall->GetWallNormal();
+		const float DotToDesired = FVector::DotProduct(WallNormal, -BranchDirection.GetSafeNormal());
+		CurrentRoomWallsMap.Add(WallNormal, RoomWall);
+		
+		if (SortedRoomWallNormals.Num() == 0)
+		{
+			SortedRoomWallNormals.Add(WallNormal);
+		}
+		else
+		{
+			const float FirstNormalDot = FVector::DotProduct(SortedRoomWallNormals[0], -BranchDirection.GetSafeNormal());
+			if (DotToDesired > FirstNormalDot)
+			{
+				SortedRoomWallNormals.Insert(WallNormal, 0);
+			}
+			else
+			{
+				SortedRoomWallNormals.Add(WallNormal);
+			}
+		}
 	}
 	
 	bool bCorrectLocationFound = false;
-	while (CurrentRoomWalls.Num() > 0)
+	
+	for(FVector& ThisWallNormal: SortedRoomWallNormals)
 	{
 		if (bCorrectLocationFound)
 		{
 			break;
 		}
 
+		FRoomWall* ThisRoomWall = CurrentRoomWallsMap[ThisWallNormal];
 		
-		
-		const int RandomWallIndex = FMath::RandRange(0, CurrentRoomWalls.Num()-1);
-
-		FRoomWall* ThisRoomWall = CurrentRoomWalls[RandomWallIndex];
-		const FVector ThisWallNormal = ThisRoomWall->GetWallNormal();
 		// invert current room random wall normal to get last room desired wall normal
-		FVector LastRoomDesiredWallNormal = ThisWallNormal;
-
-		TArray<FRoomWall*> LastRoomWalls = ParentRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
-		if (LastRoomWalls.Num() == 0)
-		{
-			CurrentRoomWalls.RemoveAt(RandomWallIndex);
-			UE_LOG(LogTemp, Error, TEXT("No compatible walls found for new room!"));
-			continue;
-		}
+		FVector ParentRoomDesiredWallNormal = -ThisWallNormal;
+		TArray<FRoomWall*> ParentRoomWalls = ParentRoomData.RoomActor->GetRoomWallsOfNormal(ParentRoomDesiredWallNormal);
 		
-		for (FRoomWall* LastRoomWall: LastRoomWalls)
+		for (FRoomWall* ParentRoomWall: ParentRoomWalls)
 		{
 			FVector ThisWallStart = ThisRoomWall->StartPoint;
 			FVector ThisWallEnd = ThisRoomWall->EndPoint;
 			
 			// Check point directions from center to determine which point starts the wall - to the left
-			TArray<FVector> LastWallPointDirections = LastRoomWall->GetPointDirectionsFromWallCenter();
+			TArray<FVector> LastWallPointDirections = ParentRoomWall->GetPointDirectionsFromWallCenter();
 			TArray<FVector> ThisWallPointDirections = ThisRoomWall->GetPointDirectionsFromWallCenter();
 			if (!LastWallPointDirections[0].Equals(ThisWallPointDirections[0], 0.1))
 			{
@@ -280,12 +289,11 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 				ThisWallEnd = ThisRoomWall->StartPoint;
 			}
 			
-			FVector ThisRoomLocation = ParentRoomData.RoomActor->GetActorLocation() + LastRoomWall->StartPoint - ThisWallStart;
+			FVector ThisRoomLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->StartPoint - ThisWallStart;
 			// ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
 			RoomData.RoomActor->SetActorLocation(ThisRoomLocation);
 			// Check this wall intersections with last room walls
 			
-			// todo: make collision check
 			bool bIsOverlapping = false;
 			for (ADungeonRoom* OtherRoom: RoomActors)
 			{
@@ -300,17 +308,8 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 			
 			if (bIsOverlapping)
 			{
-				CurrentRoomWalls.RemoveAt(RandomWallIndex);
 				continue;
 			}
-
-			// Todo: Proper walkthrough path
-			// MainWalkthroughPath->SplineComponent->AddSplinePoint(ParentRoomData->RoomActor->GetActorLocation() + LastRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
-			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
-			// MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + ThisRoomWall.GetWallCenter(), ESplineCoordinateSpace::Local, true);
-			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
-			// MainWalkthroughPath->SplineComponent->AddSplinePoint(DungeonRoom->GetActorLocation() + DungeonRoom->GetRoomCenter(), ESplineCoordinateSpace::Local, true);
-			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
 			
 			// good!
 			bCorrectLocationFound = true;
