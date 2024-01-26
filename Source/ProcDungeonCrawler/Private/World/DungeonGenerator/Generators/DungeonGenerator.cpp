@@ -144,12 +144,12 @@ bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
 		if (FloorId < DungeonFloorAmount)
 		{
 			FRuleProperties StairsRoomProperties = FRuleProperties();
-			FRoomData& StairsRoomData = Rooms[Rooms.Add(
-			FRoomData(FloorId, Rooms.Num(), StairsRoomProperties)
-				)];
-			StairsRoomData.bIsOnMainWalkthroughPath = true;
+			// FRoomData& StairsRoomData = Rooms[Rooms.Add(
+			// FRoomData(FloorId, Rooms.Num(), StairsRoomProperties)
+			// 	)];
+			// StairsRoomData.bIsOnMainWalkthroughPath = true;
 			
-			FloorData.Rooms.Add(&StairsRoomData);
+			// FloorData.Rooms.Add(&StairsRoomData);
 		}
 		// If this is the last floor, mark room as exit
 		else
@@ -182,7 +182,11 @@ bool ADungeonGenerator::BuildDungeon()
 	FVector BranchDirection = FVector::ForwardVector;
 	for (int RoomIdx = 0; RoomIdx < Rooms.Num(); RoomIdx++)
 	{
-		BuildRoom(Rooms[RoomIdx], BranchDirection);
+		if (ADungeonRoom* NewRoom = BuildRoom(Rooms[RoomIdx], BranchDirection))
+		{
+			FString ActorName = FString::Printf(TEXT("Room_%i"), RoomIdx);
+			NewRoom->SetActorLabel(ActorName);
+		}
 	}
 	
 	return true;
@@ -193,7 +197,7 @@ void ADungeonGenerator::BuildRoomById(int Id)
 	// BuildRoom(Rooms[Id]);
 }
 
-void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
+ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Room %i: %s"), RoomData.Id, *UEnum::GetValueAsString(RoomData.RoomRules.RoomType));
 
@@ -202,29 +206,22 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 	if (RoomResource.RoomClass == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Room class is null!"));
-		return;
+		return nullptr;
 	}
 
+	//Spawn Room Actor
 	RoomData.RoomActor = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomResource.RoomClass.Get()));
-	RoomActors.Add(RoomData.RoomActor.Get());
-
-	const FVector CheckPoint = FVector(2000.f, 500.f, 0.f);
-	RoomData.RoomActor->IsPointInsideRoom(CheckPoint);
-	DrawDebugCapsule(GetWorld(),
-		CheckPoint, 0.f, 100.f, FQuat::Identity,
-		FColor::Red, true, 100.f, 4, 5.f);
-	
 	if (!RoomData.RoomActor.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
-		return;
+		return nullptr;
 	}
 
-	// Start room position isn't calculated
+	//Add to Dungeon Room Actors
+	RoomActors.Add(RoomData.RoomActor.Get());
 	if (RoomData.ParentId == -1){
-		//todo: uncomment
-		// RoomData.RoomActor->SetActorLocation(-RoomData.RoomActor->GetRoomCenter());
-		return;
+		RoomData.RoomActor->SetActorLocation(-RoomData.RoomActor->GetRoomCenter());
+		return RoomData.RoomActor.Get();
 	}
 	
 	// get parent room data
@@ -232,7 +229,7 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 	if (!ParentRoomData.RoomActor.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Parent Room of Id: %i, has no spawned room!"), ParentRoomData.Id);
-		return;
+		return nullptr;
 	}
 	
 	// get current room walls data
@@ -245,6 +242,7 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 		{
 			break;
 		}
+		
 		const int RandomWallIndex = FMath::RandRange(0, CurrentRoomWalls.Num()-1);
 
 		FRoomWall* ThisRoomWall = CurrentRoomWalls[RandomWallIndex];
@@ -295,6 +293,7 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 			
 			if (bIsOverlapping)
 			{
+				CurrentRoomWalls.RemoveAt(RandomWallIndex);
 				continue;
 			}
 
@@ -318,6 +317,8 @@ void ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
 		UE_LOG(LogTemp, Display, TEXT("Dupa!"))
 		RoomActor->DrawDebugShapes();
 	}
+
+	return RoomData.RoomActor.Get();
 }
 
 bool ADungeonGenerator::LoadAndSetDungeonData()

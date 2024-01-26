@@ -31,6 +31,10 @@ void ADungeonRoom::DrawDebugShapes()
 		const FVector WallStartPoint = GetActorLocation() + RoomWall.StartPoint;
 		const FVector WallEndPoint = GetActorLocation() + RoomWall.EndPoint;
 
+		DrawDebugCapsule(GetWorld(),
+			WallStartPoint,
+			0.f, 5.f, FQuat::Identity, FColor::Red, true, 100.f, 4, 10.f);
+		
 		DrawDebugLine(GetWorld(),
 			WallStartPoint,
 			WallEndPoint,
@@ -134,8 +138,7 @@ bool ADungeonRoom::IsPointInsideRoom(const FVector& Point)
 	{
 		const FVector StartPoint = RoomWall.StartPoint + GetActorLocation();
 		const FVector EndPoint = RoomWall.EndPoint + GetActorLocation();
-		UE_LOG(LogTemp, Display, TEXT("Distances to: Start: %f, End: %f"), FVector::Distance(StartPoint, Point), FVector::Distance(EndPoint, Point))
-		if (FVector::Distance(StartPoint, Point) < 10.f || FVector::Distance(EndPoint, Point) < 10.f)
+		if (FVector::Distance(StartPoint, Point) < 5.f || FVector::Distance(EndPoint, Point) < 5.f)
 		{
 			continue;
 		}
@@ -175,28 +178,29 @@ bool ADungeonRoom::IsOverlappingWithRoom(ADungeonRoom* OtherRoom)
 	}
 	UE_LOG(LogTemp, Display, TEXT("Point not inside room."))
 	
-	// // OtherRoom's corners are not inside this room, check if any of the walls are overlapping
-	// for (FRoomWall& ThisRoomWall: RoomWalls)
-	// {
-	// 	const FVector ThisStartPoint = ThisRoomWall.StartPoint + GetActorLocation();
-	// 	const FVector ThisEndPoint = ThisRoomWall.EndPoint + GetActorLocation();
-	// 	for (FRoomWall& OtherRoomWall: OtherRoom->GetRoomWalls())
-	// 	{
-	// 		FVector OtherStartPoint = OtherRoomWall.StartPoint + OtherRoom->GetActorLocation();
-	// 		FVector OtherEndPoint = OtherRoomWall.EndPoint + OtherRoom->GetActorLocation();
-	// 		
-	// 		bool bWallsOverlapping = false;
-	// 		FVector IntersectionPoint = FVector::ZeroVector;
-	// 		if (USplineTools::AreLinesIntersecting(GetWorld(),
-	// 			ThisStartPoint, ThisEndPoint,
-	// 			OtherStartPoint, OtherEndPoint,
-	// 			IntersectionPoint,
-	// 			bWallsOverlapping,
-	// 			true))
-	// 		{
-	// 			return true;
-	// 		}
-	// 	}
-	// }
+	// OtherRoom's corners are not inside this room, check if any of the walls are overlapping
+	for (FRoomWall& ThisRoomWall: RoomWalls)
+	{
+		const FVector ThisStartPoint = ThisRoomWall.StartPoint + GetActorLocation();
+		const FVector ThisEndPoint = ThisRoomWall.EndPoint + GetActorLocation();
+		for (FRoomWall& OtherRoomWall: OtherRoom->GetRoomWalls())
+		{
+			FVector OtherStartPoint = OtherRoomWall.StartPoint + OtherRoom->GetActorLocation();
+			FVector OtherEndPoint = OtherRoomWall.EndPoint + OtherRoom->GetActorLocation();
+			
+			bool bWallsOverlapping = false;
+			FVector IntersectionPoint = FVector::ZeroVector;
+			if (USplineTools::AreLinesIntersecting(GetWorld(),
+				ThisStartPoint, ThisEndPoint,
+				OtherStartPoint, OtherEndPoint,
+				IntersectionPoint,
+				bWallsOverlapping,
+				true))
+			{
+				DrawDebugCapsule(GetWorld(), IntersectionPoint, 0.f, 10.f, FQuat::Identity, FColor::Red, true, 100.f, 4, 10.f);
+				return true;
+			}
+		}
+	}
 	return false;
 }

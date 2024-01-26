@@ -172,7 +172,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
-	void BuildRoom(FRoomData& RoomData, FVector& BranchDirection);
+	ADungeonRoom* BuildRoom(FRoomData& RoomData, FVector& BranchDirection);
 	
 	bool LoadAndSetDungeonData();
 	bool ExtendFloorRoomTree(FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
@@ -184,6 +184,9 @@ protected:
 
 	FObstacleData* GetObstacleData(TArray<FObstacleData*> PossibleObstacleData) const;
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float GridTileSize = 200.f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
 	
