@@ -234,6 +234,11 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 	
 	// get current room walls data
 	TArray<FRoomWall*> CurrentRoomWalls = RoomData.RoomActor->GetValidRoomWalls();
+	TMap<FVector, FRoomWall*> CurrentRoomWallsMap;
+	for (FRoomWall* RoomWall: CurrentRoomWalls)
+	{
+		CurrentRoomWallsMap.Add(RoomWall->GetWallNormal(), RoomWall);
+	}
 	
 	bool bCorrectLocationFound = false;
 	while (CurrentRoomWalls.Num() > 0)
@@ -242,13 +247,15 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 		{
 			break;
 		}
+
+		
 		
 		const int RandomWallIndex = FMath::RandRange(0, CurrentRoomWalls.Num()-1);
 
 		FRoomWall* ThisRoomWall = CurrentRoomWalls[RandomWallIndex];
 		const FVector ThisWallNormal = ThisRoomWall->GetWallNormal();
 		// invert current room random wall normal to get last room desired wall normal
-		FVector LastRoomDesiredWallNormal = -ThisWallNormal;
+		FVector LastRoomDesiredWallNormal = ThisWallNormal;
 
 		TArray<FRoomWall*> LastRoomWalls = ParentRoomData.RoomActor->GetRoomWallsOfNormal(LastRoomDesiredWallNormal);
 		if (LastRoomWalls.Num() == 0)
@@ -306,7 +313,6 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 			// USplineTools::SetTangentsToZero(MainWalkthroughPath->SplineComponent, MainWalkthroughPath->SplineComponent->GetNumberOfSplinePoints()-1);
 			
 			// good!
-			ThisRoomWall->bIsUsed = true;
 			bCorrectLocationFound = true;
 			break;
 		}

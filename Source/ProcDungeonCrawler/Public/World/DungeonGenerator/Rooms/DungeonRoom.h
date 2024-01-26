@@ -16,30 +16,28 @@ struct FWallRange
 
 	FWallRange()
 	{
-		StartPoint = 0.f;
-		EndPoint = 0.f;
+		StartLerpPoint = 0.0;
+		RangeEndLerpPoint = 1.0;
 	}
 
-	FWallRange(float NewStartPoint, float NewEndPoint)
+	FWallRange(const float _StartLerpPoint, const float _RangeEndLerpPoint)
 	{
-		if (NewStartPoint < NewEndPoint){
-			StartPoint = NewStartPoint;
-			EndPoint = NewEndPoint;
-		}
-		else
-		{
-			StartPoint = NewEndPoint;
-			EndPoint = NewStartPoint;
-		}
+		StartLerpPoint = _StartLerpPoint;
+		RangeEndLerpPoint = FMath::Clamp(_RangeEndLerpPoint, 0.0, 1.0);
+	}
+
+	bool IsLerpPointInRange(const float LerpPoint) const
+	{
+		return LerpPoint >= StartLerpPoint && LerpPoint <= RangeEndLerpPoint;
 	}
 
 	float GetRangeLength() const
 	{
-		return abs(EndPoint - StartPoint);
+		return RangeEndLerpPoint - StartLerpPoint;
 	}
 	
-	float StartPoint;
-	float EndPoint;
+	float StartLerpPoint = 0.0;
+	float RangeEndLerpPoint = 1.0;
 };
 
 USTRUCT()
@@ -49,19 +47,46 @@ struct FRoomWall
 
 	FVector StartPoint;
 	FVector EndPoint;
-	bool bIsUsed = false;
+
+	TArray<FWallRange> FreeRanges;
 
 	FRoomWall()
 	{
 		StartPoint = FVector::ZeroVector;
 		EndPoint = FVector::ZeroVector;
-		bIsUsed = false;
+		FreeRanges = {};
 	}
+	
 	FRoomWall(FVector NewStartPoint, FVector NewEndPoint)
 	{
 		StartPoint = NewStartPoint;
 		EndPoint = NewEndPoint;
-		bIsUsed = false;
+		FreeRanges.Add(FWallRange());
+	}
+
+	void UseWallRange(FWallRange& WallRange, const float RangeStart, const float RangeDistance)
+	{
+		if (RangeDistance < WallRange.GetRangeLength()) //Split!
+		{
+			if (RangeStart == WallRange.StartLerpPoint)
+			{
+				WallRange.StartLerpPoint += RangeDistance;
+			}
+			else if (RangeStart + RangeDistance == WallRange.RangeEndLerpPoint)
+			{
+				WallRange.RangeEndLerpPoint = RangeStart;
+			}
+			else
+			{
+				FreeRanges.Add(FWallRange(WallRange.StartLerpPoint, RangeStart));
+				FreeRanges.Add(FWallRange(RangeStart + RangeDistance, WallRange.RangeEndLerpPoint));
+				FreeRanges.Remove(WallRange);
+			}
+		}
+		else //Remove
+		{
+			FreeRanges.Remove(WallRange);
+		}
 	}
 
 	FORCEINLINE bool operator == (const FRoomWall& OtherRoomWall) const
@@ -69,34 +94,7 @@ struct FRoomWall
 		return this->StartPoint == OtherRoomWall.StartPoint && this->EndPoint == OtherRoomWall.EndPoint;
 	}
 	
-	void GetWallFreeRanges(TMap<FVector, TArray<FWallRange>>& OccupationMap, TArray<FWallRange>& OutFreeRanges)
-	{
-		const FVector WallNormal = this->GetWallNormal();
-		if (!OccupationMap.Contains(WallNormal))
-		{
-			return;
-		}
-
-		TArray<FWallRange>& WallOccupiedRanges = OccupationMap[WallNormal];
-		TArray<FWallRange> WallFreeRanges = TArray<FWallRange>();
-		
-		float FreePointStart = 0.0;		
-		for (const FWallRange& WallOccupiedRange: WallOccupiedRanges)
-		{
-			const float FreePointEnd = WallOccupiedRange.StartPoint;
-
-			// Check if Free Point in Free Ranges
-			if (WallFreeRanges.Num() > 0 && !WallFreeRanges.ContainsByPredicate([=](const FWallRange& CheckFreeWallRange){
-				return FreePointStart >= CheckFreeWallRange.StartPoint && FreePointStart <= CheckFreeWallRange.EndPoint ||
-					   FreePointEnd >= CheckFreeWallRange.StartPoint && FreePointEnd <= CheckFreeWallRange.EndPoint;
-			}))
-			{
-				WallFreeRanges.Add( FWallRange(FreePointStart, FreePointEnd) );
-			}
-			FreePointStart = WallOccupiedRange.EndPoint;
-		}
-		OutFreeRanges = WallFreeRanges;
-	}
+	
 	
 	float GetWallLength() const
 	{
@@ -108,7 +106,7 @@ struct FRoomWall
 	}
 	FVector GetWallNormal() const
 	{
-		return GetStartToEndDirection().RotateAngleAxis(90.f, FVector::UpVector);;
+		return GetStartToEndDirection().RotateAngleAxis(-90.f, FVector::UpVector);
 	}
 	FVector GetWallDirection() const
 	{
