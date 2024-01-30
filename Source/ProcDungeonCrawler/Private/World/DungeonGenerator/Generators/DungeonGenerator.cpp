@@ -1,5 +1,6 @@
 #include "World/DungeonGenerator/Generators/DungeonGenerator.h"
 
+#include "FrameTypes.h"
 #include "Characters/Human/Player/PlayerPawn.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/SpellbookComponent.h"
@@ -15,6 +16,58 @@
 ADungeonGenerator::ADungeonGenerator()
 {
 	PrimaryActorTick.bCanEverTick = false;
+}
+
+void ADungeonGenerator::PrintDungeonStructure()
+{
+	for (const FRoomData& RoomData: Rooms)
+	{
+		UE_LOG(LogTemp, Display, TEXT("\t %i - %s"), RoomData.Id, *UEnum::GetValueAsString(RoomData.RoomRules.RoomType));
+			
+		// Print Parent
+		if (RoomData.ParentId != -1)
+		{
+			UE_LOG(LogTemp, Display, TEXT("\t\t Parent: %i - %s"), RoomData.ParentId, *UEnum::GetValueAsString(Rooms[RoomData.ParentId].RoomRules.RoomType));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("\t\t Dungeon Start"));
+		}
+
+		// // Print Obstacle Data
+		// if (RoomData->Obstacle_FromParent_Class != nullptr)
+		// {
+		// 	UE_LOG(LogTemp, Display, TEXT("\t\t  Has Obstacle of: %s"), *RoomData->Obstacle_FromParent_Class->GetName());
+		// }
+		// if (RoomData->HasSolutionToObstacleInRoomIdx > -1)
+		// {
+		// 	UE_LOG(LogTemp, Display, TEXT("\t\t  Has Obstacle Solution for Room of Id: %i"), RoomData->HasSolutionToObstacleInRoomIdx);
+		// }
+		//
+		// // Print Set Asset Data
+		// if (RoomData->RequiredAssetsToSpawn.Num() > 0)
+		// {
+		// 	UE_LOG(LogTemp, Display, TEXT("\t\t  Has Assets to Spawn:"));
+		// 	for (const TSubclassOf<AActor> AssetClass: RoomData->RequiredAssetsToSpawn)
+		// 	{
+		// 		UE_LOG(LogTemp, Display, TEXT("\t\t\t- %s"), *AssetClass->GetName());
+		// 	}
+		// }
+
+		// Print Children
+		if (RoomData.Children.Num() > 0)
+		{
+			UE_LOG(LogTemp, Display, TEXT("\t\t  Children: (%i)"), RoomData.Children.Num());
+			for (FRoomData* Child: RoomData.Children)
+			{
+				UE_LOG(LogTemp, Display, TEXT("\t\t\t %i - %s"), Child->Id, *UEnum::GetValueAsString(Child->RoomRules.RoomType));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Display, TEXT("\t\t -Branch End-"));
+		}
+	}
 }
 
 void ADungeonGenerator::BeginPlay()
@@ -44,118 +97,50 @@ bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
 		UE_LOG(LogTemp, Error, TEXT("No floors in Dungeon!"));
 		return false;
 	}
+	int FloorId = 0;
 	
-	for (int FloorId = 0; FloorId < DungeonFloorAmount; FloorId++)
+	UE_LOG(LogTemp, Warning, TEXT("Generating Floor %i"), FloorId);
+	
+	FFloorData& FloorData = Floors[
+		Floors.Add(
+		FFloorData(FloorId)
+	)
+	];
+	
+	if (!DungeonConfig->MaxRoomAmountOnFloor.Contains(FloorData.Id))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Generating Floor %i"), FloorId);
-		
-		FFloorData& FloorData = Floors[
-			Floors.Add(
-			FFloorData(FloorId)
-		)
-		];
-		
-		if (!DungeonConfig->MaxRoomAmountOnFloor.Contains(FloorData.Id))
-		{
-			UE_LOG(LogTemp, Error, TEXT("Dungeon Config doesn't have an entry for max rooms on floor %i, only required extensions will be applied!"));
-		}
-		else
-		{
-			FloorData.MaxRoomAmount = DungeonConfig->MaxRoomAmountOnFloor[FloorId];
-		}
-		
-		if (!DungeonRuleDictionary->HasFloorRoomStructures(FloorId))
-		{
-			UE_LOG(LogTemp, Error, TEXT("No Room Structures for floor %i! Cancelling generation!"), FloorId);
-			return false;
-		}
-		
-		// Add Floor Base Structure
-		FRuleCollection& FloorStructure = DungeonRuleDictionary->GetFloorRoomStructure(FloorId);
+		UE_LOG(LogTemp, Error, TEXT("Dungeon Config doesn't have an entry for max rooms on floor %i, only required extensions will be applied!"));
+	}
+	else
+	{
+		FloorData.MaxRoomAmount = DungeonConfig->MaxRoomAmountOnFloor[FloorId];
+	}
+	
+	if (!DungeonRuleDictionary->HasFloorRoomStructures(FloorId))
+	{
+		UE_LOG(LogTemp, Error, TEXT("No Room Structures for floor %i! Cancelling generation!"), FloorId);
+		return false;
+	}
+	
+	// Add Floor Base Structure
+	FRuleCollection& FloorStructure = DungeonRuleDictionary->GetFloorRoomStructure(FloorId);
 
-		// If this is a first floor, do not connect first room to parent, because it's not existent!
-		int FloorStartRoomId = FloorId == 0 ? -1 : Rooms.Num();
-		FloorData.Rooms = ConnectRuleCollectionToRooms(FloorStartRoomId, FloorId, FloorStructure, true);
-		
-		const int FloorLastRoomId = FloorStartRoomId + FloorStructure.Rules.Num();
+	// If this is a first floor, do not connect first room to parent, because it's not existent!
+	int FloorStartRoomId = FloorId == 0 ? -1 : Rooms.Num()-1;
+	FloorData.Rooms = ConnectRuleCollectionToRooms(FloorStartRoomId, FloorId, FloorStructure, true);
+	
+	const int FloorLastRoomId = FloorStartRoomId + FloorStructure.Rules.Num();
 
-		// If it's a first room in the dungeon, reset the start room id to 0 from -1
-		if (FloorStartRoomId < 0)
-		{
-			FloorStartRoomId = 0;
-		}
-		
-		if (ExtendFloorRoomTree(FloorData, FloorStartRoomId, FloorLastRoomId))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("\t- Room Tree Extension Successfull! Floor %i has %i rooms."), FloorId, Rooms.Num() - FloorStartRoomId);
-			UE_LOG(LogTemp, Warning, TEXT("\t- The Rooms Are:"));
-
-			for (const FRoomData* RoomData: FloorData.Rooms)
-			{
-				UE_LOG(LogTemp, Display, TEXT("\t\t- Id: %i, Type: %s"), RoomData->Id, *UEnum::GetValueAsString(RoomData->RoomRules.RoomType));
-				// Print Children
-				if (RoomData->ChildrenIds.Num() > 0)
-				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t  Children: (%i)"), RoomData->ChildrenIds.Num());
-					for (const int ChildRoomId: RoomData->ChildrenIds)
-					{
-						UE_LOG(LogTemp, Display, TEXT("\t\t\t- Id: %i, Type: %s"), ChildRoomId, *UEnum::GetValueAsString(Rooms[ChildRoomId].RoomRules.RoomType));
-					}
-				}
-				else
-				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t -Branch End-"));
-				}
-
-				// Print Parent
-				if (RoomData->ParentId != -1)
-				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t  Parent: "));
-					UE_LOG(LogTemp, Display, TEXT("\t\t\t- Id: %i, Type: %s"), RoomData->ParentId, *UEnum::GetValueAsString(Rooms[RoomData->ParentId].RoomRules.RoomType));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t -Dungeon Start-"));
-				}
-
-				// Print Obstacle Data
-				if (RoomData->Obstacle_FromParent_Class != nullptr)
-				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t  Has Obstacle of: %s"), *RoomData->Obstacle_FromParent_Class->GetName());
-				}
-				if (RoomData->HasSolutionToObstacleInRoomIdx > -1)
-				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t  Has Obstacle Solution for Room of Id: %i"), RoomData->HasSolutionToObstacleInRoomIdx);
-				}
-
-				// Print Set Asset Data
-				if (RoomData->RequiredAssetsToSpawn.Num() > 0)
-				{
-					UE_LOG(LogTemp, Display, TEXT("\t\t  Has Assets to Spawn:"));
-					for (const TSubclassOf<AActor> AssetClass: RoomData->RequiredAssetsToSpawn)
-					{
-						UE_LOG(LogTemp, Display, TEXT("\t\t\t- %s"), *AssetClass->GetName());
-					}
-				}
-			}
-		}
-
-		// If there is a next floor, create stairs
-		if (FloorId < DungeonFloorAmount)
-		{
-			FRuleProperties StairsRoomProperties = FRuleProperties();
-			// FRoomData& StairsRoomData = Rooms[Rooms.Add(
-			// FRoomData(FloorId, Rooms.Num(), StairsRoomProperties)
-			// 	)];
-			// StairsRoomData.bIsOnMainWalkthroughPath = true;
-			
-			// FloorData.Rooms.Add(&StairsRoomData);
-		}
-		// If this is the last floor, mark room as exit
-		else
-		{
-			FloorData.Rooms.Last()->bIsExit = true;
-		}
+	// If it's a first room in the dungeon, reset the start room id to 0 from -1
+	if (FloorStartRoomId < 0)
+	{
+		FloorStartRoomId = 0;
+	}
+	
+	if (ExtendFloorRoomTree(FloorData, FloorStartRoomId, FloorLastRoomId))
+	{
+		//successfully extended floor tree
+		PrintDungeonStructure();
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Generated rooms: %i"), Rooms.Num());
@@ -179,7 +164,7 @@ bool ADungeonGenerator::BuildDungeon()
 	// const AWalkthroughPath* SplineGlobalWalkthough = GetWorld()->SpawnActor<AWalkthroughPath>(WalkthroughPathClass);
 
 	FRoomData& StartRoomData = Rooms[0];
-	FVector BranchDirection = FVector::ForwardVector;
+	FVector BranchDirection = FVector(1.f, -1.f, 0.f);
 	for (int RoomIdx = 0; RoomIdx < Rooms.Num(); RoomIdx++)
 	{
 		if (ADungeonRoom* NewRoom = BuildRoom(Rooms[RoomIdx], BranchDirection))
@@ -276,6 +261,9 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 		
 		for (FRoomWall* ParentRoomWall: ParentRoomWalls)
 		{
+			float RoomRotationAngle = FMath::RadiansToDegrees(FMath::Acos(ThisWallNormal.Dot(ParentRoomWall->GetWallNormal())));
+			RoomData.RoomActor->SetActorRotation(FRotator(0.f, 0.f, RoomRotationAngle));
+			
 			FVector ThisWallStart = ThisRoomWall->StartPoint;
 			FVector ThisWallEnd = ThisRoomWall->EndPoint;
 			
@@ -289,20 +277,24 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 				ThisWallEnd = ThisRoomWall->StartPoint;
 			}
 			
-			FVector ThisRoomLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->StartPoint - ThisWallStart;
-			// ThisRoomLocation -= LastRoomDesiredWallNormal * 200.f;
-			RoomData.RoomActor->SetActorLocation(ThisRoomLocation);
-			// Check this wall intersections with last room walls
-			
-			bool bIsOverlapping = false;
-			for (ADungeonRoom* OtherRoom: RoomActors)
-			{
-				if (OtherRoom == RoomData.RoomActor.Get()) continue;
+			FVector ThisRoomStartLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->StartPoint - ThisWallStart;
+			FVector ThisRoomEndLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->EndPoint - ThisWallEnd;
 
-				bIsOverlapping = RoomData.RoomActor->IsOverlappingWithRoom(OtherRoom);
-				if (bIsOverlapping)
+			bool bIsOverlapping = false;
+			for (float CurrentLerpAlpha = 0.f; CurrentLerpAlpha <= 1.f; CurrentLerpAlpha += 0.25f)
+			{
+				FVector ThisRoomLocationCheck = FMath::Lerp(ThisRoomStartLocation, ThisRoomEndLocation, CurrentLerpAlpha);
+				RoomData.RoomActor->SetActorLocation(ThisRoomLocationCheck);
+				
+				for (ADungeonRoom* OtherRoom: RoomActors)
 				{
-					break;
+					if (OtherRoom == RoomData.RoomActor.Get()) continue;
+
+					bIsOverlapping = RoomData.RoomActor->IsOverlappingWithRoom(OtherRoom);
+					if (bIsOverlapping)
+					{
+						break;
+					}
 				}
 			}
 			
@@ -319,7 +311,6 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 
 	for (ADungeonRoom* RoomActor: RoomActors)
 	{
-		UE_LOG(LogTemp, Display, TEXT("Dupa!"))
 		RoomActor->DrawDebugShapes();
 	}
 
@@ -389,7 +380,7 @@ bool ADungeonGenerator::LoadAndSetDungeonData()
 
 bool ADungeonGenerator::ExtendFloorRoomTree(FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId)
 {
-	UE_LOG(LogTemp, Warning, TEXT("\t- Extanding Floor Tree"));
+	UE_LOG(LogTemp, Warning, TEXT("\t- Extanding Floor Tree of %i Rooms!"), FloorData.Rooms.Num());
 	if (!LoadAndSetDungeonData())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to load Dungeon Data!"));
@@ -410,30 +401,7 @@ bool ADungeonGenerator::ExtendFloorRoomTree(FFloorData& FloorData, const int Flo
 		// Can't extend from current room
 		if (!RoomRules.bMarkForExtension) continue;
 
-		// add on stack
-		RoomIdsForExtension.Add(RoomId);
-		
-		// Not an obstacle or start room, omit 
-		if (!RoomRules.bHasObstacle)
-		{
-			continue;
-		}
-
-		// Is an obstacle, get random room from stack
-		if (RoomIdsForExtension.Num() == 0)
-		{
-			UE_LOG(LogTemp, Error, TEXT("No rooms to extend from! Check Set Rules Data Asset!"));
-			return false;
-		}
-		const int RandomRoomId = FMath::RandRange(0, RoomIdsForExtension.Num()-1);
-		const FRoomData& RandomRoomData = Rooms[RoomIdsForExtension[RandomRoomId]];
-		
-		const ERoomType RoomType = RandomRoomData.RoomRules.RoomType;
-		if (RoomType == ERoomType::None)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Room type of room %i is None!"), RandomRoomId);
-			return false;
-		}
+		const ERoomType RoomType = RoomData.RoomRules.RoomType;
 
 		// Get random collection for the chosen room
 		if (!DungeonRuleDictionary->HasRoomExtensionOfType(RoomType))
@@ -443,25 +411,12 @@ bool ADungeonGenerator::ExtendFloorRoomTree(FFloorData& FloorData, const int Flo
 		}
 		
 		FRuleCollection RuleCollection = DungeonRuleDictionary->GetRandomRoomExtensionOfType(RoomType).Rules;
-		TArray<FRoomData*> NewRooms = ConnectRuleCollectionToRooms(RandomRoomData.Id, FloorData.Id, RuleCollection);
+		TArray<FRoomData*> NewRooms = ConnectRuleCollectionToRooms(RoomId, FloorData.Id, RuleCollection);
 		// Merge New Rooms to Floor Data Rooms
 		for (FRoomData* NewRoom: NewRooms)
 		{
 			FloorData.Rooms.Add(NewRoom);
 		}
-		
-		// Choose Obstacle Solution Room Randomly
-		if (FRoomData* ObstacleSolverRoom = SetSolverAndObstacleRoom(RoomData, NewRooms))
-		{
-			UE_LOG(LogTemp, Display, TEXT("\t\t - Solver Room Set Successfully!"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("\t\t - Couldn't Set Solver Room!"));
-		}
-
-		// Clear out stack
-		RoomIdsForExtension.Empty();
 	}
 
 	return true;
@@ -502,7 +457,7 @@ TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(int ParentRoo
 		// Create a Parent-Child relation
 		RoomData.ParentId = ParentRoomId;
 		// Todo: Why it disappears on original parent room?
-		Rooms[ParentRoomId].ChildrenIds.Add(RoomData.Id);
+		Rooms[ParentRoomId].Children.Add(&RoomData);
 		
 		// ParentRoomId Changes with each iteration
 		ParentRoomId = NewRoomId;

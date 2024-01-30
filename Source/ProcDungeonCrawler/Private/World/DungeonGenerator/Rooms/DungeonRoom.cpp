@@ -23,6 +23,15 @@ ADungeonRoom::ADungeonRoom()
 	AssetPlacerPCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
 }
 
+void ADungeonRoom::BeginPlay()
+{
+	Super::BeginPlay();
+
+	GenerateRoomWalls();
+	
+	Tags.Add(TargetRoomPCGTag);
+}
+
 void ADungeonRoom::DrawDebugShapes()
 {
 	for (FRoomWall& RoomWall: RoomWalls)
@@ -45,15 +54,6 @@ void ADungeonRoom::DrawDebugShapes()
 			GetActorLocation() + RoomWall.GetWallCenter() + RoomWall.GetWallNormal() * 100.f,
 			100.f, FColor::Blue, true, 100.f, 4, 15.f);
 	}
-}
-
-void ADungeonRoom::BeginPlay()
-{
-	Super::BeginPlay();
-
-	GenerateRoomWalls();
-	
-	Tags.Add(TargetRoomPCGTag);
 }
 
 void ADungeonRoom::GenerateRoomWalls()
@@ -171,10 +171,11 @@ bool ADungeonRoom::IsOverlappingWithRoom(ADungeonRoom* OtherRoom)
 	{
 		if (IsPointInsideRoom(OtherRoom->GetActorLocation() + OtherRoomLocalPoint))
 		{
+			UE_LOG(LogTemp, Display, TEXT("Overlapping!"))
 			return true;
 		}
 	}
-	UE_LOG(LogTemp, Display, TEXT("Point not inside room."))
+	UE_LOG(LogTemp, Warning, TEXT("Point not inside room."))
 	
 	// OtherRoom's corners are not inside this room, check if any of the walls are overlapping
 	for (FRoomWall& ThisRoomWall: RoomWalls)

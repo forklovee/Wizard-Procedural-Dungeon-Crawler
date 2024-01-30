@@ -59,7 +59,7 @@ struct FRoomData
 	TArray<TSubclassOf<AActor>> RequiredAssetsToSpawn;
 	
 	int ParentId = -1;
-	TArray<int> ChildrenIds;
+	TArray<FRoomData*> Children;
 	
 	TMap<FVector, TArray<FWallRange>> OccupiedWallsRanges;
 	
@@ -125,6 +125,9 @@ class PROCDUNGEONCRAWLER_API ADungeonGenerator : public AActor
 public:	
 	ADungeonGenerator();
 
+	UFUNCTION(BlueprintCallable, Category="Debug")
+	void PrintDungeonStructure();
+	
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
 	bool GenerateDungeon(APlayerPawn* Player);
 
