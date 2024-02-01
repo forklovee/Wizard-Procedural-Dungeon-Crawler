@@ -16,6 +16,10 @@ ADungeonRoom::ADungeonRoom()
 	RoomBoundsSpline = CreateDefaultSubobject<USplineComponent>(FName("RoomBoundsSpline"));
 	RoomBoundsSpline->ComponentTags.Add(FName("RoomBoundsSpline"));
 	RoomBoundsSpline->SetupAttachment(RootComponent);
+
+	RoomHeightSpline = CreateDefaultSubobject<USplineComponent>(FName("RoomHeightSpline"));
+	RoomHeightSpline->ComponentTags.Add(FName("RoomHeightSpline"));
+	RoomHeightSpline->SetupAttachment(RootComponent);
 	
 	RoomBuildSpline = CreateDefaultSubobject<USplineComponent>(FName("RoomBuildSpline"));
 	RoomBuildSpline->ComponentTags.Add(FName("RoomBaseSpline"));
@@ -31,7 +35,7 @@ ADungeonRoom::ADungeonRoom()
 void ADungeonRoom::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	GenerateRoomWalls();
 	
 	Tags.Add(TargetRoomPCGTag);
@@ -64,7 +68,7 @@ void ADungeonRoom::DrawDebugShapes()
 void ADungeonRoom::GenerateRoomWalls()
 {
 	// Generate Room Walls and Bounds Spline
-	RoomBoundsSpline->ClearSplinePoints(); //todo: do i need this???
+	RoomBoundsSpline->ClearSplinePoints();
 	
 	const int SplinePointsAmount = RoomBuildSpline->GetNumberOfSplinePoints();
 	if (SplinePointsAmount < 2)

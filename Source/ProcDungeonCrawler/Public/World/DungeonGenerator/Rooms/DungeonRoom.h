@@ -16,34 +16,35 @@ struct FWallRange
 
 	FWallRange()
 	{
-		StartLerpPoint = 0.0;
-		RangeEndLerpPoint = 1.0;
+		Start = 0.0;
+		End = 200.0;
 	}
 
-	FWallRange(const float _StartLerpPoint, const float _RangeEndLerpPoint)
+	FWallRange(const float _Start, const float _End)
 	{
-		StartLerpPoint = _StartLerpPoint;
-		RangeEndLerpPoint = FMath::Clamp(_RangeEndLerpPoint, 0.0, 1.0);
+		Start = _Start;
+		End = _End;
 	}
 
 	FORCEINLINE bool operator == (const FWallRange& OtherWallRange) const
 	{
-		return this->StartLerpPoint == OtherWallRange.StartLerpPoint
-			&& this->RangeEndLerpPoint == OtherWallRange.RangeEndLerpPoint;
+		return this->Start == OtherWallRange.Start
+			&& this->End == OtherWallRange.End;
 	}
 	
-	bool IsLerpPointInRange(const float LerpPoint) const
+	bool IsPointInRange(const float LerpPoint) const
 	{
-		return LerpPoint >= StartLerpPoint && LerpPoint <= RangeEndLerpPoint;
+		return LerpPoint >= Start && LerpPoint <= End;
 	}
 
 	float GetRangeLength() const
 	{
-		return RangeEndLerpPoint - StartLerpPoint;
+		return Start - End;
 	}
-	
-	float StartLerpPoint = 0.0;
-	float RangeEndLerpPoint = 1.0;
+
+	// In tile unit
+	float Start = 0.f;
+	float End = 200.f;
 };
 
 USTRUCT()
@@ -51,6 +52,7 @@ struct FRoomWall
 {
 	GENERATED_BODY()
 
+	// Local Space
 	FVector StartPoint;
 	FVector EndPoint;
 
@@ -74,18 +76,18 @@ struct FRoomWall
 	{
 		if (RangeDistance < WallRange.GetRangeLength()) //Split!
 		{
-			if (RangeStart == WallRange.StartLerpPoint)
+			if (RangeStart == WallRange.Start)
 			{
-				WallRange.StartLerpPoint += RangeDistance;
+				WallRange.Start += RangeDistance;
 			}
-			else if (RangeStart + RangeDistance == WallRange.RangeEndLerpPoint)
+			else if (RangeStart + RangeDistance == WallRange.End)
 			{
-				WallRange.RangeEndLerpPoint = RangeStart;
+				WallRange.End = RangeStart;
 			}
 			else
 			{
-				FreeRanges.Add(FWallRange(WallRange.StartLerpPoint, RangeStart));
-				FreeRanges.Add(FWallRange(RangeStart + RangeDistance, WallRange.RangeEndLerpPoint));
+				FreeRanges.Add(FWallRange(WallRange.Start, RangeStart));
+				FreeRanges.Add(FWallRange(RangeStart + RangeDistance, WallRange.End));
 				FreeRanges.Remove(WallRange);
 			}
 		}
@@ -169,8 +171,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Room")
 	uint8 RoomHeight = 1;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Components")
 	USplineComponent* RoomBoundsSpline;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	USplineComponent* RoomHeightSpline;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	USplineComponent* RoomBuildSpline;
