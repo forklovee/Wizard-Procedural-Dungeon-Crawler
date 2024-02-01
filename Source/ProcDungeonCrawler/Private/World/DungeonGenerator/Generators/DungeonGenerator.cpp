@@ -148,7 +148,7 @@ bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
 	return Rooms.Num() > 1;
 }
 
-bool ADungeonGenerator::BuildDungeon()
+bool ADungeonGenerator::BuildDungeon(float NewGridTileSize, float NewMeshTileSize)
 {
 	if (!LoadAndSetDungeonData())
 	{
@@ -261,9 +261,6 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 		
 		for (FRoomWall* ParentRoomWall: ParentRoomWalls)
 		{
-			float RoomRotationAngle = FMath::RadiansToDegrees(FMath::Acos(ThisWallNormal.Dot(ParentRoomWall->GetWallNormal())));
-			RoomData.RoomActor->SetActorRotation(FRotator(0.f, 0.f, RoomRotationAngle));
-			
 			FVector ThisWallStart = ThisRoomWall->StartPoint;
 			FVector ThisWallEnd = ThisRoomWall->EndPoint;
 			

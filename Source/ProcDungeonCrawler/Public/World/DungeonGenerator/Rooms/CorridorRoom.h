@@ -20,7 +20,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	void RotatePointAroundCenter(FVector& Point, const FVector& Center, const float AngleDeg) const;
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Room|Corridor")
 	int ConnectedRooms = 0;

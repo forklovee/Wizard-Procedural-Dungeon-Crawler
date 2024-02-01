@@ -70,7 +70,7 @@ void ACorridorRoom::GenerateRoomSpline(FVector BuildDirection)
 	}
 
 	// Set spline points 
-	RoomBaseSpline->ClearSplinePoints();
+	RoomBuildSpline->ClearSplinePoints();
 
 	for (int PointId = 1; PointId >= 0; PointId--)
 	{
@@ -78,20 +78,11 @@ void ACorridorRoom::GenerateRoomSpline(FVector BuildDirection)
 			PointId == 0 ? StartId >= 0 : StartId < PointPairs.Num();
 			PointId == 0 ? StartId-- : StartId++ )
 		{
-			RoomBaseSpline->AddSplinePoint(PointPairs[StartId][PointId], ESplineCoordinateSpace::Local, false);
-			RoomBaseSpline->SetTangentsAtSplinePoint(RoomBaseSpline->GetNumberOfSplinePoints()-1, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);
+			RoomBuildSpline->AddSplinePoint(PointPairs[StartId][PointId], ESplineCoordinateSpace::Local, false);
+			RoomBuildSpline->SetTangentsAtSplinePoint(RoomBuildSpline->GetNumberOfSplinePoints()-1, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);
 		}
 	}
-	RoomBaseSpline->SetClosedLoop(true);
+	RoomBuildSpline->SetClosedLoop(true);
 }
 
-void ACorridorRoom::RotatePointAroundCenter(FVector& Point, const FVector& Center, const float AngleDeg) const
-{
-	const float Angle = FMath::DegreesToRadians(AngleDeg);
-	Point = FVector(
-	Center.X + (Point.X-Center.X)*FMath::Cos(Angle) - (Point.Y-Center.Y)*FMath::Sin(Angle),
-	Center.Y + (Point.X-Center.X)*FMath::Sin(Angle) + (Point.Y-Center.Y)*FMath::Cos(Angle),
-	0.f
-	);
-}
 

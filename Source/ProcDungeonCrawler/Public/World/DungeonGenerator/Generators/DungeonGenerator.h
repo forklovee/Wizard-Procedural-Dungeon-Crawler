@@ -132,7 +132,7 @@ public:
 	bool GenerateDungeon(APlayerPawn* Player);
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
-	bool BuildDungeon();
+	bool BuildDungeon(float NewGridTileSize, float NewMeshTileSize);
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
 	void BuildRoomById(int Id);

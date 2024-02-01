@@ -158,16 +158,22 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	void GenerateRoomWalls();
-	
+
+	void RotatePointAroundCenter(FVector& Point, const FVector& Center, const float AngleDeg) const;
+	void ScaleWallByPoint(FRoomWall& RoomWall, FVector Point, float SizeChange) const;
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Room")
 	FName TargetRoomPCGTag = FName("Basic");
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Room")
 	uint8 RoomHeight = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	USplineComponent* RoomBoundsSpline;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
-	USplineComponent* RoomBaseSpline;
+	USplineComponent* RoomBuildSpline;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	UPCGComponent* RoomWallsPCGComponent;
@@ -179,4 +185,7 @@ private:
 	FTimerHandle BuildTimerHandle;
 
 	TArray<FRoomWall> RoomWalls;
+
+	float GridTileSize = 200.f;
+	float MeshTileSize = 600.f;
 };
