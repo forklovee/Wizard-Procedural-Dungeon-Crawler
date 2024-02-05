@@ -21,16 +21,26 @@ void UItemTile::NativeOnInitialized()
  void UItemTile::NativeConstruct()
 {
 	Super::NativeConstruct();
-
- 	
 }
 
 void UItemTile::UpdateData(FInventorySlot InventorySlot)
 {
  	ItemData = InventorySlot;
-	
- 	AmountTextBlock->SetText(FText::FromString(FString::FromInt(InventorySlot.Amount)));
-	ItemImage->SetBrushFromTexture(nullptr);
+
+	if (InventorySlot.ItemClass == nullptr)
+	{
+		Button->SetVisibility(ESlateVisibility::Collapsed);
+		AmountTextBlock->SetVisibility(ESlateVisibility::Collapsed);
+		ItemImage->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	else
+	{
+		Button->SetVisibility(ESlateVisibility::Visible);
+		AmountTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
+		AmountTextBlock->SetText(FText::FromString(FString::FromInt(InventorySlot.Amount)));
+		
+		ItemImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+	}
 }
 
 void UItemTile::UseItem()

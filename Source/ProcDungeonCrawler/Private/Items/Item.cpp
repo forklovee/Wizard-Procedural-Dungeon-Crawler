@@ -2,17 +2,11 @@
 
 #include "Items/Item.h"
 
-#include "Components/CapsuleComponent.h"
+#include "Characters/Human/Human.h"
 
 AItem::AItem()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
-	WeaponRoot = CreateDefaultSubobject<USceneComponent>(FName("WeaponRoot"));
-	RootComponent = WeaponRoot;
-	
-	PickupCollision = CreateDefaultSubobject<UCapsuleComponent>(FName("PickupCollision"));
-	PickupCollision->SetupAttachment(WeaponRoot);
 }
 
 void AItem::Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FName SocketName)

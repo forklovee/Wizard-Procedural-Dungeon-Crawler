@@ -21,6 +21,13 @@ struct FInventorySlot
 		Amount = 0;
 	}
 
+	FInventorySlot(const int Row, const int Column)
+	{
+		ItemClass = nullptr;
+		Amount = 0;
+		TilePos = FVector2D(Row, Column);
+	}
+	
 	FInventorySlot(TSubclassOf<AItem> NewItemClass, int32 NewAmount)
 	{
 		ItemClass = NewItemClass;

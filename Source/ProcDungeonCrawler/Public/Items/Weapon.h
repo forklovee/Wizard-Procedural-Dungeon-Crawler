@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Item.h"
+#include "PickupItem.h"
 #include "Weapon.generated.h"
 
 class AHuman;
@@ -14,7 +14,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponEquipped);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponUnequipped);
 
 UCLASS()
-class PROCDUNGEONCRAWLER_API AWeapon : public AItem
+class PROCDUNGEONCRAWLER_API AWeapon : public APickupItem
 {
 	GENERATED_BODY()
 
@@ -44,7 +44,7 @@ private:
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon")
-	USkeletalMeshComponent* WeaponMesh;
+	USceneComponent* WeaponHandlePoint;
 	
 protected:
 	/* Damage dealt by this weapon */

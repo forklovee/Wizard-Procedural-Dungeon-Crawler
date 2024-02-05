@@ -11,9 +11,8 @@
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
-	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
-	WeaponMesh->SetupAttachment(RootComponent);
+	WeaponHandlePoint = CreateDefaultSubobject<USceneComponent>(TEXT("WeaponHandlePoint"));
+	WeaponHandlePoint->SetupAttachment(RootComponent);
 }
 
 void AWeapon::Attack()
@@ -37,8 +36,9 @@ void AWeapon::Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FN
 	}
 
 	WeaponOwner = HumanPawn;
-	
-	PickupCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	ItemMesh->SetSimulatePhysics(false);
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttachToComponent(EquipTargetComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
 
 	if (OnWeaponEquipped.IsBound())
@@ -55,7 +55,8 @@ void AWeapon::UnEquip()
 	}
 	
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	PickupCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ItemMesh->SetSimulatePhysics(true);
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	WeaponOwner = nullptr;
 	
 	if (OnWeaponUnequipped.IsBound())

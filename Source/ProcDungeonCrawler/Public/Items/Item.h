@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
 
+class AHuman;
 class UCapsuleComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPickedUp);
 
@@ -27,12 +28,6 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Pickup")
 	virtual TSubclassOf<AActor> Pickup(APawn* Pawn);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
-	USceneComponent* WeaponRoot;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
-	UCapsuleComponent* PickupCollision;
 	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Item")

@@ -64,6 +64,7 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
 			ItemTiles.Add(ItemTile);
 			InventoryGrid->AddChildToUniformGrid(ItemTile, X, Y);
+			ItemTile->UpdateData(FInventorySlot(X, Y));
 		}
 	}
 }

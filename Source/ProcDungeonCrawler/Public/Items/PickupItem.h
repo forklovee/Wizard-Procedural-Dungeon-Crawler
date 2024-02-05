@@ -16,8 +16,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Physics")
 	void SetSimulatePhysics(const bool bNewSimulatePhysics);
-
-
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
 	UStaticMeshComponent* ItemMesh;
