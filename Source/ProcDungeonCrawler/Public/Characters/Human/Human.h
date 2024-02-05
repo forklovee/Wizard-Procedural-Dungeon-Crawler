@@ -26,7 +26,7 @@ class ASpellCast;
 class UPawnStats;
 class AItem;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponAttack);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAttack, int, AttackNumber);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrouchStateChanged, bool, bCrouchState);
 
 UCLASS(Blueprintable, BlueprintType)
@@ -88,24 +88,26 @@ protected:
 	UFUNCTION()
 	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget);
 
+	void ResetCanAttack();
 // private:
 	// UFUNCTION()
 	// void PrepareSpell(TSubclassOf<ASpell> SpellCastClass, float ManaCost);
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
 	UPhysicalAnimationComponent* PhysicalAnimation;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spells")
 	USpellBookComponent* SpellBook;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Human")
 	UInventoryComponent* Inventory;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Human")
 	UPawnStats* Stats;
 
 protected:
+	// Equipment
 	TWeakObjectPtr<AItem> GrabbedItem;
 	TWeakObjectPtr<AWeapon> Weapon;
 
@@ -114,7 +116,26 @@ protected:
 	TWeakObjectPtr<AClothes> FeetArmor;
 	TArray<TWeakObjectPtr<AClothes>> Rings;
 
+	// Combat
+	// Animation controlled Attack Lock
+	UPROPERTY(BlueprintReadWrite, Category= "Combat")
+	bool bCanPerformNextAttack = true;
+	
 private:
+	// Combat
+	UPROPERTY(EditAnywhere, Category= "Combat", meta = (AllowPrivateAccess = "true"))
+	int AttackDelay = 0.15;
+	UPROPERTY(EditAnywhere, Category= "Combat", meta = (AllowPrivateAccess = "true"))
+	int MaxAttackNumber = 3;
+	int AttackNumber = 0;
+
+	bool bIsAttacking = false;
+	// General usage Attack Lock
+	bool bCanAttack = true;
+
+	FTimerHandle AttackDelayTimerHandle;
+
+	// Movement
 	bool bIsCrouching = false;
 	bool bBlockMovement = false;
 	bool bIsSprinting = false;

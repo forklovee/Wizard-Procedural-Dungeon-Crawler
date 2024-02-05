@@ -71,16 +71,24 @@ void AHuman::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AHuman::PrimaryAction()
 {
 	// No prepared spell.
-	if (!SpellBook->IsSpellPrepared())
+	if (!bCanAttack || !bCanPerformNextAttack)
 	{
-		if (OnWeaponAttack.IsBound())
-		{
-			OnWeaponAttack.Broadcast();
-		}
+		bIsAttacking = false;
 		return;
 	}
-	
-	// SpellBook->CastPreparedSpell(this);
+
+	bIsAttacking = true;
+	AttackNumber++;
+	if (OnWeaponAttack.IsBound())
+	{
+		OnWeaponAttack.Broadcast(AttackNumber);
+	}
+
+	if (AttackNumber >= MaxAttackNumber)
+	{
+		AttackNumber = 0;
+		bIsAttacking = false;
+	}
 }
 
 void AHuman::UseItem(TSubclassOf<AItem> Item, int ItemAmount)
@@ -138,6 +146,14 @@ void AHuman::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
 			FeetArmor = NewClothes;
 			break;
 	}
+}
+
+void AHuman::ResetCanAttack()
+{
+	bCanAttack = true;
+	bCanPerformNextAttack = true;
+	AttackNumber = 0;
+	UE_LOG(LogTemp, Display, TEXT("Attack reset"))
 }
 
 // Movement
