@@ -9,6 +9,10 @@ AItem::AItem()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
+void AItem::Use(AHuman* HumanPawn)
+{
+}
+
 void AItem::Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FName SocketName)
 {
 	

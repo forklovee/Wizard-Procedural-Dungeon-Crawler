@@ -84,11 +84,12 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		Inventory->OnItemAdded.AddDynamic(PlayerHUD, &UPlayerHUD::OnItemAdded);
 		
 		// Bind stat changes to hud
-		Stats->OnHurt.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHurt);
-		Stats->OnHeal.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHeal);
-		Stats->OnManaUsage.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerManaUsage);
-		Stats->Heal(0.f);
-		Stats->UseMana(nullptr, 0.f);
+		Stats->OnHurt.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateHealthBar);
+		Stats->OnHeal.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateHealthBar);
+		Stats->OnManaUsage.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateManaBar);
+		Stats->OnManaRestore.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateManaBar);
+		Stats->ChangeHealth(100.f);
+		Stats->ChangeMana(100.f);
 	
 		// PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
 		

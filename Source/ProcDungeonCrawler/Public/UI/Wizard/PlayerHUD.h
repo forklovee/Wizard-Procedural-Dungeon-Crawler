@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUD.generated.h"
 
+class UProgressBar;
 class UCanvasPanel;
 class UItemTile;
 class UUniformGridPanel;
@@ -67,17 +68,21 @@ public:
 	void UnbindRuneToSlot(int SlotIdx);
 
 	UFUNCTION()
-	void OnPlayerHeal(float Health, float HealHealth);
+	void UpdateHealthBar(const float CurrentHealth, const float HealthChange);
+
 	UFUNCTION()
-	void OnPlayerHurt(AActor* DamageCauser, float Damage, const UDamageType* DamageType);
-	UFUNCTION()
-	void OnPlayerManaUsage(float Mana, float ManaUsage);
+	void UpdateManaBar(const float CurrentMana, const float ManaChange);
 
 protected:
 	virtual void NativeOnInitialized() override;
 
 	void UpdateInventoryData();
 	UItemTile* GetItemTileAtPosition(FVector2D TilePos) const;
+
+private:
+	void LerpHealthBarValueToTarget();
+	void LerpManaBarValueToTarget();
+	
 public:
 	UPROPERTY()
 	APlayerPawn* Player;
@@ -93,6 +98,14 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UUniformGridPanel* InventoryGrid;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI|Stats", meta=(BindWidget))
+	UProgressBar* HealthBar;
+	FTimerHandle HealthBarAnimateTimer;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI|Stats", meta=(BindWidget))
+	UProgressBar* ManaBar;
+	FTimerHandle ManaBarAnimateTimer;
 	
 // public:
 // 	UPROPERTY(EditAnywhere, meta=(BindWidget))
@@ -110,4 +123,8 @@ protected:
 
 	FVector2D InventorySize = FVector2D(5, 5);
 	bool bIsVisible = false;
+
+private:
+	float TargetHealthValue = 0.f;
+	float TargetManaValue = 0.f;
 };

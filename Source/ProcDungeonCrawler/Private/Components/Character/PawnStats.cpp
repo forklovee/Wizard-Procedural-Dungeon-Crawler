@@ -47,30 +47,43 @@ bool UPawnStats::HasRequiredMana(float ManaCost) const
 void UPawnStats::TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
 	AController* InstigatedBy, AActor* DamageCauser)
 {
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
-	UE_LOG(LogTemp, Display, TEXT("%s Health: %f Damage: %f taken!"),  *DamagedActor->GetName(), Health, Damage);
-	if (OnHurt.IsBound())
+	ChangeHealth(-Damage);
+}
+
+void UPawnStats::ChangeHealth(float HealthChange)
+{
+	Health = FMath::Clamp(Health + HealthChange, 0.f, MaxHealth);
+
+	if (HealthChange > 0.f && OnHeal.IsBound())
 	{
-		OnHurt.Broadcast(DamageCauser, Damage, DamageType);
+		OnHeal.Broadcast(Health, HealthChange);
+	}
+	else if (HealthChange < 0.f && OnHurt.IsBound())
+	{
+		OnHurt.Broadcast(Health, FMath::Abs(HealthChange));
 	}
 }
- 
+
+void UPawnStats::ChangeMana(float ManaChange)
+{
+	Mana = FMath::Clamp(Mana + ManaChange, 0.f, MaxMana);
+
+	if (ManaChange > 0.f && OnManaRestore.IsBound())
+	{
+		OnManaRestore.Broadcast(Mana, ManaChange);
+	}
+	else if (ManaChange < 0.f && OnManaUsage.IsBound())
+	{
+		OnManaUsage.Broadcast(Mana, FMath::Abs(ManaChange));
+	}
+}
+
 void UPawnStats::UseMana(ASpell* SpellCast, float ManaCost)
 {
 	Mana = FMath::Clamp(Mana - ManaCost, 0.f, MaxMana);
 	if (OnManaUsage.IsBound())
 	{
 		OnManaUsage.Broadcast(Mana, ManaCost);
-	}
-}
-
-void UPawnStats::Heal(float HealAmount)
-{
-	Health = FMath::Clamp(Health + HealAmount, 0.f, MaxHealth);
-
-	if (OnHeal.IsBound())
-	{
-		OnHeal.Broadcast(Health, HealAmount);
 	}
 }
 
@@ -94,7 +107,7 @@ void UPawnStats::ApplyStatusEffect(AStatusEffect* StatusEffect)
 		default:
 		case EEffectType::Heal:
 		{
-			Heal(StatusEffect->Strength);
+			ChangeHealth(StatusEffect->Strength);
 			break;
 		}
 			

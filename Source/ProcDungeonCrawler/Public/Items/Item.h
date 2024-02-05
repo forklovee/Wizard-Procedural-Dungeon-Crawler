@@ -21,6 +21,9 @@ public:
 	
 	AItem();
 
+	UFUNCTION(BlueprintCallable, Category = "Usage")
+	virtual void Use(AHuman* HumanPawn);
+	
 	UFUNCTION(BlueprintCallable, Category = "Equip")
 	virtual void Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FName SocketName);
 	UFUNCTION(BlueprintCallable, Category = "Equip")

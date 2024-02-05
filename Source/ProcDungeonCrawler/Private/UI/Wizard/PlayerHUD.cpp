@@ -10,8 +10,10 @@
 
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
+#include "Components/ProgressBar.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/Character/InventoryComponent.h"
+#include "Components/Character/PawnStats.h"
 #include "UI/Inventory/ItemTile.h"
 #include "UI/Wizard/RuneCastsHistory.h"
 
@@ -143,31 +145,17 @@ void UPlayerHUD::UnbindRuneToSlot(int SlotIdx)
 	RuneCastSlots[SlotIdx]->ClearRuneData();
 }
 
-void UPlayerHUD::OnPlayerHeal(float Health, float HealHealh)
+void UPlayerHUD::UpdateHealthBar(const float CurrentHealth, const float HealthChange)
 {
-	if (OnPlayerHeal_UpdateHealth.IsBound())
-	{
-		OnPlayerHeal_UpdateHealth.Broadcast(Health, HealHealh);
-	}
+	TargetHealthValue = CurrentHealth;
+	GetWorld()->GetTimerManager().SetTimer(HealthBarAnimateTimer, this, &UPlayerHUD::LerpHealthBarValueToTarget, 0.01f, true);
 }
 
-void UPlayerHUD::OnPlayerHurt(AActor* DamageCauser, float Damage, const UDamageType* DamageType)
+void UPlayerHUD::UpdateManaBar(const float CurrentMana, const float ManaChange)
 {
-	if (OnPlayerHurt_UpdateHealth.IsBound())
-	{
-		OnPlayerHurt_UpdateHealth.Broadcast(DamageCauser, Damage, DamageType);
-	}
+	TargetManaValue = CurrentMana;
+	GetWorld()->GetTimerManager().SetTimer(ManaBarAnimateTimer, this, &UPlayerHUD::LerpManaBarValueToTarget, 0.01f, true);
 }
-
-void UPlayerHUD::OnPlayerManaUsage(float Mana, float ManaUsage)
-{
-	if (OnPlayerManaUsage_ManaUpdate.IsBound())
-	{
-		OnPlayerManaUsage_ManaUpdate.Broadcast(Mana, ManaUsage);
-	}
-}
-
-
 
 void UPlayerHUD::BindRuneToSlot(int SlotIdx, URune* RuneCast)
 {
@@ -175,5 +163,31 @@ void UPlayerHUD::BindRuneToSlot(int SlotIdx, URune* RuneCast)
 	
 	if (URuneCastSlot* RuneCastSlot = RuneCastSlots[SlotIdx]) {
 		RuneCastSlot->SetRuneData(RuneCast);
+	}
+}
+
+void UPlayerHUD::LerpHealthBarValueToTarget()
+{
+	const float TargetValuePercent = Player->Stats->GetHealth() / Player->Stats->GetMaxHealth();
+	const float CurrentBarPercent = HealthBar->GetPercent();
+	HealthBar->SetPercent( FMath::Lerp(CurrentBarPercent, TargetValuePercent, 0.5) );
+
+	if (ManaBar->GetPercent() == TargetValuePercent)
+	{
+		HealthBar->SetPercent(TargetValuePercent);
+		GetWorld()->GetTimerManager().ClearTimer(HealthBarAnimateTimer);
+	}
+}
+
+void UPlayerHUD::LerpManaBarValueToTarget()
+{
+	const float TargetValuePercent = Player->Stats->GetMana() / Player->Stats->GetMaxMana();
+	const float CurrentBarPercent = ManaBar->GetPercent();
+	ManaBar->SetPercent( FMath::Lerp(CurrentBarPercent, TargetValuePercent, 0.5) );
+
+	if (ManaBar->GetPercent() == TargetValuePercent)
+	{
+		ManaBar->SetPercent(TargetValuePercent);
+		GetWorld()->GetTimerManager().ClearTimer(ManaBarAnimateTimer);
 	}
 }

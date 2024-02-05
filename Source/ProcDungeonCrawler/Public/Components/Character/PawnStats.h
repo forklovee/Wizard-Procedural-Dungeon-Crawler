@@ -11,8 +11,11 @@ class ASpell;
 class AStatusEffect;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHeal, float, Health, float, HealAmount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHurt, float, Health, float, Damage);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaRestore, float, Mana, float, ManaRestored);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaUsage, float, Mana, float, ManaUsed);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt, AActor*, DamageCauser, float, Damage, const UDamageType*, DamageType);
+
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewStatusEffectAdded, AStatusEffect*, StatusEffect);
 
@@ -25,9 +28,13 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnHeal OnHeal;
 	UPROPERTY(BlueprintAssignable)
+	FOnManaRestore OnManaRestore;
+	
+	UPROPERTY(BlueprintAssignable)
 	FOnManaUsage OnManaUsage;
 	UPROPERTY(BlueprintAssignable)
 	FOnHurt OnHurt;
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnNewStatusEffectAdded OnNewStatusEffectAdded;
 	
@@ -50,8 +57,11 @@ public:
 	void TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 	UFUNCTION(BlueprintCallable)
-	void Heal(float HealAmount);
+	void ChangeHealth(float HealthChange);
 
+	UFUNCTION(BlueprintCallable)
+	void ChangeMana(float ManaChange);
+	
 	UFUNCTION(BlueprintCallable)
 	void UseMana(ASpell* SpellCast, float ManaCost);
 	
