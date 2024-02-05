@@ -4,6 +4,7 @@
 #include "Characters/Human/Player/PlayerPawn.h"
 
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Characters/Human/Player/DefaultPlayerController.h"
 #include "Components/Character/InventoryComponent.h"
@@ -14,7 +15,7 @@
 #include "Items/Clothes/RuneRing.h"
 #include "UI/Wizard/PlayerHUD.h"
 
-APlayerPawn::APlayerPawn(): Super()
+APlayerPawn::APlayerPawn()
 {
 	FP_RootComponent = CreateDefaultSubobject<USceneComponent>(FName("FP_Root"));
 	FP_RootComponent->SetupAttachment(RootComponent);
@@ -49,7 +50,8 @@ APlayerPawn::APlayerPawn(): Super()
 	PlayerInteraction->SetupAttachment(CameraComponent);
 
 	// Enable auto possession
-	AutoPossessPlayer = EAutoReceiveInput::Player0;
+	AutoReceiveInput = EAutoReceiveInput::Player0;
+
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -62,73 +64,70 @@ void APlayerPawn::Tick(float DeltaSeconds)
 
 void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
-	UEnhancedInputComponent* PlayerEnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-	if (PlayerEnhancedInputComponent == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Couldn't cast PlayerInputComponent to UEnhancedInputComponent."));
-		return;
-	}
+	ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController());
 	
 	// set ui inputs
-	if (ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController()))
+	PlayerController->SetupDefaultInput(Cast<UEnhancedInputComponent>(PlayerInputComponent));
+	
+	// Setup WizardHUD
+	if (UPlayerHUD* PlayerHUD = PlayerController->AddHudToViewport())
 	{
-		PlayerController->SetupDefaultInput(PlayerEnhancedInputComponent);
-		// PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
+		PlayerHUD->SetupInventory(this);
 		
-		// Setup WizardHUD
-		if (UPlayerHUD* PlayerHUD = PlayerController->AddHudToViewport())
-		{
-			PlayerHUD->SetupInventory(this);
-			
-			UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
+		UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
 
-			PlayerController->OnToggleInventoryAction.AddDynamic(PlayerHUD, &UPlayerHUD::ToggleInventoryVisibility);
-			PlayerInteraction->OnNewInteractionTarget.AddDynamic(PlayerHUD, &UPlayerHUD::OnNewInteractionTarget);
-			
-			// Bind stat changes to hud
-			Stats->OnHurt.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHurt);
-			Stats->OnHeal.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHeal);
-			Stats->OnManaUsage.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerManaUsage);
-			Stats->Heal(0.f);
-			Stats->UseMana(nullptr, 0.f);
+		PlayerController->OnToggleInventoryAction.AddDynamic(PlayerHUD, &UPlayerHUD::ToggleInventoryVisibility);
+		PlayerInteraction->OnNewInteractionTarget.AddDynamic(PlayerHUD, &UPlayerHUD::OnNewInteractionTarget);
+		PlayerInteraction->OnWeaponPickedUp.AddDynamic(this, &APlayerPawn::SetWeapon);
 		
-			// PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
-			
-			// SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
-			// SpellBook->OnRuneCasted.AddDynamic(WizardHUD, &UWizardHUD::OnRuneCasted);
-		}
+		PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
+		Inventory->OnItemAdded.AddDynamic(PlayerHUD, &UPlayerHUD::OnItemAdded);
 		
-		// Bind interaction system
-		// PlayerInteraction->OnItemPickedUp.AddDynamic(this, &APlayerPawn::UseItem);
-		// PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
+		// Bind stat changes to hud
+		Stats->OnHurt.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHurt);
+		Stats->OnHeal.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerHeal);
+		Stats->OnManaUsage.AddDynamic(PlayerHUD, &UPlayerHUD::OnPlayerManaUsage);
+		Stats->Heal(0.f);
+		Stats->UseMana(nullptr, 0.f);
+	
+		// PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
 		
-		PlayerController->SetInputContext(EInputContextType::Movement, true);
-		PlayerController->SetInputContext(EInputContextType::Interaction, true);
-		PlayerController->SetInputContext(EInputContextType::UI, true);
+		// SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
+		// SpellBook->OnRuneCasted.AddDynamic(WizardHUD, &UWizardHUD::OnRuneCasted);
 	}
+	
+	// Bind interaction system
+	// PlayerInteraction->OnItemPickedUp.AddDynamic(this, &APlayerPawn::UseItem);
+	// PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
+	
+	PlayerController->SetInputContext(EInputContextType::Movement, true);
+	PlayerController->SetInputContext(EInputContextType::Interaction, true);
+	PlayerController->SetInputContext(EInputContextType::UI, true);
 }
 
 void APlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UE_LOG(LogTemp, Display, TEXT("Begin/!!!"))
 }
 
 void APlayerPawn::Interact()
 {
 	Super::Interact();
 
-	AActor* InteractionTarget = PlayerInteraction->GetInteractionTarget();
-	if (InteractionTarget == nullptr)
-	{
-		return;
-	}
+	PlayerInteraction->Interact();
 
-	if (AWeapon* NewWeapon = Cast<AWeapon>(InteractionTarget))
-	{
-		EquipWeapon(NewWeapon, ArmsMeshComponent, FName("WeaponSocket"));
-	}
+	// if (AWeapon* NewWeapon = Cast<AWeapon>(InteractionTarget))
+	// {
+	// 	EquipWeapon(NewWeapon, ArmsMeshComponent, FName("WeaponSocket"));
+	// }
+	//
+	// if (AItem* NewItem = Cast<AItem>(InteractionTarget))
+	// {
+	// 	Inventory->AddItem(NewItem->GetClass(), 1);
+	// 	NewItem->Destroy();
+	// }
 }
 
 void APlayerPawn::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
@@ -144,6 +143,12 @@ void APlayerPawn::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
 	}
 	
 	Super::SetArmor(NewClothes, ArmorTarget);
+}
+
+void APlayerPawn::SetWeapon(AWeapon* NewWeapon)
+{
+	Super::SetWeapon(NewWeapon);
+	Weapon->Equip(this, ArmsMeshComponent, FName("WeaponSocket"));
 }
 
 //

@@ -35,12 +35,14 @@ class APlayerPawn : public AHuman
 public:
 	APlayerPawn();
 	virtual void Tick(float DeltaSeconds) override;
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	
 protected:
 	virtual void BeginPlay() override;
-
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	
 	virtual void Interact() override;
 	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget) override;
+	virtual void SetWeapon(AWeapon* NewWeapon) override;
 public:
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")

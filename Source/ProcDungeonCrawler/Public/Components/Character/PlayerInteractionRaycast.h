@@ -12,7 +12,7 @@ class URune;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnNewInteractionTarget, FText, ActorName, FName, InteractionType, bool, bCanBeGrabbed);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponPickedUp, TSubclassOf<AWeapon>, WeaponClass);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponPickedUp, AWeapon*, WeaponActor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, TSubclassOf<AItem>, ItemClass, int32, Amount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRunePickedUp, URune*, RuneCast);
 
@@ -41,7 +41,7 @@ public:
 	AActor* GetInteractionTarget() const;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	bool Interact();
+	void Interact();
 
 private:
 	void CastRaycast(FHitResult& OutHitResult) const;

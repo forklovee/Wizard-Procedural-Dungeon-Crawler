@@ -4,8 +4,6 @@
 #include "Characters/Human/Human.h"
 
 #include "Characters/Human/Player/DefaultPlayerController.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/TimelineComponent.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/PawnStats.h"
 #include "Components/Character/SpellbookComponent.h"
@@ -13,45 +11,21 @@
 #include "Items/Weapon.h"
 #include "Items/Item.h"
 #include "Items/Clothes/Clothes.h"
-#include "Kismet/KismetSystemLibrary.h"
+#include "PhysicsEngine/PhysicalAnimationComponent.h"
 
 AHuman::AHuman()
 {
-	AutoPossessPlayer = EAutoReceiveInput::Disabled;
 	bUseControllerRotationYaw = true;
+
+	PhysicalAnimation = CreateDefaultSubobject<UPhysicalAnimationComponent>(FName("PhysicalAnimation"));
 	
 	// Spell cast enabler
 	SpellBook = CreateDefaultSubobject<USpellBookComponent>(FName("SpellBook"));
-
 	// Pawn Stats
 	Stats = CreateDefaultSubobject<UPawnStats>(FName("PawnStats"));
-
 	Inventory = CreateDefaultSubobject<UInventoryComponent>(FName("Bag"));
 	
 	PrimaryActorTick.bCanEverTick = true;
-}
-
-void AHuman::EquipWeapon(AWeapon* NewWeapon, USceneComponent* EquipTargetComponent, FName SocketName)
-{
-	if (NewWeapon == nullptr)
-	{
-		return;
-	}
-	
-	if (Weapon.IsValid())
-	{
-		Weapon->UnEquip();
-		Weapon = nullptr;
-	}
-	
-	Weapon = NewWeapon;
-	Weapon->Equip(this, EquipTargetComponent, SocketName);
-}
-
-void AHuman::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
 }
 
 void AHuman::BeginPlay()
@@ -85,6 +59,13 @@ void AHuman::BeginPlay()
 		PlayerController->OnGrabbedAction.AddDynamic(this, &AHuman::Grab);
 		PlayerController->OnReleasedAction.AddDynamic(this, &AHuman::Release);
 	}
+}
+
+void AHuman::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	UE_LOG(LogTemp, Display, TEXT("NOSZ KURAWA"))
 }
 
 void AHuman::PrimaryAction()
@@ -128,7 +109,19 @@ void AHuman::SetItemGrab(AItem* Item)
 
 void AHuman::SetWeapon(AWeapon* NewWeapon)
 {
+	if (NewWeapon == nullptr)
+	{
+		return;
+	}
+	
+	if (Weapon.IsValid())
+	{
+		Weapon->UnEquip();
+		Weapon = nullptr;
+	}
+	
 	Weapon = NewWeapon;
+	Weapon->Equip(this, GetMesh(), FName("WeaponSocket"));
 }
 
 void AHuman::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
@@ -150,16 +143,12 @@ void AHuman::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
 // Movement
 void AHuman::MoveAround(const FVector2D& MoveOffset)
 {
-	if (Controller == nullptr) return;
-	
 	AddMovementInput(GetActorRightVector(), MoveOffset.Y);
 	AddMovementInput(GetActorForwardVector(), MoveOffset.X);
 }
 
 void AHuman::LookAround(const FVector2D& LookOffset)
 {
-	if (Controller == nullptr) return;
-
 	AddControllerPitchInput(-LookOffset.Y);
 	AddControllerYawInput(LookOffset.X);
 }
@@ -167,6 +156,8 @@ void AHuman::LookAround(const FVector2D& LookOffset)
 void AHuman::Jump()
 {
 	Super::Jump();
+
+	UE_LOG(LogTemp, Display, TEXT("Kurwa"))
 }
 
 void AHuman::SetSprinting(const bool bNewIsSprinting)

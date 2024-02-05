@@ -12,19 +12,14 @@
 #include "UI/Wizard/PlayerHUD.h"
 
 
+ADefaultPlayerController::ADefaultPlayerController()
+{
+	PrimaryActorTick.bCanEverTick = true;
+}
+
 void ADefaultPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-}
-
-void ADefaultPlayerController::SetupInputComponent()
-{
-	Super::SetupInputComponent();
-}
-
-void ADefaultPlayerController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
 
 	if (!Movement_InputContext.IsNull() && !Movement_InputContext.IsValid())
 	{
@@ -40,21 +35,9 @@ void ADefaultPlayerController::OnPossess(APawn* InPawn)
 	}
 }
 
-void ADefaultPlayerController::OnUnPossess()
-{
-	Super::OnUnPossess();
-}
-
 void ADefaultPlayerController::SetInputContext(EInputContextType InputContext, bool bState)
 {
-	const ULocalPlayer* LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetLocalPlayer();
-	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-
-	if (EnhancedInputSubsystem == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("EnhancedInputSubsystem is null"));
-		return;
-	}
+	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	
 	UInputMappingContext* TargetInputContext = nullptr;
 	switch (InputContext)
@@ -103,14 +86,8 @@ void ADefaultPlayerController::SetInputContext(EInputContextType InputContext, b
 
 void ADefaultPlayerController::SetupDefaultInput(UEnhancedInputComponent* PlayerInputComponent)
 {
-	const ULocalPlayer* LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetLocalPlayer();
-	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-
-	if (EnhancedInputSubsystem == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("EnhancedInputSubsystem is null"));
-		return;
-	}
+	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	EnhancedInputSubsystem->ClearAllMappings();
 	
 	// Set movement inputs
 	PlayerInputComponent->BindAction(LookAround_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnLookAroundInputAction);

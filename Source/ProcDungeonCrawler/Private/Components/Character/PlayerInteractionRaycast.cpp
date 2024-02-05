@@ -66,26 +66,28 @@ AActor* UPlayerInteractionRaycast::GetInteractionTarget() const
 	return InteractionTarget.GetActor();
 }
 
-bool UPlayerInteractionRaycast::Interact()
+void UPlayerInteractionRaycast::Interact()
 {
 	USceneComponent* TargetComponent = InteractionTarget.GetComponent();
 	AActor* Target = InteractionTarget.GetActor();
-
 	ClearInteractionTarget();
 	
-	if (Target == nullptr) return false;
+	if (Target == nullptr)
+	{
+		UE_LOG(LogTemp, Display, TEXT("Interaction Target is null"))
+		return;
+	}
 
 	if (AItem* Item = Cast<AItem>(Target))
 	{
-		return PickUpItem(Item);
+		PickUpItem(Item);
+		return;
 	}
 
 	if (UInteractionShapeComponent* InteractionShapeComponent = Cast<UInteractionShapeComponent>(TargetComponent))
 	{
-		return InteractionShapeComponent->Interact(Cast<APawn>(GetOwner()));
+		InteractionShapeComponent->Interact(Cast<APawn>(GetOwner()));
 	}
-	
-	return false;
 }
 
 void UPlayerInteractionRaycast::CastRaycast(FHitResult& OutHitResult) const
@@ -142,13 +144,15 @@ bool UPlayerInteractionRaycast::PickUpItem(AItem* Item) const
 {
 	if (Item == nullptr) return false;
 	
+	UE_LOG(LogTemp, Display, TEXT("pick"))
+	
 	Item->Pickup( Cast<APawn>(GetOwner()) );
 	
 	if (AWeapon* Weapon = Cast<AWeapon>(Item))
 	{
 		if (OnWeaponPickedUp.IsBound())
 		{
-			OnWeaponPickedUp.Broadcast(Weapon->GetClass());
+			OnWeaponPickedUp.Broadcast(Weapon);
 		}
 		return true;
 	}
@@ -168,8 +172,10 @@ bool UPlayerInteractionRaycast::PickUpItem(AItem* Item) const
 	
 	if (OnItemPickedUp.IsBound())
 	{
+		UE_LOG(LogTemp, Display, TEXT("pick pikc"))
 		OnItemPickedUp.Broadcast(Item->GetClass(), 1);
 	}
+	Item->Destroy();
 	
 	return true;
 }

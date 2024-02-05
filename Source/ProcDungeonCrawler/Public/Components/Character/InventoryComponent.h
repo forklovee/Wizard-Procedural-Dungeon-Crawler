@@ -43,8 +43,8 @@ struct FInventorySlot
 	int32 Amount = 0;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemAdded, FInventorySlot, InventorySlot);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, FInventorySlot, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemAdded, int, SlotIndex, FInventorySlot, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemRemoved, int, SlotIndex, FInventorySlot, InventorySlot);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UInventoryComponent : public UActorComponent
@@ -56,9 +56,6 @@ public:
 	FOnItemRemoved OnItemRemoved;
 	
 	UInventoryComponent();
-
-	UFUNCTION(BlueprintCallable)
-	TArray<FInventorySlot>& GetItems();
 	
 	UFUNCTION(BlueprintCallable)
 	void AddItem(TSubclassOf<AItem> ItemClass, int32 Amount = 1);
@@ -76,11 +73,12 @@ public:
 	FVector2D GetInventorySize() const { return InventorySize; }
 protected:
 	virtual void BeginPlay() override;
-	
+
+	FVector2D GetFirstFreeTile() const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bag", meta=(AllowPrivateAccess = "true"))
 	FVector2D InventorySize = FVector2D(6, 15);
 	
 private:
-	TArray<FInventorySlot> Items;
+	TArray<FInventorySlot> ItemSlots;
 };

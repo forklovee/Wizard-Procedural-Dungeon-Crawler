@@ -51,6 +51,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon", meta=(AllowPrivateAccess = "true"))
 	float Damage = 10.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon", meta=(AllowPrivateAccess = "true"))
+	float Length = 55.f;
+	
 	/* Attack delay in seconds */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon", meta=(AllowPrivateAccess = "true"))
 	float AttackDelay = 0.5;

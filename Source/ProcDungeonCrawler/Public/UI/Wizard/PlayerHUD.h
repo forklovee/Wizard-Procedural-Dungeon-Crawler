@@ -50,6 +50,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void SetInventoryVisible(bool bNewIsVisible);
+
+	UFUNCTION()
+	void OnItemAdded(int SlotIndex, FInventorySlot InventorySlot);
 	
 	UFUNCTION(BlueprintCallable)
 	void OnNewInteractionTarget(FText ActorName, FName InteractionType, bool bCanBeGrabbed);

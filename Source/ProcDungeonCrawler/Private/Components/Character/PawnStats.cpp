@@ -48,7 +48,7 @@ void UPawnStats::TakeDamage(AActor* DamagedActor, float Damage, const UDamageTyp
 	AController* InstigatedBy, AActor* DamageCauser)
 {
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
-
+	UE_LOG(LogTemp, Display, TEXT("%s Health: %f Damage: %f taken!"),  *DamagedActor->GetName(), Health, Damage);
 	if (OnHurt.IsBound())
 	{
 		OnHurt.Broadcast(DamageCauser, Damage, DamageType);

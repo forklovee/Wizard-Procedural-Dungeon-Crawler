@@ -47,6 +47,8 @@ class PROCDUNGEONCRAWLER_API ADefaultPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	ADefaultPlayerController();
+
 	// Movement
 	UPROPERTY(BlueprintAssignable)
 	FOnLookAroundAction OnLookAroundAction;
@@ -95,10 +97,6 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
-	virtual void SetupInputComponent() override;
-
-	virtual void OnPossess(APawn* InPawn) override;
-	virtual void OnUnPossess() override;
 	
 private:
 	// Movement Input

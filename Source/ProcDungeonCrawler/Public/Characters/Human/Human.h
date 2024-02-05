@@ -7,6 +7,8 @@
 
 #include "Human.generated.h"
 
+class UPhysicalAnimationComponent;
+
 UENUM(Blueprintable, BlueprintType)
 enum class EArmorTarget: uint8
 {
@@ -40,17 +42,19 @@ public:
 	FOnCrouchStateChanged OnCrouchStateChanged;
 	
 	AHuman();
-
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void EquipWeapon(AWeapon* NewWeapon, USceneComponent* EquipTargetComponent, FName SocketName = "");
-
+	
 	UFUNCTION()
 	void UseItem(TSubclassOf<AItem> Item, int ItemAmount);
+
+	// Movement
+	UFUNCTION(BlueprintCallable)
+	bool IsSprinting() const { return bIsSprinting; }
+	UFUNCTION(BlueprintCallable)
+	bool IsCrouching() const { return bIsCrouching; }
 	
 protected:
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
-
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	// Movement
 	UFUNCTION()
 	void MoveAround(const FVector2D& MoveOffset);
@@ -75,7 +79,13 @@ protected:
 	void Release();
 
 	virtual void SetItemGrab(AItem* NewGrabItem);
+	UFUNCTION()
 	virtual void SetWeapon(AWeapon* NewWeapon);
+
+	UFUNCTION(BlueprintCallable)
+	AWeapon* GetWeapon() const { return Weapon.Get(); }
+	
+	UFUNCTION()
 	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget);
 
 // private:
@@ -83,6 +93,9 @@ protected:
 	// void PrepareSpell(TSubclassOf<ASpell> SpellCastClass, float ManaCost);
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
+	UPhysicalAnimationComponent* PhysicalAnimation;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay")
 	USpellBookComponent* SpellBook;
 
