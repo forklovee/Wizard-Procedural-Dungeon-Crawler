@@ -16,35 +16,29 @@ struct FWallRange
 
 	FWallRange()
 	{
-		Start = 0.0;
-		End = 200.0;
+		StartLerpAlpha = 0.0;
+		EndLerpAlpha = 200.f;
 	}
 
-	FWallRange(const float _Start, const float _End)
+	FWallRange(const float _StartLerpAlpha, const float _EndLerpAlpha)
 	{
-		Start = _Start;
-		End = _End;
+		StartLerpAlpha = _StartLerpAlpha;
+		EndLerpAlpha = _EndLerpAlpha;
 	}
 
 	FORCEINLINE bool operator == (const FWallRange& OtherWallRange) const
 	{
-		return this->Start == OtherWallRange.Start
-			&& this->End == OtherWallRange.End;
+		return this->StartLerpAlpha == OtherWallRange.StartLerpAlpha
+			&& this->EndLerpAlpha == OtherWallRange.EndLerpAlpha;
 	}
 	
 	bool IsPointInRange(const float LerpPoint) const
 	{
-		return LerpPoint >= Start && LerpPoint <= End;
+		return LerpPoint >= StartLerpAlpha && LerpPoint <= EndLerpAlpha;
 	}
-
-	float GetRangeLength() const
-	{
-		return Start - End;
-	}
-
-	// In tile unit
-	float Start = 0.f;
-	float End = 200.f;
+	
+	float StartLerpAlpha = 0.f;
+	float EndLerpAlpha = 200.f;
 };
 
 USTRUCT()
@@ -69,25 +63,29 @@ struct FRoomWall
 	{
 		StartPoint = NewStartPoint;
 		EndPoint = NewEndPoint;
-		FreeRanges.Add(FWallRange());
+		FreeRanges.Add(FWallRange(0.0, FVector::Dist(StartPoint, EndPoint)));
 	}
 
-	void UseWallRange(FWallRange& WallRange, const float RangeStart, const float RangeDistance)
+	void UseWallRange(FWallRange& WallRange, const float RangeUsageStart, const float RangeUsageDistance)
 	{
-		if (RangeDistance < WallRange.GetRangeLength()) //Split!
+		float& WallRangeStartPoint = WallRange.StartLerpAlpha;
+		float& WallRangeEndPoint = WallRange.EndLerpAlpha;
+		const float WallRangeDistance = WallRangeEndPoint - WallRangeStartPoint; 
+		
+		if (RangeUsageDistance < WallRangeDistance) //Split!
 		{
-			if (RangeStart == WallRange.Start)
+			if (RangeUsageStart == WallRangeStartPoint)
 			{
-				WallRange.Start += RangeDistance;
+				WallRangeStartPoint += RangeUsageDistance;
 			}
-			else if (RangeStart + RangeDistance == WallRange.End)
+			else if (WallRangeStartPoint + RangeUsageDistance == WallRangeEndPoint)
 			{
-				WallRange.End = RangeStart;
+				WallRangeEndPoint = RangeUsageStart;
 			}
 			else
 			{
-				FreeRanges.Add(FWallRange(WallRange.Start, RangeStart));
-				FreeRanges.Add(FWallRange(RangeStart + RangeDistance, WallRange.End));
+				FreeRanges.Add(FWallRange(WallRangeStartPoint, RangeUsageStart));
+				FreeRanges.Add(FWallRange(RangeUsageStart + RangeUsageDistance, WallRangeEndPoint));
 				FreeRanges.Remove(WallRange);
 			}
 		}

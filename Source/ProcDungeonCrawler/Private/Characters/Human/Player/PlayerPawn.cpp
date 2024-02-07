@@ -77,6 +77,8 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
 
 		PlayerController->OnToggleInventoryAction.AddDynamic(PlayerHUD, &UPlayerHUD::ToggleInventoryVisibility);
+		PlayerHUD->OnInventoryVisibilityChanged.AddDynamic(this, &APlayerPawn::UpdateInventoryInputContext);
+		
 		PlayerInteraction->OnNewInteractionTarget.AddDynamic(PlayerHUD, &UPlayerHUD::OnNewInteractionTarget);
 		PlayerInteraction->OnWeaponPickedUp.AddDynamic(this, &APlayerPawn::SetWeapon);
 		
@@ -103,7 +105,7 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	
 	PlayerController->SetInputContext(EInputContextType::Movement, true);
 	PlayerController->SetInputContext(EInputContextType::Interaction, true);
-	PlayerController->SetInputContext(EInputContextType::UI, true);
+	// PlayerController->SetInputContext(EInputContextType::UI, true);
 }
 
 void APlayerPawn::BeginPlay()
@@ -118,17 +120,6 @@ void APlayerPawn::Interact()
 	Super::Interact();
 
 	PlayerInteraction->Interact();
-
-	// if (AWeapon* NewWeapon = Cast<AWeapon>(InteractionTarget))
-	// {
-	// 	EquipWeapon(NewWeapon, ArmsMeshComponent, FName("WeaponSocket"));
-	// }
-	//
-	// if (AItem* NewItem = Cast<AItem>(InteractionTarget))
-	// {
-	// 	Inventory->AddItem(NewItem->GetClass(), 1);
-	// 	NewItem->Destroy();
-	// }
 }
 
 void APlayerPawn::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
@@ -152,72 +143,14 @@ void APlayerPawn::SetWeapon(AWeapon* NewWeapon)
 	Weapon->Equip(this, ArmsMeshComponent, FName("WeaponSocket"));
 }
 
-//
-// void APlayerPawn::UpdateSpellBookInputContext(bool IsSpellBookOpen)
-// {
-// 	//TODO: Add Bag specific actions
-//
-// 	SetInteractionInput(!IsSpellBookOpen);
-// 	SetCharacterMovementInput(!IsSpellBookOpen);
-// }
-//
-// void APlayerPawn::UpdateMapInputContext(bool IsMapOpenOpen)
-// {
-// 	//TODO: Add Bag specific actions
-//
-// 	SetInteractionInput(!IsMapOpenOpen);
-// 	SetCharacterMovementInput(!IsMapOpenOpen);
-// }
-//
-// void APlayerPawn::OnInteractAction(const FInputActionValue& Value)
-// {
-// 	if (PlayerInteraction->IsGrabbingItem() || PlayerInteraction->bInteractionDisabled)
-// 	{
-// 		return;
-// 	}
-// 	
-// 	bool bInteractionState = PlayerInteraction->Interact();
-// }
-//
-// void APlayerPawn::OnMoveAroundAction(const FInputActionValue& Value)
-// {
-// 	const FVector2D MoveDirection = Value.Get<FVector2D>();
-// 	MoveAround(MoveDirection);
-// }
-//
-// void APlayerPawn::OnLookAroundAction(const FInputActionValue& Value)
-// {
-// 	LookAround(Value.Get<FVector2D>());
-// }
-//
-// void APlayerPawn::OnSetSprintAction(const FInputActionValue& Value)
-// {
-// 	SetSprinting(Value.Get<bool>());
-// }
-//
-// void APlayerPawn::OnSetCrouchAction(const FInputActionValue& Value)
-// {
-// 	SetCrouch(!IsCrouching());
-// }
-//
-// void APlayerPawn::OnToggleBagAction(const FInputActionValue& Value)
-// {
-// 	if (OnToggleBagRequest.IsBound())
-// 	{
-// 		const bool IsBagOpen = Bag->IsOpen();
-// 		SetCrouch(!IsBagOpen);
-// 		if (IsBagOpen)
-// 		{
-// 			OnUILeftRightInput.AddDynamic(Bag, &UBagComponent::OnLeftRightInputAction);
-// 		}
-// 		else
-// 		{
-// 			OnUILeftRightInput.RemoveDynamic(Bag, &UBagComponent::OnLeftRightInputAction);
-// 		}
-// 		OnToggleBagRequest.Broadcast(!IsBagOpen);
-// 	}
-// }
-//
+void APlayerPawn::UpdateInventoryInputContext(bool bIsInventoryOpen)
+{
+	ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController());
+	PlayerController->SetInputContext(EInputContextType::Movement, !bIsInventoryOpen);
+	PlayerController->SetInputContext(EInputContextType::Interaction, !bIsInventoryOpen);
+	PlayerController->SetInputContext(EInputContextType::UI, bIsInventoryOpen);
+}
+
 // void APlayerPawn::OnRuneSlotKeyPressed(const FInputActionValue& Value)
 // {
 // 	const int32 RuneSlotIdx = ((int32)Value.Get<float>()) - 1; // "1 key" is equal to scalar of 1 because 0 is ignored in input.

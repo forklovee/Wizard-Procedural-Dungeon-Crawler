@@ -35,6 +35,9 @@ class APlayerPawn : public AHuman
 public:
 	APlayerPawn();
 	virtual void Tick(float DeltaSeconds) override;
+
+	UFUNCTION(BlueprintCallable, Category="Hands")
+	bool AreHandsVisible() const { return bHandsVisible; }
 	
 protected:
 	virtual void BeginPlay() override;
@@ -43,6 +46,9 @@ protected:
 	virtual void Interact() override;
 	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget) override;
 	virtual void SetWeapon(AWeapon* NewWeapon) override;
+
+	UFUNCTION()
+	void UpdateInventoryInputContext(bool bIsInventoryOpen);
 public:
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Components")
@@ -73,8 +79,9 @@ public:
 	USceneComponent* WeaponSocket;
 	
 protected:
+	bool bHandsVisible = true;
 	TWeakObjectPtr<AWeapon> CurrentWeapon;
-
+	
 private:
 	float TargetCameraFieldOfView = 90.f;
 };

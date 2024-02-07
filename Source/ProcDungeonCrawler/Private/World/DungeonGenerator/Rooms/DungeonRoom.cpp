@@ -77,38 +77,29 @@ void ADungeonRoom::GenerateRoomWalls()
 		return;
 	}
 	
-	RoomBoundsSpline->SetClosedLoop(true);
-
-	const FVector FirstBuildSplinePointPosition = RoomBuildSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Local);
-	const FVector SecondBuildSplinePointPosition = RoomBuildSpline->GetLocationAtSplinePoint(1, ESplineCoordinateSpace::Local);
-	const FVector FirstWallNormal = FRoomWall(FirstBuildSplinePointPosition, SecondBuildSplinePointPosition).GetWallNormal();
-	RoomBoundsSpline->AddSplineLocalPoint(FirstBuildSplinePointPosition);
-	RoomBoundsSpline->SetTangentsAtSplinePoint(0, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);
-	
 	// Generate Bounds Spline
-	FVector LastWallNormal = FirstWallNormal;
-	for (int PointId = 1; PointId < SplinePointsAmount; PointId++)
+	RoomBoundsSpline->SetClosedLoop(true);
+	for (int PointId = 0; PointId < SplinePointsAmount; PointId++)
 	{
-		const FVector LastBoundSplinePointPosition = RoomBoundsSpline->GetLocationAtSplinePoint(PointId-1, ESplineCoordinateSpace::Local);
-		const FVector LastBuildSplinePointPosition = RoomBuildSpline->GetLocationAtSplinePoint(PointId-1, ESplineCoordinateSpace::Local);
-		const FVector ThisSplinePointPosition = RoomBuildSpline->GetLocationAtSplinePoint(PointId, ESplineCoordinateSpace::Local);
-		const FVector WallNormal = FRoomWall(LastBuildSplinePointPosition, ThisSplinePointPosition).GetWallNormal();
+		const int LastPointId = (PointId == 0) ? SplinePointsAmount - 1 : PointId - 1;
+		const int NextPointId = (PointId == SplinePointsAmount - 1) ? 0 : PointId + 1;
 		
-		UE_LOG(LogTemp, Display, TEXT("ID: %i, Normal: %f, %f"), PointId, WallNormal.X, WallNormal.Y)
-		RoomBoundsSpline->SetLocationAtSplinePoint(PointId-1,LastBoundSplinePointPosition + WallNormal*100.f, ESplineCoordinateSpace::Local, false);
-		RoomBoundsSpline->SetTangentsAtSplinePoint(PointId-1, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);
+		TArray<FVector> BuildSplinePoints = {};
+		BuildSplinePoints.Add(RoomBuildSpline->GetLocationAtSplinePoint(LastPointId, ESplineCoordinateSpace::Local));
+		BuildSplinePoints.Add(RoomBuildSpline->GetLocationAtSplinePoint(PointId, ESplineCoordinateSpace::Local));
+		BuildSplinePoints.Add(RoomBuildSpline->GetLocationAtSplinePoint(NextPointId, ESplineCoordinateSpace::Local));
 
-		RoomBoundsSpline->AddSplineLocalPoint(ThisSplinePointPosition + WallNormal*100.f);
+		TArray<FVector> BuildSplineWallNormals = {};
+		BuildSplineWallNormals.Add(FRoomWall(BuildSplinePoints[0], BuildSplinePoints[1]).GetWallNormal());
+		BuildSplineWallNormals.Add(FRoomWall(BuildSplinePoints[1], BuildSplinePoints[2]).GetWallNormal());
+
+		const float WallNormalsDot = FVector::DotProduct(BuildSplineWallNormals[0], BuildSplineWallNormals[1]);
+		UE_LOG(LogTemp, Display, TEXT("v1(%f, %f) v2(%f, %f) Dot: %f"), BuildSplineWallNormals[0].X, BuildSplineWallNormals[0].Y, BuildSplineWallNormals[1].X, BuildSplineWallNormals[1].Y, WallNormalsDot);
+		FVector WallsAddNormal = (BuildSplineWallNormals[0] + BuildSplineWallNormals[1]) * 100.f;
+		const FVector BoundsSplinePointLocation = BuildSplinePoints[1] + WallsAddNormal;
+		RoomBoundsSpline->AddSplinePoint(BoundsSplinePointLocation, ESplineCoordinateSpace::Local, false);
 		RoomBoundsSpline->SetTangentsAtSplinePoint(PointId, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);
 	}
-	const FVector LastBuildSplinePointPosition = RoomBuildSpline->GetLocationAtSplinePoint(SplinePointsAmount-1, ESplineCoordinateSpace::Local);
-	const FVector LastBoundsSplinePointPosition = RoomBoundsSpline->GetLocationAtSplinePoint(SplinePointsAmount-1, ESplineCoordinateSpace::Local);
-	const FVector FirstBoundsSplinePointPosition = RoomBoundsSpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::Local);
-	LastWallNormal = FRoomWall(LastBuildSplinePointPosition, FirstBoundsSplinePointPosition).GetWallNormal();
-
-	RoomBoundsSpline->SetLocationAtSplinePoint(0,FirstBoundsSplinePointPosition + LastWallNormal*100.f, ESplineCoordinateSpace::Local, false);
-	RoomBoundsSpline->SetLocationAtSplinePoint(SplinePointsAmount-1,LastBoundsSplinePointPosition + LastWallNormal*100.f, ESplineCoordinateSpace::Local, false);
-	RoomBoundsSpline->SetTangentsAtSplinePoint(SplinePointsAmount-1, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);
 
 	// Generate Room Walls
 	for (int PointId = 1; PointId < SplinePointsAmount; PointId++)

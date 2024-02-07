@@ -54,8 +54,6 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 
 	InventorySize = Player->Inventory->GetInventorySize();
 	const int TargetSlotAmount = static_cast<int>(InventorySize.X * InventorySize.Y);
-	UE_LOG(LogTemp, Display, TEXT("%f %f"), InventorySize.X, InventorySize.Y)
-	UE_LOG(LogTemp, Display, TEXT("%d == %d"), TargetSlotAmount, ItemTiles.Num())
 	if (TargetSlotAmount == ItemTiles.Num())
 		return;
 	
@@ -73,22 +71,22 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 
 void UPlayerHUD::ToggleInventoryVisibility()
 {
-	SetInventoryVisible(!bIsVisible);
+	SetInventoryVisible(!bInventoryIsVisible);
 }
 
 void UPlayerHUD::SetInventoryVisible(bool bNewIsVisible)
 {
-	bIsVisible = bNewIsVisible;
+	bInventoryIsVisible = bNewIsVisible;
 	
-	InventoryCanvas->SetVisibility(!bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	InventoryCanvas->SetVisibility(!bInventoryIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	// HudCanvas->SetVisibility(bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	
 	if (OnInventoryVisibilityChanged.IsBound())
 	{
-		OnInventoryVisibilityChanged.Broadcast();
+		OnInventoryVisibilityChanged.Broadcast(bInventoryIsVisible);
 	}
 
-	if (!bIsVisible)
+	if (!bInventoryIsVisible)
 	{
 		return;
 	}

@@ -24,7 +24,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt_HealthUpdate, AActor*, Da
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerManaUsage_ManaUpdate, float, Mana, float, ManaUsage);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnInteractionTargetChanged, FText, ActorName, FName, InteractionType, bool, bCanBeGrabbed);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryVisibilityChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInventoryVisibilityChanged, bool, bNewIsInventoryVisible);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API UPlayerHUD : public UUserWidget
@@ -122,7 +122,7 @@ protected:
 	TArray<URuneCastSlot*> RuneCastSlots;
 
 	FVector2D InventorySize = FVector2D(5, 5);
-	bool bIsVisible = false;
+	bool bInventoryIsVisible = false;
 
 private:
 	float TargetHealthValue = 0.f;
