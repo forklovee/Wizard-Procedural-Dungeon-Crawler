@@ -79,7 +79,27 @@ void APlayerPawn::BeginPlay()
 	Super::BeginPlay();
 
 	ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController());
+	if (!PlayerController)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to get player controller"));
+		return;
+	}
+	
+	// Movement context
+	PlayerController->OnMoveAroundAction.AddDynamic(this, &APlayerPawn::MoveAround);
+	PlayerController->OnLookAroundAction.AddDynamic(this, &APlayerPawn::LookAround);
+	PlayerController->OnSprintToggledAction.AddDynamic(this, &APlayerPawn::SetSprinting);
+	PlayerController->OnCrouchToggledAction.AddDynamic(this, &APlayerPawn::ToggleCrouch);
+	PlayerController->OnJumpAction.AddDynamic(this, &APlayerPawn::Jump);
 
+	// Interaction context
+	PlayerController->OnPrimaryAction.AddDynamic(this, &APlayerPawn::PrimaryAction);
+	PlayerController->OnSecondaryAction.AddDynamic(this, &APlayerPawn::SecondaryAction);
+	PlayerController->OnInteractAction.AddDynamic(this, &APlayerPawn::Interact);
+	PlayerController->OnGrabbedAction.AddDynamic(this, &APlayerPawn::Grab);
+	PlayerController->OnReleasedAction.AddDynamic(this, &APlayerPawn::Release);
+
+	// Setup HUD
 	PlayerHUD = PlayerController->AddHudToViewport();
 	if (PlayerHUD.IsValid())
 	{

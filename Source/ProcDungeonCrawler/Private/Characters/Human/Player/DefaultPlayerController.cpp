@@ -98,6 +98,7 @@ void ADefaultPlayerController::SetupDefaultInput(UEnhancedInputComponent* Player
 
 	// set interaction inputs
 	PlayerInputComponent->BindAction(PrimaryAction_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnPrimaryInputAction);
+	PlayerInputComponent->BindAction(SecondaryAction_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnSecondaryInputAction);
 	PlayerInputComponent->BindAction(OnRuneSlotSelected_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnRuneSlotSelectedInputAction);
 	PlayerInputComponent->BindAction(Interaction_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnInteractionInputAction);
 	PlayerInputComponent->BindAction(GrabItem_InputAction.Get(), ETriggerEvent::Triggered, this, &ADefaultPlayerController::OnGrabItemInputAction);
@@ -179,6 +180,14 @@ void ADefaultPlayerController::OnPrimaryInputAction(const FInputActionValue& Val
 	if (OnPrimaryAction.IsBound())
 	{
 		OnPrimaryAction.Broadcast();
+	}
+}
+
+void ADefaultPlayerController::OnSecondaryInputAction(const FInputActionValue& Value)
+{
+	if (OnSecondaryAction.IsBound())
+	{
+		OnAltAction.Broadcast();
 	}
 }
 

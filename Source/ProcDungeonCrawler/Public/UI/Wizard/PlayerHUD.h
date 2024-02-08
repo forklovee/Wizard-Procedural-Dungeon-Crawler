@@ -6,6 +6,9 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUD.generated.h"
 
+class UVerticalBox;
+class UCanvasPanelSlot;
+class UButton;
 class UProgressBar;
 class UCanvasPanel;
 class UItemTile;
@@ -24,7 +27,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHurt_HealthUpdate, AActor*, Da
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerManaUsage_ManaUpdate, float, Mana, float, ManaUsage);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnInteractionTargetChanged, FText, ActorName, FName, InteractionType, bool, bCanBeGrabbed);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInventoryVisibilityChanged, bool, bNewIsInventoryVisible);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemTileContextMenuToggled, bool, bNewContextMenuOpen);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API UPlayerHUD : public UUserWidget
@@ -34,8 +39,11 @@ class PROCDUNGEONCRAWLER_API UPlayerHUD : public UUserWidget
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractionTargetChanged OnInteractionTargetChanged;
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnInventoryVisibilityChanged OnInventoryVisibilityChanged;
+	UPROPERTY(BlueprintAssignable)
+	FOnItemTileContextMenuToggled OnItemTileContextMenuToggled;
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnHeal_HealthUpdate OnPlayerHeal_UpdateHealth;
@@ -48,10 +56,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void ToggleInventoryVisibility();
-	
 	UFUNCTION(BlueprintCallable)
 	void SetInventoryVisible(bool bNewIsVisible);
-
 	UFUNCTION()
 	void UpdateInventorySlot(int SlotIndex, FInventorySlot InventorySlot);
 	
@@ -79,6 +85,17 @@ protected:
 	void UpdateInventoryData();
 	UItemTile* GetItemTileAtPosition(FVector2D TilePos) const;
 
+	UFUNCTION()
+	void ToggleContextMenuForFocusedItemTile();
+
+	UFUNCTION()
+	void OpenItemContextMenu(UItemTile* ItemTile, FVector2D MouseAbsolutePosition);
+	
+	UFUNCTION()
+	void ChangeFocusedItemTile(UItemTile* NewFocusedItemTile);
+	UFUNCTION()
+	void ClearFocusedItemTile(UItemTile* NewUnFocusedItemTile);
+	
 private:
 	void LerpHealthBarValueToTarget();
 	void LerpManaBarValueToTarget();
@@ -95,10 +112,11 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UCanvasPanel* InventoryCanvas;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UUniformGridPanel* InventoryGrid;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UVerticalBox* InventoryContextMenu;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI|Stats", meta=(BindWidget))
 	UProgressBar* HealthBar;
 	FTimerHandle HealthBarAnimateTimer;
@@ -125,6 +143,11 @@ protected:
 	bool bInventoryIsVisible = false;
 
 private:
+	TWeakObjectPtr<UItemTile> FocusedItemTile;
+	bool bCanContextMenuOpen = false;
+	
 	float TargetHealthValue = 0.f;
 	float TargetManaValue = 0.f;
 };
+
+

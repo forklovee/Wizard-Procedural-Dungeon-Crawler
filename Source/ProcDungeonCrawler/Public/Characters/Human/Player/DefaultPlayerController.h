@@ -30,6 +30,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnJumpActionInput);
 
 // Interaction
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPrimaryAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSecondaryAction);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRuneSlotSelectedAction, const int&, SlotIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractAction);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGrabbedAction);
@@ -40,6 +41,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnToggleInventoryAction);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToggleSpellBookAction, bool, bIsPressed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTogglePauseMenuAction);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnToggleMapAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAltAction);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API ADefaultPlayerController : public APlayerController
@@ -65,6 +67,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPrimaryAction OnPrimaryAction;
 	UPROPERTY(BlueprintAssignable)
+	FOnSecondaryAction OnSecondaryAction;
+	UPROPERTY(BlueprintAssignable)
 	FOnRuneSlotSelectedAction OnRuneSlotSelectedAction;
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractAction OnInteractAction;
@@ -76,6 +80,9 @@ public:
 	// UI
 	UPROPERTY(BlueprintAssignable)
 	FOnToggleInventoryAction OnToggleInventoryAction;
+	UPROPERTY(BlueprintAssignable)
+	FOnAltAction OnAltAction;
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnToggleSpellBookAction OnToggleSpellBookAction;
 	UPROPERTY(BlueprintAssignable)
@@ -114,6 +121,8 @@ private:
 	// Interaction Input
 	UFUNCTION()
 	void OnPrimaryInputAction(const FInputActionValue& Value);
+	UFUNCTION()
+	void OnSecondaryInputAction(const FInputActionValue& Value);
 	UFUNCTION()
 	void OnRuneSlotSelectedInputAction(const FInputActionValue& Value);
 	UFUNCTION()
@@ -160,6 +169,9 @@ public:
 	UPROPERTY(EditAnywhere, Category= "Input|Action")
 	TSoftObjectPtr<UInputAction> PrimaryAction_InputAction;
 
+	UPROPERTY(EditAnywhere, Category= "Input|Action")
+	TSoftObjectPtr<UInputAction> SecondaryAction_InputAction;
+	
 	UPROPERTY(EditAnywhere, Category= "Input|Action")
 	TSoftObjectPtr<UInputAction> OnRuneSlotSelected_InputAction;
 

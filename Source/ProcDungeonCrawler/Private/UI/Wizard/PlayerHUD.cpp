@@ -3,19 +3,20 @@
 
 #include "..\..\..\Public\UI\Wizard\PlayerHUD.h"
 
+#include "Blueprint/SlateBlueprintLibrary.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "Blueprint/WidgetTree.h"
+#include "Characters/Human/Player/DefaultPlayerController.h"
 #include "Characters/Human/Player/PlayerPawn.h"
 #include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
 #include "UI/Wizard/RuneCastSlot.h"
-
-#include "Components/HorizontalBox.h"
-#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/UniformGridPanel.h"
+#include "Components/VerticalBox.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/PawnStats.h"
 #include "UI/Inventory/ItemTile.h"
-#include "UI/Wizard/RuneCastsHistory.h"
 
 void UPlayerHUD::NativeOnInitialized()
 {
@@ -63,6 +64,9 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 		{
 			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
 			ItemTile->OnUseItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::UseItem);
+			ItemTile->OnContextMenuRequested.AddDynamic(this, &UPlayerHUD::OpenItemContextMenu);
+			ItemTile->OnItemTileMouseHovered.AddDynamic(this, &UPlayerHUD::ChangeFocusedItemTile);
+			ItemTile->OnItemTileMouseUnHovered.AddDynamic(this, &UPlayerHUD::ClearFocusedItemTile);
 			
 			ItemTiles.Add(ItemTile);
 			InventoryGrid->AddChildToUniformGrid(ItemTile, X, Y);
@@ -97,6 +101,61 @@ void UPlayerHUD::SetInventoryVisible(bool bNewIsVisible)
 void UPlayerHUD::UpdateInventorySlot(int SlotIndex, FInventorySlot InventorySlot)
 {
 	ItemTiles[SlotIndex]->UpdateData(InventorySlot);
+}
+
+void UPlayerHUD::ToggleContextMenuForFocusedItemTile()
+{
+	UE_LOG(LogTemp, Display, TEXT("Hovered!!!!!! %i"), bCanContextMenuOpen)
+
+	
+}
+
+void UPlayerHUD::OpenItemContextMenu(UItemTile* ItemTile, FVector2D MouseAbsolutePosition)
+{
+	InventoryContextMenu->SetVisibility(ESlateVisibility::Visible);
+	
+	FocusedItemTile = ItemTile;
+	FVector2D PixelPosition;
+	FVector2D ViewportPosition;
+	USlateBlueprintLibrary::AbsoluteToViewport(
+		GetWorld(),
+		MouseAbsolutePosition,
+		PixelPosition,
+		ViewportPosition
+		);
+
+	if (UCanvasPanelSlot* CanvasPanelSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(InventoryContextMenu))
+	{
+		UE_LOG(LogTemp, Display, TEXT("vp pos"))
+		CanvasPanelSlot->SetPosition(ViewportPosition);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Display, TEXT("FAIL"))
+	}
+	
+	bCanContextMenuOpen = !bCanContextMenuOpen;
+
+	if (OnItemTileContextMenuToggled.IsBound())
+	{
+		OnItemTileContextMenuToggled.Broadcast(bCanContextMenuOpen);
+	}
+}
+
+void UPlayerHUD::ChangeFocusedItemTile(UItemTile* NewFocusedItemTile)
+{
+	UE_LOG(LogTemp, Display, TEXT("%s hovered"), *NewFocusedItemTile->GetName())
+	
+	if (bCanContextMenuOpen) return;
+	FocusedItemTile = NewFocusedItemTile;
+}
+
+void UPlayerHUD::ClearFocusedItemTile(UItemTile* NewUnFocusedItemTile)
+{
+	UE_LOG(LogTemp, Display, TEXT("%s not hovered"), *NewUnFocusedItemTile->GetName())
+	
+	if (bCanContextMenuOpen) return;
+	FocusedItemTile = nullptr;
 }
 
 void UPlayerHUD::OnNewInteractionTarget(FText ActorName, FName InteractionType, bool bCanBeGrabbed)

@@ -27,6 +27,7 @@ class UPawnStats;
 class AItem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAttack, int, AttackNumber);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSecondWeaponAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrouchStateChanged, bool, bCrouchState);
 
 UCLASS(Blueprintable, BlueprintType)
@@ -37,7 +38,9 @@ class PROCDUNGEONCRAWLER_API AHuman : public ACharacter
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnWeaponAttack OnWeaponAttack;
-
+	UPROPERTY(BlueprintAssignable)
+	FOnSecondWeaponAttack OnSecondWeaponAttack;
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnCrouchStateChanged OnCrouchStateChanged;
 	
@@ -55,6 +58,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
 	// Movement
 	UFUNCTION()
 	void MoveAround(const FVector2D& MoveOffset);
@@ -71,6 +75,9 @@ protected:
 	// Interaction
 	UFUNCTION()
 	void PrimaryAction();
+	UFUNCTION()
+	void SecondaryAction();
+	
 	UFUNCTION()
 	virtual void Interact();
 	UFUNCTION()

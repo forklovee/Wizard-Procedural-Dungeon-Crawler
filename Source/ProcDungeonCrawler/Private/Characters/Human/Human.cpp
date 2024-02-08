@@ -3,7 +3,6 @@
 
 #include "Characters/Human/Human.h"
 
-#include "Characters/Human/Player/DefaultPlayerController.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/PawnStats.h"
 #include "Components/Character/SpellbookComponent.h"
@@ -43,23 +42,6 @@ void AHuman::BeginPlay()
 	
 	// SpellBook->OnValidRuneSequenceCasted.AddDynamic(this, &AHuman::PrepareSpell);
 	SpellBook->OnSpellCasted.AddDynamic(Stats, &UPawnStats::UseMana);
-
-	// Register to player input
-	if (ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController()))
-	{
-		// Movement context
-		PlayerController->OnMoveAroundAction.AddDynamic(this, &AHuman::MoveAround);
-		PlayerController->OnLookAroundAction.AddDynamic(this, &AHuman::LookAround);
-		PlayerController->OnSprintToggledAction.AddDynamic(this, &AHuman::SetSprinting);
-		PlayerController->OnCrouchToggledAction.AddDynamic(this, &AHuman::ToggleCrouch);
-		PlayerController->OnJumpAction.AddDynamic(this, &AHuman::Jump);
-
-		// Interaction context
-		PlayerController->OnPrimaryAction.AddDynamic(this, &AHuman::PrimaryAction);
-		PlayerController->OnInteractAction.AddDynamic(this, &AHuman::Interact);
-		PlayerController->OnGrabbedAction.AddDynamic(this, &AHuman::Grab);
-		PlayerController->OnReleasedAction.AddDynamic(this, &AHuman::Release);
-	}
 }
 
 void AHuman::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -89,6 +71,14 @@ void AHuman::PrimaryAction()
 	{
 		AttackNumber = 0;
 		bIsAttacking = false;
+	}
+}
+
+void AHuman::SecondaryAction()
+{
+	if (OnSecondWeaponAttack.IsBound())
+	{
+		OnSecondWeaponAttack.Broadcast();
 	}
 }
 

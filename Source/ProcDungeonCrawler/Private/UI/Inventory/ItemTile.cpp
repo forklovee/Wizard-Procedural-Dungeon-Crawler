@@ -3,24 +3,63 @@
 
 #include "UI/Inventory/ItemTile.h"
 
+#include "Channels/MovieSceneChannel.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
+#include "Components/Overlay.h"
 #include "Components/TextBlock.h"
 #include "Components/Character/InventoryComponent.h"
 
 void UItemTile::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
+	
 	if (Button != nullptr)
 	{
 		Button->OnPressed.AddDynamic(this, &UItemTile::UseItem);
+		
+		// Button->OnHovered.AddDynamic(this, &UItemTile::OnItemTileHovered);
+		// Button->OnUnhovered.AddDynamic(this, &UItemTile::OnItemTileUnHovered);
 	}
+
+	ContextMenu->SetVisibility(ESlateVisibility::Collapsed);
 }
 
  void UItemTile::NativeConstruct()
 {
 	Super::NativeConstruct();
+}
+
+FReply UItemTile::NativeOnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+	UE_LOG(LogTemp, Display, TEXT("%f, %f"), MyGeometry.AbsolutePosition.X, MyGeometry.AbsolutePosition.Y);
+	// Right click context menu
+	if (OnContextMenuRequested.IsBound())
+	{
+		OnContextMenuRequested.Broadcast(this, MouseEvent.GetScreenSpacePosition());
+	}
+	
+	return FReply::Handled();
+}
+
+void UItemTile::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+
+	if (OnItemTileMouseHovered.IsBound())
+	{
+		OnItemTileMouseHovered.Broadcast(this);
+	}
+}
+
+void UItemTile::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+
+	if (OnItemTileMouseUnHovered.IsBound())
+	{
+		OnItemTileMouseUnHovered.Broadcast(this);
+	}
 }
 
 void UItemTile::UpdateData(FInventorySlot InventorySlot)
@@ -88,4 +127,20 @@ void UItemTile::DropItem()
 void UItemTile::ResetUseItemTapCounter()
 {
 	UseItemTapCount = 0;
+}
+
+void UItemTile::OnItemTileHovered()
+{
+	// if (OnItemTileMouseHovered.IsBound())
+	// {
+	// 	OnItemTileMouseHovered.Broadcast(this);
+	// }
+}
+
+void UItemTile::OnItemTileUnHovered()
+{
+	// if (OnItemTileMouseUnHovered.IsBound())
+	// {
+	// 	OnItemTileMouseUnHovered.Broadcast(this);
+	// }
 }
