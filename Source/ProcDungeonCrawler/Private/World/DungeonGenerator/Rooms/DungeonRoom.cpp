@@ -76,7 +76,7 @@ void ADungeonRoom::GenerateRoomWalls()
 		UE_LOG(LogTemp, Error, TEXT("Invalid Room Spline! - less than 2 points!"))
 		return;
 	}
-	
+
 	// Generate Bounds Spline
 	RoomBoundsSpline->SetClosedLoop(true);
 	for (int PointId = 0; PointId < SplinePointsAmount; PointId++)
@@ -95,7 +95,7 @@ void ADungeonRoom::GenerateRoomWalls()
 
 		const float WallNormalsDot = FVector::DotProduct(BuildSplineWallNormals[0], BuildSplineWallNormals[1]);
 		UE_LOG(LogTemp, Display, TEXT("v1(%f, %f) v2(%f, %f) Dot: %f"), BuildSplineWallNormals[0].X, BuildSplineWallNormals[0].Y, BuildSplineWallNormals[1].X, BuildSplineWallNormals[1].Y, WallNormalsDot);
-		FVector WallsAddNormal = (BuildSplineWallNormals[0] + BuildSplineWallNormals[1]) * 100.f;
+		FVector WallsAddNormal = (BuildSplineWallNormals[0] + BuildSplineWallNormals[1]) * 100.f * (-0.5f * WallNormalsDot + 1.f);
 		const FVector BoundsSplinePointLocation = BuildSplinePoints[1] + WallsAddNormal;
 		RoomBoundsSpline->AddSplinePoint(BoundsSplinePointLocation, ESplineCoordinateSpace::Local, false);
 		RoomBoundsSpline->SetTangentsAtSplinePoint(PointId, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);

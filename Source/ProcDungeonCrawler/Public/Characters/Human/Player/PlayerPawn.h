@@ -6,6 +6,7 @@
 #include "Characters/Human/Human.h"
 #include "PlayerPawn.generated.h"
 
+class UPlayerHUD;
 class UInventoryComponent;
 class AWeapon;
 class USpringArmComponent;
@@ -84,4 +85,6 @@ protected:
 	
 private:
 	float TargetCameraFieldOfView = 90.f;
+
+	TWeakObjectPtr<UPlayerHUD> PlayerHUD;
 };

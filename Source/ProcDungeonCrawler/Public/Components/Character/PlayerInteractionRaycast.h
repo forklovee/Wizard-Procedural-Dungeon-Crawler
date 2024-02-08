@@ -13,7 +13,7 @@ class URune;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnNewInteractionTarget, FText, ActorName, FName, InteractionType, bool, bCanBeGrabbed);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponPickedUp, AWeapon*, WeaponActor);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, TSubclassOf<AItem>, ItemClass, int32, Amount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemPickedUp, AItem*, ItemActor, int32, Amount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRunePickedUp, URune*, RuneCast);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

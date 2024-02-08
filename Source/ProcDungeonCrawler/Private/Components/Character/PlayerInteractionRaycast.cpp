@@ -144,8 +144,6 @@ bool UPlayerInteractionRaycast::PickUpItem(AItem* Item) const
 {
 	if (Item == nullptr) return false;
 	
-	UE_LOG(LogTemp, Display, TEXT("pick"))
-	
 	Item->Pickup( Cast<APawn>(GetOwner()) );
 	
 	if (AWeapon* Weapon = Cast<AWeapon>(Item))
@@ -172,10 +170,8 @@ bool UPlayerInteractionRaycast::PickUpItem(AItem* Item) const
 	
 	if (OnItemPickedUp.IsBound())
 	{
-		UE_LOG(LogTemp, Display, TEXT("pick pikc"))
-		OnItemPickedUp.Broadcast(Item->GetClass(), 1);
+		OnItemPickedUp.Broadcast(Item, 1);
 	}
-	Item->Destroy();
 	
 	return true;
 }

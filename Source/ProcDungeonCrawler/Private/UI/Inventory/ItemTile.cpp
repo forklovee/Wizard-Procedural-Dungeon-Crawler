@@ -30,12 +30,15 @@ void UItemTile::UpdateData(FInventorySlot InventorySlot)
 	if (InventorySlot.ItemClass == nullptr)
 	{
 		Button->SetVisibility(ESlateVisibility::Collapsed);
+		
 		AmountTextBlock->SetVisibility(ESlateVisibility::Collapsed);
+		
 		ItemImage->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else
 	{
 		Button->SetVisibility(ESlateVisibility::Visible);
+		
 		AmountTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
 		AmountTextBlock->SetText(FText::FromString(FString::FromInt(InventorySlot.Amount)));
 		
@@ -45,10 +48,24 @@ void UItemTile::UpdateData(FInventorySlot InventorySlot)
 
 void UItemTile::UseItem()
 {
+	if (UseItemTapCount > 2) return;
+	
+	UseItemTapCount++;
+	switch (UseItemTapCount)
+	{
+		default:
+		case 1:
+			GetWorld()->GetTimerManager().SetTimer(UseItemDoubleTapTimerHandle, this, &UItemTile::ResetUseItemTapCounter, 0.5f, false);
+			return;
+		case 2:
+			GetWorld()->GetTimerManager().ClearTimer(UseItemDoubleTapTimerHandle);
+			UseItemTapCount = 0;
+			break;
+	}
+
 	if (OnUseItemRequest.IsBound())
 	{
-		UE_LOG(LogTemp, Display, TEXT("Use item class: %s, amount: %d"), *ItemData.ItemClass->GetName(), ItemData.Amount);
-		OnUseItemRequest.Broadcast(ItemData.ItemClass, ItemData.Amount);
+		OnUseItemRequest.Broadcast(ItemData.ItemClass);
 	}
 }
 
@@ -66,4 +83,9 @@ void UItemTile::DropItem()
 	{
 		OnDropItemRequest.Broadcast(ItemData.ItemClass, ItemData.Amount);
 	}
+}
+
+void UItemTile::ResetUseItemTapCounter()
+{
+	UseItemTapCount = 0;
 }

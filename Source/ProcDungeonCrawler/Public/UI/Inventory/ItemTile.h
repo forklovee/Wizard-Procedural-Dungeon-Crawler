@@ -16,7 +16,7 @@ class UTextBlock;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemClicked);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemAltClicked);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUseItemRequest, TSubclassOf<AItem>, ItemClass, int32, Amount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseItemRequest, TSubclassOf<AItem>, ItemClass);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInspectItemRequest, TSubclassOf<AItem>, ItemClass);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDropItemRequest, TSubclassOf<AItem>, ItemClass, int32, Amount);
 
@@ -48,8 +48,13 @@ protected:
 	void UseItem();
 	void InspectItem();
 	void DropItem();
-	
+
+private:
+	void ResetUseItemTapCounter();
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UMaterialInstance* ItemTileMaterial;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UButton* Button;
 	
@@ -62,4 +67,7 @@ public:
 private:
 	FInventorySlot ItemData;
 	FVector2D TilePos;
+
+	FTimerHandle UseItemDoubleTapTimerHandle;
+	int UseItemTapCount = 0;
 };

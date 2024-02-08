@@ -44,7 +44,7 @@ public:
 	AHuman();
 	
 	UFUNCTION()
-	void UseItem(TSubclassOf<AItem> Item, int ItemAmount);
+	void UseItem(TSubclassOf<AItem> ItemClass);
 
 	// Movement
 	UFUNCTION(BlueprintCallable)

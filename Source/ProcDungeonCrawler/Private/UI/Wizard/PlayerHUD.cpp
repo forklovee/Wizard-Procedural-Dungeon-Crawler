@@ -62,6 +62,8 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 		for (int X = 0; X < static_cast<int>(InventorySize.X); X++)
 		{
 			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
+			ItemTile->OnUseItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::UseItem);
+			
 			ItemTiles.Add(ItemTile);
 			InventoryGrid->AddChildToUniformGrid(ItemTile, X, Y);
 			ItemTile->UpdateData(FInventorySlot(X, Y));
@@ -90,22 +92,9 @@ void UPlayerHUD::SetInventoryVisible(bool bNewIsVisible)
 	{
 		return;
 	}
-
-	// for (FInventorySlot& InventorySlot : Player->Inventory->GetItems())
-	// {
-	// 	if (InventorySlot.ItemClass == nullptr) continue;
-	// 	
-	// 	UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
-	// 	ItemTile->UpdateData(InventorySlot);
-	// 	ItemTile->OnUseItemRequest.AddDynamic(Player, &APlayerPawn::UseItem);
-	// 	ItemTile->OnUseItemRequest.AddDynamic(Player->Inventory, &UInventoryComponent::RemoveItem);
-	// 	// ItemTile->OnInspectItemRequest.AddDynamic(this, &UPlayerHUD::OnInspectItemRequest);
-	// 	// ItemTile->OnDropItemRequest.AddDynamic(this, &UPlayerHUD::OnDropItemRequest);
-	// 	InventoryGrid->AddChildToUniformGrid(ItemTile, InventorySlot.TilePos.X, InventorySlot.TilePos.Y);
-	// }
 }
 
-void UPlayerHUD::OnItemAdded(int SlotIndex, FInventorySlot InventorySlot)
+void UPlayerHUD::UpdateInventorySlot(int SlotIndex, FInventorySlot InventorySlot)
 {
 	ItemTiles[SlotIndex]->UpdateData(InventorySlot);
 }

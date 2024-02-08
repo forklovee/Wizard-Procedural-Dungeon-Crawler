@@ -12,67 +12,73 @@ UInventoryComponent::UInventoryComponent()
 void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
-}
 
-FVector2D UInventoryComponent::GetFirstFreeTile() const
-{
-	for (int X = 0; X < InventorySize.X; X++)
+	for (int i = 0; i < InventorySize.X; i++)
 	{
-		for (int Y = 0; Y < InventorySize.Y; Y++)
+		for (int j = 0; j < InventorySize.Y; j++)
 		{
-			if (ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {
-				return Slot.TilePos == FVector2D(X, Y);
-			}) == nullptr)
-			{
-				return FVector2D(X, Y);
-			}
+			ItemSlots.Add(FInventorySlot(i, j));
 		}
 	}
-	return FVector2D(-1, -1);
 }
 
-void UInventoryComponent::AddItem(TSubclassOf<AItem> ItemClass, int32 Amount)
+int UInventoryComponent::GetFirstFreeInventorySlotId() const
 {
+	return ItemSlots.IndexOfByPredicate([=](const FInventorySlot& Slot) {
+		return Slot.IsEmpty();
+	});
+}
+
+void UInventoryComponent::AddItem(AItem* ItemActor, int32 Amount)
+{
+	if (!IsValid(ItemActor))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Invalid Item actor."))
+		return;
+	}
+	
+	const TSubclassOf<AItem> ItemClass = ItemActor->GetClass();
 	int SlotIndex = ItemSlots.IndexOfByPredicate([=](const FInventorySlot& Slot) {
 		return Slot.ItemClass == ItemClass;
 	});
 	
-	UE_LOG(LogTemp, Display, TEXT("aaaa"))
-
 	if (SlotIndex != -1) // Item exists, add amount
 	{
 		ItemSlots[SlotIndex].Amount += Amount;
-		UE_LOG(LogTemp, Display, TEXT("Item: %s - Amount: %d"), *ItemClass->GetName(), ItemSlots[SlotIndex].Amount)
 
 		if (OnItemAdded.IsBound())
 		{
 			OnItemAdded.Broadcast(SlotIndex, ItemSlots[SlotIndex]);
 		}
+		ItemActor->Destroy();
 		return;
 	}
 	// Item doesn't exist, add new item
 	// Check if there is a free tile
-	const FVector2D FreeTilePosition = GetFirstFreeTile();
-	if (FreeTilePosition == FVector2D(-1, -1))
+	SlotIndex = GetFirstFreeInventorySlotId();
+	if (SlotIndex == -1)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Inventory full"))
 		return;
 	}
 
-	SlotIndex = ItemSlots.Add(FInventorySlot(ItemClass, Amount));
-	ItemSlots[SlotIndex].TilePos = FreeTilePosition;
-
+	ItemSlots[SlotIndex].ItemClass = ItemClass;
+	ItemSlots[SlotIndex].Amount = Amount;
+	ItemSlots[SlotIndex].ItemIcon = ItemActor->GetItemIcon();
+	
 	UE_LOG(LogTemp, Display, TEXT("Item: %s - Amount: %d"), *ItemClass->GetName(), ItemSlots[SlotIndex].Amount)
 	
 	if (OnItemAdded.IsBound())
 	{
 		OnItemAdded.Broadcast(SlotIndex, ItemSlots[SlotIndex]);
 	}
+
+	ItemActor->Destroy();
 }
 
 void UInventoryComponent::RemoveItem(TSubclassOf<AItem> ItemClass, int32 Amount)
 {
-	int SlotIndex = ItemSlots.IndexOfByPredicate([=](const FInventorySlot& Slot) {
+	const int SlotIndex = ItemSlots.IndexOfByPredicate([=](const FInventorySlot& Slot) {
 		return Slot.ItemClass == ItemClass;
 	});
 	

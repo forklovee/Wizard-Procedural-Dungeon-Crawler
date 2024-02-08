@@ -39,7 +39,7 @@ public:
 	FOnNewStatusEffectAdded OnNewStatusEffectAdded;
 	
 	UPawnStats();
-	
+
 	UFUNCTION(BlueprintCallable)
 	float GetMaxHealth() const;
 	UFUNCTION(BlueprintCallable)

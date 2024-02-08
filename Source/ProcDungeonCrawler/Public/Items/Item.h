@@ -31,10 +31,16 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Pickup")
 	virtual TSubclassOf<AActor> Pickup(APawn* Pawn);
+
+	UFUNCTION(BlueprintCallable, Category = "Visual")
+	UTexture2D* GetItemIcon() const { return ItemIcon; }
 	
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Item")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item")
 	FName ItemName = "Item";
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item")
+	UTexture2D* ItemIcon = nullptr;
 	
 	FTimerHandle DestroyTimerHandle;
 };

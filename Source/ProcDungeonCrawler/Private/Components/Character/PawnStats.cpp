@@ -14,9 +14,10 @@ UPawnStats::UPawnStats()
 void UPawnStats::BeginPlay()
 {
 	Super::BeginPlay();
-
 	Health = StartingHealth;
 	Mana = StartingMana;
+
+	UE_LOG(LogTemp, Display, TEXT("%s %f/%f"), *GetOwner()->GetName(), Health, MaxHealth)
 }
 
 float UPawnStats::GetMaxHealth() const
@@ -86,6 +87,8 @@ void UPawnStats::UseMana(ASpell* SpellCast, float ManaCost)
 		OnManaUsage.Broadcast(Mana, ManaCost);
 	}
 }
+
+
 
 void UPawnStats::AddStatusEffect(TSubclassOf<AStatusEffect> StatusEffectClass)
 {

@@ -11,6 +11,7 @@
 #include "Items/Weapon.h"
 #include "Items/Item.h"
 #include "Items/Clothes/Clothes.h"
+#include "Items/Consumables/ConsumableItem.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
 
 AHuman::AHuman()
@@ -39,7 +40,7 @@ void AHuman::BeginPlay()
 	MovementSpeed = WalkingSpeed;
 	
 	OnTakeAnyDamage.AddDynamic(Stats, &UPawnStats::TakeDamage);
-
+	
 	// SpellBook->OnValidRuneSequenceCasted.AddDynamic(this, &AHuman::PrepareSpell);
 	SpellBook->OnSpellCasted.AddDynamic(Stats, &UPawnStats::UseMana);
 
@@ -91,8 +92,23 @@ void AHuman::PrimaryAction()
 	}
 }
 
-void AHuman::UseItem(TSubclassOf<AItem> Item, int ItemAmount)
+void AHuman::UseItem(TSubclassOf<AItem> ItemClass)
 {
+	UE_LOG(LogTemp, Display, TEXT("Dupa"))
+	if (ItemClass == nullptr) return;
+	UE_LOG(LogTemp, Display, TEXT("Dupa valid"))
+
+	const FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 21372137.f;
+	AActor* ItemActor = GetWorld()->SpawnActor(ItemClass, &SpawnLocation);
+	if (AConsumableItem* ConsumableItem = Cast<AConsumableItem>(ItemActor))
+	{
+		ConsumableItem->Use(this);
+		Inventory->RemoveItem(ItemClass, 1);
+	}
+	else
+	{
+		ItemActor->Destroy();
+	}
 	
 }
 
@@ -136,6 +152,7 @@ void AHuman::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
 {
 	switch (ArmorTarget)
 	{
+		default:
 		case EArmorTarget::Head:
 			HeadArmor = NewClothes;
 			break;

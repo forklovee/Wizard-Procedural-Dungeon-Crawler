@@ -46,10 +46,12 @@ struct FRoomWall
 {
 	GENERATED_BODY()
 
+	bool bHasDoor = false;
+	
 	// Local Space
 	FVector StartPoint;
 	FVector EndPoint;
-
+	
 	TArray<FWallRange> FreeRanges;
 
 	FRoomWall()

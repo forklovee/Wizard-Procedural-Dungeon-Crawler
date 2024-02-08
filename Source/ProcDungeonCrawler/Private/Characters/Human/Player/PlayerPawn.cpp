@@ -69,40 +69,6 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	// set ui inputs
 	PlayerController->SetupDefaultInput(Cast<UEnhancedInputComponent>(PlayerInputComponent));
 	
-	// Setup WizardHUD
-	if (UPlayerHUD* PlayerHUD = PlayerController->AddHudToViewport())
-	{
-		PlayerHUD->SetupInventory(this);
-		
-		UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
-
-		PlayerController->OnToggleInventoryAction.AddDynamic(PlayerHUD, &UPlayerHUD::ToggleInventoryVisibility);
-		PlayerHUD->OnInventoryVisibilityChanged.AddDynamic(this, &APlayerPawn::UpdateInventoryInputContext);
-		
-		PlayerInteraction->OnNewInteractionTarget.AddDynamic(PlayerHUD, &UPlayerHUD::OnNewInteractionTarget);
-		PlayerInteraction->OnWeaponPickedUp.AddDynamic(this, &APlayerPawn::SetWeapon);
-		
-		PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
-		Inventory->OnItemAdded.AddDynamic(PlayerHUD, &UPlayerHUD::OnItemAdded);
-		
-		// Bind stat changes to hud
-		Stats->OnHurt.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateHealthBar);
-		Stats->OnHeal.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateHealthBar);
-		Stats->OnManaUsage.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateManaBar);
-		Stats->OnManaRestore.AddDynamic(PlayerHUD, &UPlayerHUD::UpdateManaBar);
-		Stats->ChangeHealth(100.f);
-		Stats->ChangeMana(100.f);
-	
-		// PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
-		
-		// SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
-		// SpellBook->OnRuneCasted.AddDynamic(WizardHUD, &UWizardHUD::OnRuneCasted);
-	}
-	
-	// Bind interaction system
-	// PlayerInteraction->OnItemPickedUp.AddDynamic(this, &APlayerPawn::UseItem);
-	// PlayerInteraction->OnRunePickedUp.AddDynamic(SpellBook, &USpellbookComponent::AddRune);
-	
 	PlayerController->SetInputContext(EInputContextType::Movement, true);
 	PlayerController->SetInputContext(EInputContextType::Interaction, true);
 	// PlayerController->SetInputContext(EInputContextType::UI, true);
@@ -112,6 +78,39 @@ void APlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
+	ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(GetController());
+
+	PlayerHUD = PlayerController->AddHudToViewport();
+	if (PlayerHUD.IsValid())
+	{
+		PlayerHUD->SetupInventory(this);
+		
+		UE_LOG(LogTemp, Display, TEXT("Added WizardHUD to viewport."))
+
+		PlayerController->OnToggleInventoryAction.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::ToggleInventoryVisibility);
+		PlayerHUD->OnInventoryVisibilityChanged.AddDynamic(this, &APlayerPawn::UpdateInventoryInputContext);
+		
+		PlayerInteraction->OnNewInteractionTarget.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::OnNewInteractionTarget);
+		PlayerInteraction->OnWeaponPickedUp.AddDynamic(this, &APlayerPawn::SetWeapon);
+		
+		PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
+		Inventory->OnItemAdded.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::UpdateInventorySlot);
+		Inventory->OnItemRemoved.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::UpdateInventorySlot);
+
+		// Bind stat changes to hud
+		Stats->OnHurt.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::UpdateHealthBar);
+		Stats->OnHeal.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::UpdateHealthBar);
+		Stats->OnManaUsage.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::UpdateManaBar);
+		Stats->OnManaRestore.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::UpdateManaBar);
+		PlayerHUD->UpdateHealthBar(Stats->GetHealth(), Stats->GetMaxHealth());
+		PlayerHUD->UpdateManaBar(Stats->GetMana(), Stats->GetMaxMana());
+		
+		// PlayerInteraction->OnNewInteractionTarget.AddDynamic(WizardHUD->InteractionUI, &UInteractionUI::UpdateInteractionPrompt);
+		
+		// SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
+		// SpellBook->OnRuneCasted.AddDynamic(WizardHUD, &UWizardHUD::OnRuneCasted);
+	}
+	
 	UE_LOG(LogTemp, Display, TEXT("Begin/!!!"))
 }
 
