@@ -131,7 +131,7 @@ void UItemTile::DropItem()
 {
 	if (OnDropItemRequest.IsBound())
 	{
-		OnDropItemRequest.Broadcast(ItemData.ItemClass, ItemData.Amount);
+		OnDropItemRequest.Broadcast(ItemData.ItemClass);
 	}
 }
 

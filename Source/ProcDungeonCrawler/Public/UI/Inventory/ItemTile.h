@@ -24,7 +24,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnContextMenuRequested, UItemTile*
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseItemRequest, TSubclassOf<AItem>, ItemClass);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInspectItemRequest, TSubclassOf<AItem>, ItemClass);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDropItemRequest, TSubclassOf<AItem>, ItemClass, int32, Amount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDropItemRequest, TSubclassOf<AItem>, ItemClass);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API UItemTile : public UUserWidget

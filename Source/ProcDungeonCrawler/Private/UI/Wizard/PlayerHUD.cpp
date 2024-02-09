@@ -67,7 +67,7 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 		{
 			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
 			ItemTile->OnUseItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::UseItem);
-			// ItemTile->OnDropItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::DropItem);
+			ItemTile->OnDropItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::DropItem);
 			
 			ItemTile->OnContextMenuRequested.AddDynamic(InventoryContextMenu, &UItemTileContextMenu::Open);
 			ItemTile->OnItemTileMouseHovered.AddDynamic(this, &UPlayerHUD::ChangeFocusedItemTile);

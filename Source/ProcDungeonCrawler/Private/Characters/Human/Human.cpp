@@ -84,9 +84,7 @@ void AHuman::SecondaryAction()
 
 void AHuman::UseItem(TSubclassOf<AItem> ItemClass)
 {
-	UE_LOG(LogTemp, Display, TEXT("Dupa"))
 	if (ItemClass == nullptr) return;
-	UE_LOG(LogTemp, Display, TEXT("Dupa valid"))
 
 	const FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 21372137.f;
 	AActor* ItemActor = GetWorld()->SpawnActor(ItemClass, &SpawnLocation);
@@ -99,7 +97,19 @@ void AHuman::UseItem(TSubclassOf<AItem> ItemClass)
 	{
 		ItemActor->Destroy();
 	}
+}
+
+void AHuman::DropItem(TSubclassOf<AItem> ItemClass)
+{
+	if (ItemClass == nullptr) return;
+
+	const FVector SpawnLocation = GetActorLocation() + FVector::UpVector*50.f + GetActorForwardVector() * 25.f + GetActorRightVector() * 25.f;
+	if (const APickupItem* ItemActor = Cast<APickupItem>(GetWorld()->SpawnActor(ItemClass, &SpawnLocation)))
+	{
+		ItemActor->ItemMesh->AddImpulse((GetActorForwardVector() + FVector::DownVector).GetSafeNormal() * 100.f);
+	}
 	
+	Inventory->RemoveItem(ItemClass, 1);
 }
 
 void AHuman::Interact()

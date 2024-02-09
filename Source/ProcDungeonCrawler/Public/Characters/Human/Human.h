@@ -48,6 +48,8 @@ public:
 	
 	UFUNCTION()
 	void UseItem(TSubclassOf<AItem> ItemClass);
+	UFUNCTION()
+	void DropItem(TSubclassOf<AItem> ItemClass);
 
 	// Movement
 	UFUNCTION(BlueprintCallable)
