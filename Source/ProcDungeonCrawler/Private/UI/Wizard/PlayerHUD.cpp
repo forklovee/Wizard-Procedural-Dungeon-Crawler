@@ -6,17 +6,16 @@
 #include "Blueprint/SlateBlueprintLibrary.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Blueprint/WidgetTree.h"
-#include "Characters/Human/Player/DefaultPlayerController.h"
 #include "Characters/Human/Player/PlayerPawn.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "UI/Wizard/RuneCastSlot.h"
 #include "Components/ProgressBar.h"
 #include "Components/UniformGridPanel.h"
-#include "Components/VerticalBox.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/PawnStats.h"
 #include "UI/Inventory/ItemTile.h"
+#include "UI/Inventory/ItemTileContextMenu.h"
 
 void UPlayerHUD::NativeOnInitialized()
 {
@@ -53,6 +52,10 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 	}
 	Player = PlayerPawn;
 
+	OnInventoryVisibilityChanged.AddDynamic(InventoryContextMenu, &UItemTileContextMenu::OnInventoryVisibilityChanged);
+	InventoryContextMenu->OnItemTileContextMenuOpened.AddDynamic(this, &UPlayerHUD::DisableAllItemTiles);
+	InventoryContextMenu->OnItemTileContextMenuClosed.AddDynamic(this, &UPlayerHUD::EnableAllItemTiles);
+	
 	InventorySize = Player->Inventory->GetInventorySize();
 	const int TargetSlotAmount = static_cast<int>(InventorySize.X * InventorySize.Y);
 	if (TargetSlotAmount == ItemTiles.Num())
@@ -64,7 +67,9 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 		{
 			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
 			ItemTile->OnUseItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::UseItem);
-			ItemTile->OnContextMenuRequested.AddDynamic(this, &UPlayerHUD::OpenItemContextMenu);
+			// ItemTile->OnDropItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::DropItem);
+			
+			ItemTile->OnContextMenuRequested.AddDynamic(InventoryContextMenu, &UItemTileContextMenu::Open);
 			ItemTile->OnItemTileMouseHovered.AddDynamic(this, &UPlayerHUD::ChangeFocusedItemTile);
 			ItemTile->OnItemTileMouseUnHovered.AddDynamic(this, &UPlayerHUD::ClearFocusedItemTile);
 			
@@ -110,38 +115,6 @@ void UPlayerHUD::ToggleContextMenuForFocusedItemTile()
 	
 }
 
-void UPlayerHUD::OpenItemContextMenu(UItemTile* ItemTile, FVector2D MouseAbsolutePosition)
-{
-	InventoryContextMenu->SetVisibility(ESlateVisibility::Visible);
-	
-	FocusedItemTile = ItemTile;
-	FVector2D PixelPosition;
-	FVector2D ViewportPosition;
-	USlateBlueprintLibrary::AbsoluteToViewport(
-		GetWorld(),
-		MouseAbsolutePosition,
-		PixelPosition,
-		ViewportPosition
-		);
-
-	if (UCanvasPanelSlot* CanvasPanelSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(InventoryContextMenu))
-	{
-		UE_LOG(LogTemp, Display, TEXT("vp pos"))
-		CanvasPanelSlot->SetPosition(ViewportPosition);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Display, TEXT("FAIL"))
-	}
-	
-	bCanContextMenuOpen = !bCanContextMenuOpen;
-
-	if (OnItemTileContextMenuToggled.IsBound())
-	{
-		OnItemTileContextMenuToggled.Broadcast(bCanContextMenuOpen);
-	}
-}
-
 void UPlayerHUD::ChangeFocusedItemTile(UItemTile* NewFocusedItemTile)
 {
 	UE_LOG(LogTemp, Display, TEXT("%s hovered"), *NewFocusedItemTile->GetName())
@@ -156,6 +129,22 @@ void UPlayerHUD::ClearFocusedItemTile(UItemTile* NewUnFocusedItemTile)
 	
 	if (bCanContextMenuOpen) return;
 	FocusedItemTile = nullptr;
+}
+
+void UPlayerHUD::EnableAllItemTiles()
+{
+	for (UItemTile* ItemTile : ItemTiles)
+	{
+		ItemTile->SetIsEnabled(true);
+	}
+}
+
+void UPlayerHUD::DisableAllItemTiles()
+{
+	for (UItemTile* ItemTile : ItemTiles)
+	{
+		ItemTile->SetIsEnabled(false);
+	}
 }
 
 void UPlayerHUD::OnNewInteractionTarget(FText ActorName, FName InteractionType, bool bCanBeGrabbed)

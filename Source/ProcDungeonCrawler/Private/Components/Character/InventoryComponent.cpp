@@ -62,6 +62,7 @@ void UInventoryComponent::AddItem(AItem* ItemActor, int32 Amount)
 		return;
 	}
 
+	ItemSlots[SlotIndex].ItemNameText = ItemActor->GetItemName();
 	ItemSlots[SlotIndex].ItemClass = ItemClass;
 	ItemSlots[SlotIndex].Amount = Amount;
 	ItemSlots[SlotIndex].ItemIcon = ItemActor->GetItemIcon();

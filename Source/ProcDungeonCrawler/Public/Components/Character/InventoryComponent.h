@@ -28,13 +28,19 @@ struct FInventorySlot
 		TilePos = FVector2D(Row, Column);
 	}
 	
-	FInventorySlot(const TSubclassOf<AItem> NewItemClass, const UTexture2D* NewItemIcon, const int32 NewAmount)
+	FInventorySlot(const FText NewItemNameText, const TSubclassOf<AItem> NewItemClass, const UTexture2D* NewItemIcon, const int32 NewAmount)
 	{
+		ItemNameText = NewItemNameText;
 		ItemClass = NewItemClass;
 		ItemIcon = NewItemIcon;
 		Amount = NewAmount;
 	}
 
+	FORCEINLINE bool operator == (const FInventorySlot& Other) const
+	{
+		return ItemClass == Other.ItemClass;
+	}
+	
 	void Clear()
 	{
 		ItemClass = nullptr;
@@ -46,7 +52,8 @@ struct FInventorySlot
 	{
 		return Amount <= 0;
 	}
-	
+
+	FText ItemNameText;
 	TSubclassOf<AItem> ItemClass;
 	TSoftObjectPtr<UTexture2D> ItemIcon = nullptr;
 	bool bIsConsumable = false;
@@ -88,6 +95,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	int GetFirstFreeInventorySlotId() const;
+	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bag", meta=(AllowPrivateAccess = "true"))
 	FVector2D InventorySize = FVector2D(6, 15);

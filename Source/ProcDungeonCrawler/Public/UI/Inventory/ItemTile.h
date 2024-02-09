@@ -14,9 +14,12 @@ struct FInventorySlot;
 class UImage;
 class UTextBlock;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemTileUpdated, UItemTile*, ItemTile, FInventorySlot&, InventorySlot);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemTileMouseHovered, UItemTile*, ItemTile);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemTileMouseUnHovered, UItemTile*, ItemTile);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemClicked);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnContextMenuRequested, UItemTile*, ItemTile, FVector2D, ViewportPosition);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseItemRequest, TSubclassOf<AItem>, ItemClass);
@@ -29,6 +32,9 @@ class PROCDUNGEONCRAWLER_API UItemTile : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintAssignable)
+	FOnItemTileUpdated OnItemTileUpdated;
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnItemTileMouseHovered OnItemTileMouseHovered;
 	UPROPERTY(BlueprintAssignable)
@@ -56,10 +62,15 @@ public:
 	
 	void UpdateData(FInventorySlot InventorySlot);
 
-protected:
+	FInventorySlot& GetItemData() { return ItemData; }
+
+	UFUNCTION()
+	void DoubleClickUseItem();
 	UFUNCTION()
 	void UseItem();
+	UFUNCTION()
 	void InspectItem();
+	UFUNCTION()
 	void DropItem();
 
 private:
@@ -80,14 +91,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* AmountTextBlock;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UOverlay* ContextMenu;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UButton* UseItemButton;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UButton* DropItemButton;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UButton* CloseContextMenuButton;
 private:
 	FInventorySlot ItemData;
 	FVector2D TilePos;

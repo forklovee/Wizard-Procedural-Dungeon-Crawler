@@ -21,23 +21,26 @@ public:
 	
 	AItem();
 
-	UFUNCTION(BlueprintCallable, Category = "Usage")
+	UFUNCTION(BlueprintCallable, Category = "Item|Usage")
 	virtual void Use(AHuman* HumanPawn);
 	
-	UFUNCTION(BlueprintCallable, Category = "Equip")
+	UFUNCTION(BlueprintCallable, Category = "Item|Equip")
 	virtual void Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FName SocketName);
-	UFUNCTION(BlueprintCallable, Category = "Equip")
+	UFUNCTION(BlueprintCallable, Category = "Item|Equip")
 	virtual void UnEquip();
 	
-	UFUNCTION(BlueprintCallable, Category = "Pickup")
+	UFUNCTION(BlueprintCallable, Category = "Item|Pickup")
 	virtual TSubclassOf<AActor> Pickup(APawn* Pawn);
 
-	UFUNCTION(BlueprintCallable, Category = "Visual")
+	UFUNCTION(BlueprintCallable, Category = "Item|Visual")
 	UTexture2D* GetItemIcon() const { return ItemIcon; }
+
+	UFUNCTION(BlueprintCallable, Category = "Item")
+	const FText& GetItemName() const { return ItemName; }
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item")
-	FName ItemName = "Item";
+	FText ItemName = FText::FromString("Item");
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item")
 	UTexture2D* ItemIcon = nullptr;

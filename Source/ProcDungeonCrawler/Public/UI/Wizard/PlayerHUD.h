@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUD.generated.h"
 
+class UItemTileContextMenu;
 class UVerticalBox;
 class UCanvasPanelSlot;
 class UButton;
@@ -87,14 +88,16 @@ protected:
 
 	UFUNCTION()
 	void ToggleContextMenuForFocusedItemTile();
-
-	UFUNCTION()
-	void OpenItemContextMenu(UItemTile* ItemTile, FVector2D MouseAbsolutePosition);
 	
 	UFUNCTION()
 	void ChangeFocusedItemTile(UItemTile* NewFocusedItemTile);
 	UFUNCTION()
 	void ClearFocusedItemTile(UItemTile* NewUnFocusedItemTile);
+
+	UFUNCTION()
+	void EnableAllItemTiles();
+	UFUNCTION()
+	void DisableAllItemTiles();
 	
 private:
 	void LerpHealthBarValueToTarget();
@@ -115,7 +118,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UUniformGridPanel* InventoryGrid;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UVerticalBox* InventoryContextMenu;
+	UItemTileContextMenu* InventoryContextMenu;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI|Stats", meta=(BindWidget))
 	UProgressBar* HealthBar;

@@ -16,13 +16,11 @@ void UItemTile::NativeOnInitialized()
 	
 	if (Button != nullptr)
 	{
-		Button->OnPressed.AddDynamic(this, &UItemTile::UseItem);
+		Button->OnPressed.AddDynamic(this, &UItemTile::DoubleClickUseItem);
 		
 		// Button->OnHovered.AddDynamic(this, &UItemTile::OnItemTileHovered);
 		// Button->OnUnhovered.AddDynamic(this, &UItemTile::OnItemTileUnHovered);
 	}
-
-	ContextMenu->SetVisibility(ESlateVisibility::Collapsed);
 }
 
  void UItemTile::NativeConstruct()
@@ -83,25 +81,38 @@ void UItemTile::UpdateData(FInventorySlot InventorySlot)
 		
 		ItemImage->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
+
+	if (OnItemTileUpdated.IsBound())
+	{
+		OnItemTileUpdated.Broadcast(this, InventorySlot);
+	}
 }
 
-void UItemTile::UseItem()
+void UItemTile::DoubleClickUseItem()
 {
 	if (UseItemTapCount > 2) return;
 	
 	UseItemTapCount++;
 	switch (UseItemTapCount)
 	{
-		default:
-		case 1:
-			GetWorld()->GetTimerManager().SetTimer(UseItemDoubleTapTimerHandle, this, &UItemTile::ResetUseItemTapCounter, 0.5f, false);
-			return;
-		case 2:
-			GetWorld()->GetTimerManager().ClearTimer(UseItemDoubleTapTimerHandle);
-			UseItemTapCount = 0;
-			break;
+	default:
+	case 1:
+		GetWorld()->GetTimerManager().SetTimer(UseItemDoubleTapTimerHandle, this, &UItemTile::ResetUseItemTapCounter, 0.5f, false);
+		return;
+	case 2:
+		GetWorld()->GetTimerManager().ClearTimer(UseItemDoubleTapTimerHandle);
+		UseItemTapCount = 0;
+		break;
 	}
 
+	if (OnUseItemRequest.IsBound())
+	{
+		OnUseItemRequest.Broadcast(ItemData.ItemClass);
+	}
+}
+
+void UItemTile::UseItem()
+{
 	if (OnUseItemRequest.IsBound())
 	{
 		OnUseItemRequest.Broadcast(ItemData.ItemClass);
