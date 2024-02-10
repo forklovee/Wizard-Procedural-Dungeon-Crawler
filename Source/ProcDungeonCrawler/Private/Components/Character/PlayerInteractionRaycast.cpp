@@ -146,14 +146,14 @@ bool UPlayerInteractionRaycast::PickUpItem(AItem* Item) const
 	
 	Item->Pickup( Cast<APawn>(GetOwner()) );
 	
-	if (AWeapon* Weapon = Cast<AWeapon>(Item))
-	{
-		if (OnWeaponPickedUp.IsBound())
-		{
-			OnWeaponPickedUp.Broadcast(Weapon);
-		}
-		return true;
-	}
+	// if (AWeapon* Weapon = Cast<AWeapon>(Item))
+	// {
+	// 	if (OnWeaponPickedUp.IsBound())
+	// 	{
+	// 		OnWeaponPickedUp.Broadcast(Weapon);
+	// 	}
+	// 	return true;
+	// }
 
 	if (ARuneRing* Rune = Cast<ARuneRing>(Item))
 	{

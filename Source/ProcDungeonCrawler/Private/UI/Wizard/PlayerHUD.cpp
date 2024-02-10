@@ -3,23 +3,25 @@
 
 #include "..\..\..\Public\UI\Wizard\PlayerHUD.h"
 
-#include "Blueprint/SlateBlueprintLibrary.h"
-#include "Blueprint/WidgetLayoutLibrary.h"
 #include "Blueprint/WidgetTree.h"
+#include "Characters/Human/Player/DefaultPlayerController.h"
 #include "Characters/Human/Player/PlayerPawn.h"
 #include "Components/CanvasPanel.h"
-#include "Components/CanvasPanelSlot.h"
 #include "UI/Wizard/RuneCastSlot.h"
 #include "Components/ProgressBar.h"
 #include "Components/UniformGridPanel.h"
+#include "Components/WidgetSwitcher.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/PawnStats.h"
 #include "UI/Inventory/ItemTile.h"
 #include "UI/Inventory/ItemTileContextMenu.h"
+#include "UI/Inventory/Tabs/InventoryTabButton.h"
 
 void UPlayerHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
+
+	SetInventoryVisible(false);
 }
 
 void UPlayerHUD::UpdateInventoryData()
@@ -88,18 +90,31 @@ void UPlayerHUD::ToggleInventoryVisibility()
 void UPlayerHUD::SetInventoryVisible(bool bNewIsVisible)
 {
 	bInventoryIsVisible = bNewIsVisible;
-	
+	UE_LOG(LogTemp, Display, TEXT("Inventory visible: %i"), bInventoryIsVisible)
 	InventoryCanvas->SetVisibility(!bInventoryIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
-	// HudCanvas->SetVisibility(bIsVisible ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+
+	if (Player)
+		if (ADefaultPlayerController* PlayerController = Cast<ADefaultPlayerController>(Player->GetController()))
+		{
+			PlayerController->bShowMouseCursor = bInventoryIsVisible;
+			if (bInventoryIsVisible)
+			{
+				PlayerController->SetInputMode(FInputModeGameAndUI());
+			}
+			else
+			{
+				PlayerController->SetInputMode(FInputModeGameOnly());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Display, TEXT("Failed to get PlayerController"))
+		}
+
 	
 	if (OnInventoryVisibilityChanged.IsBound())
 	{
 		OnInventoryVisibilityChanged.Broadcast(bInventoryIsVisible);
-	}
-
-	if (!bInventoryIsVisible)
-	{
-		return;
 	}
 }
 
@@ -111,8 +126,6 @@ void UPlayerHUD::UpdateInventorySlot(int SlotIndex, FInventorySlot InventorySlot
 void UPlayerHUD::ToggleContextMenuForFocusedItemTile()
 {
 	UE_LOG(LogTemp, Display, TEXT("Hovered!!!!!! %i"), bCanContextMenuOpen)
-
-	
 }
 
 void UPlayerHUD::ChangeFocusedItemTile(UItemTile* NewFocusedItemTile)
@@ -145,6 +158,16 @@ void UPlayerHUD::DisableAllItemTiles()
 	{
 		ItemTile->SetIsEnabled(false);
 	}
+}
+
+void UPlayerHUD::OnInventoryTabButtonPressed()
+{
+	InventoryTabSwitcher->SetActiveWidgetIndex(0);
+}
+
+void UPlayerHUD::OnSpellBookTabButtonPressed()
+{
+	InventoryTabSwitcher->SetActiveWidgetIndex(1);
 }
 
 void UPlayerHUD::OnNewInteractionTarget(FText ActorName, FName InteractionType, bool bCanBeGrabbed)

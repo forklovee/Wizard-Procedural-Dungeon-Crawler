@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUD.generated.h"
 
+class UInventoryTabButton;
+class UWidgetSwitcher;
 class UItemTileContextMenu;
 class UVerticalBox;
 class UCanvasPanelSlot;
@@ -98,6 +100,11 @@ protected:
 	void EnableAllItemTiles();
 	UFUNCTION()
 	void DisableAllItemTiles();
+
+	UFUNCTION()
+	void OnInventoryTabButtonPressed();
+	UFUNCTION()
+	void OnSpellBookTabButtonPressed();
 	
 private:
 	void LerpHealthBarValueToTarget();
@@ -115,6 +122,14 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UCanvasPanel* InventoryCanvas;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UInventoryTabButton* InventoryTabButton;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UInventoryTabButton* SpellBookTabButton;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidgetSwitcher* InventoryTabSwitcher;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UUniformGridPanel* InventoryGrid;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
