@@ -52,14 +52,15 @@ struct FInventorySlot
 	{
 		return Amount <= 0;
 	}
-
+	
 	FText ItemNameText;
 	TSubclassOf<AItem> ItemClass;
 	TSoftObjectPtr<UTexture2D> ItemIcon = nullptr;
 	bool bIsConsumable = false;
 	
 	FVector2D TilePos;
-	int32 Amount = 0;
+	uint8 MaxStackSize = 1;
+	uint8 Amount = 0;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemAdded, int, SlotIndex, FInventorySlot, InventorySlot);
@@ -91,6 +92,7 @@ public:
 	bool IsTileFree(FVector2D TilePos);
 
 	FVector2D GetInventorySize() const { return InventorySize; }
+	
 protected:
 	virtual void BeginPlay() override;
 

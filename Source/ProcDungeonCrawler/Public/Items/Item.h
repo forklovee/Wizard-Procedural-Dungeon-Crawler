@@ -37,8 +37,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Item")
 	const FText& GetItemName() const { return ItemName; }
+
+	UFUNCTION(BlueprintCallable, Category = "Item|Visual")
+	uint8 GetMaxStackSize() const { return MaxStackSize; }
 	
 protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item")
+	uint8 MaxStackSize = 1;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item")
 	FText ItemName = FText::FromString("Item");
 

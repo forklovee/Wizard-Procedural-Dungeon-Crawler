@@ -39,7 +39,7 @@ void UInventoryComponent::AddItem(AItem* ItemActor, int32 Amount)
 	
 	const TSubclassOf<AItem> ItemClass = ItemActor->GetClass();
 	int SlotIndex = ItemSlots.IndexOfByPredicate([=](const FInventorySlot& Slot) {
-		return Slot.ItemClass == ItemClass;
+		return Slot.ItemClass == ItemClass && Slot.Amount + Amount <= Slot.MaxStackSize;
 	});
 	
 	if (SlotIndex != -1) // Item exists, add amount
@@ -64,7 +64,10 @@ void UInventoryComponent::AddItem(AItem* ItemActor, int32 Amount)
 
 	ItemSlots[SlotIndex].ItemNameText = ItemActor->GetItemName();
 	ItemSlots[SlotIndex].ItemClass = ItemClass;
+	
+	ItemSlots[SlotIndex].MaxStackSize = ItemActor->GetMaxStackSize();
 	ItemSlots[SlotIndex].Amount = Amount;
+	
 	ItemSlots[SlotIndex].ItemIcon = ItemActor->GetItemIcon();
 	
 	UE_LOG(LogTemp, Display, TEXT("Item: %s - Amount: %d"), *ItemClass->GetName(), ItemSlots[SlotIndex].Amount)

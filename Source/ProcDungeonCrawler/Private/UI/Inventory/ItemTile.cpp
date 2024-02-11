@@ -9,6 +9,7 @@
 #include "Components/Overlay.h"
 #include "Components/TextBlock.h"
 #include "Components/Character/InventoryComponent.h"
+#include "Materials/MaterialInstanceConstant.h"
 
 void UItemTile::NativeOnInitialized()
 {
@@ -80,6 +81,11 @@ void UItemTile::UpdateData(FInventorySlot InventorySlot)
 		AmountTextBlock->SetText(FText::FromString(FString::FromInt(InventorySlot.Amount)));
 		
 		ItemImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+		if (UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(ItemTileMaterial, this))
+		{
+			Material->SetTextureParameterValue(FName("ItemTexture"), InventorySlot.ItemIcon.Get());
+			ItemImage->SetBrushFromMaterial(Material);
+		}
 	}
 
 	if (OnItemTileUpdated.IsBound())
