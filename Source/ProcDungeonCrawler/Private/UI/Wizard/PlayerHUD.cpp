@@ -63,22 +63,18 @@ void UPlayerHUD::SetupInventory(APlayerPawn* PlayerPawn)
 	if (TargetSlotAmount == ItemTiles.Num())
 		return;
 	
-	for (int Y = 0; Y < static_cast<int>(InventorySize.Y); Y++)
+	for (FInventorySlot& InventorySlot: PlayerPawn->Inventory->GetItemSlots())
 	{
-		for (int X = 0; X < static_cast<int>(InventorySize.X); X++)
-		{
-			UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
-			ItemTile->OnUseItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::UseItem);
-			ItemTile->OnDropItemRequest.AddDynamic(PlayerPawn, &APlayerPawn::DropItem);
-			
-			ItemTile->OnContextMenuRequested.AddDynamic(InventoryContextMenu, &UItemTileContextMenu::Open);
-			ItemTile->OnItemTileMouseHovered.AddDynamic(this, &UPlayerHUD::ChangeFocusedItemTile);
-			ItemTile->OnItemTileMouseUnHovered.AddDynamic(this, &UPlayerHUD::ClearFocusedItemTile);
-			
-			ItemTiles.Add(ItemTile);
-			InventoryGrid->AddChildToUniformGrid(ItemTile, X, Y);
-			ItemTile->UpdateData(FInventorySlot(X, Y));
-		}
+		UItemTile* ItemTile = CreateWidget<UItemTile>(GetWorld(), ItemTileClass);
+		ItemTile->OnUseItemRequest.AddDynamic(PlayerPawn->Inventory, &UInventoryComponent::UseItem);
+		ItemTile->OnDropItemRequest.AddDynamic(PlayerPawn->Inventory, &UInventoryComponent::DropItem);
+		
+		ItemTile->OnContextMenuRequested.AddDynamic(InventoryContextMenu, &UItemTileContextMenu::Open);
+		
+		ItemTiles.Add(ItemTile);
+		
+		InventoryGrid->AddChildToUniformGrid(ItemTile, InventorySlot.TilePos.X, InventorySlot.TilePos.Y);
+		ItemTile->SetInventorySlot(InventorySlot);
 	}
 }
 
@@ -118,30 +114,10 @@ void UPlayerHUD::SetInventoryVisible(bool bNewIsVisible)
 	}
 }
 
-void UPlayerHUD::UpdateInventorySlot(int SlotIndex, FInventorySlot InventorySlot)
+void UPlayerHUD::UpdateInventorySlot(FInventorySlot& InventorySlot)
 {
-	ItemTiles[SlotIndex]->UpdateData(InventorySlot);
-}
-
-void UPlayerHUD::ToggleContextMenuForFocusedItemTile()
-{
-	UE_LOG(LogTemp, Display, TEXT("Hovered!!!!!! %i"), bCanContextMenuOpen)
-}
-
-void UPlayerHUD::ChangeFocusedItemTile(UItemTile* NewFocusedItemTile)
-{
-	UE_LOG(LogTemp, Display, TEXT("%s hovered"), *NewFocusedItemTile->GetName())
-	
-	if (bCanContextMenuOpen) return;
-	FocusedItemTile = NewFocusedItemTile;
-}
-
-void UPlayerHUD::ClearFocusedItemTile(UItemTile* NewUnFocusedItemTile)
-{
-	UE_LOG(LogTemp, Display, TEXT("%s not hovered"), *NewUnFocusedItemTile->GetName())
-	
-	if (bCanContextMenuOpen) return;
-	FocusedItemTile = nullptr;
+	ItemTiles[InventorySlot.Index]->UpdateVisualData();
+	// SetInventorySlot(InventorySlot);
 }
 
 void UPlayerHUD::EnableAllItemTiles()

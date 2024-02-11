@@ -22,9 +22,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemClicked);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnContextMenuRequested, UItemTile*, ItemTile, FVector2D, ViewportPosition);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseItemRequest, TSubclassOf<AItem>, ItemClass);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInspectItemRequest, TSubclassOf<AItem>, ItemClass);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDropItemRequest, TSubclassOf<AItem>, ItemClass);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseItemRequest, FInventorySlot&, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInspectItemRequest, FInventorySlot&, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDropItemRequest, FInventorySlot&, InventorySlot);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API UItemTile : public UUserWidget
@@ -59,10 +59,11 @@ public:
 	
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
-	
-	void UpdateData(FInventorySlot InventorySlot);
 
-	FInventorySlot& GetItemData() { return ItemData; }
+	void UpdateVisualData();
+	void SetInventorySlot(FInventorySlot& InventorySlot);
+
+	FInventorySlot& GetItemData() const { return *ItemDataPtr; }
 
 	UFUNCTION()
 	void DoubleClickUseItem();
@@ -87,12 +88,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UButton* Button;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	UImage* EquippedImage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UImage* ItemImage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* AmountTextBlock;
 
 private:
-	FInventorySlot ItemData;
+	FInventorySlot* ItemDataPtr;
 	FVector2D TilePos;
 
 	FTimerHandle UseItemDoubleTapTimerHandle;

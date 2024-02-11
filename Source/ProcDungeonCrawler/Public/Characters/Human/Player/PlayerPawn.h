@@ -44,9 +44,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
-	virtual void Interact() override;
 	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget) override;
-	virtual void SetWeapon(AWeapon* NewWeapon) override;
+	virtual void SetWeaponActor(AWeapon* NewWeapon, FInventorySlot& InventorySlot) override;
 
 	UFUNCTION()
 	void UpdateInventoryInputContext(bool bIsInventoryOpen);

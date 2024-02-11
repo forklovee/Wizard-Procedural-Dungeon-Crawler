@@ -6,6 +6,15 @@
 #include "Items/Item.h"
 #include "Clothes.generated.h"
 
+UENUM(Blueprintable, BlueprintType)
+enum class EArmorTarget: uint8
+{
+	Head,
+	Chest,
+	Feet,
+	Hands
+};
+
 UCLASS()
 class PROCDUNGEONCRAWLER_API AClothes : public AItem
 {
@@ -18,4 +27,8 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Clothes")
+	EArmorTarget ArmorTarget = EArmorTarget::Chest;
 };

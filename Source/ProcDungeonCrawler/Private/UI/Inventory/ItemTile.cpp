@@ -61,16 +61,15 @@ void UItemTile::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 	}
 }
 
-void UItemTile::UpdateData(FInventorySlot InventorySlot)
+void UItemTile::UpdateVisualData()
 {
- 	ItemData = InventorySlot;
-
-	if (InventorySlot.ItemClass == nullptr)
+	if (ItemDataPtr->ItemClass == nullptr)
 	{
 		Button->SetVisibility(ESlateVisibility::Collapsed);
 		
 		AmountTextBlock->SetVisibility(ESlateVisibility::Collapsed);
-		
+
+		EquippedImage->SetVisibility(ESlateVisibility::Collapsed);
 		ItemImage->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else
@@ -78,20 +77,28 @@ void UItemTile::UpdateData(FInventorySlot InventorySlot)
 		Button->SetVisibility(ESlateVisibility::Visible);
 		
 		AmountTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
-		AmountTextBlock->SetText(FText::FromString(FString::FromInt(InventorySlot.Amount)));
+		AmountTextBlock->SetText(FText::FromString(FString::FromInt(ItemDataPtr->Amount)));
+
+		EquippedImage->SetVisibility(ItemDataPtr->SpawnedActor.IsValid() ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 		
 		ItemImage->SetVisibility(ESlateVisibility::HitTestInvisible);
 		if (UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(ItemTileMaterial, this))
 		{
-			Material->SetTextureParameterValue(FName("ItemTexture"), InventorySlot.ItemIcon.Get());
+			Material->SetTextureParameterValue(FName("ItemTexture"), ItemDataPtr->ItemIcon.Get());
 			ItemImage->SetBrushFromMaterial(Material);
 		}
 	}
 
 	if (OnItemTileUpdated.IsBound())
 	{
-		OnItemTileUpdated.Broadcast(this, InventorySlot);
+		OnItemTileUpdated.Broadcast(this, *ItemDataPtr);
 	}
+}
+
+void UItemTile::SetInventorySlot(FInventorySlot& InventorySlot)
+{
+ 	ItemDataPtr = &InventorySlot;
+	UpdateVisualData();
 }
 
 void UItemTile::DoubleClickUseItem()
@@ -113,32 +120,36 @@ void UItemTile::DoubleClickUseItem()
 
 	if (OnUseItemRequest.IsBound())
 	{
-		OnUseItemRequest.Broadcast(ItemData.ItemClass);
+		OnUseItemRequest.Broadcast(*ItemDataPtr);
 	}
+	UpdateVisualData();
 }
 
 void UItemTile::UseItem()
 {
 	if (OnUseItemRequest.IsBound())
 	{
-		OnUseItemRequest.Broadcast(ItemData.ItemClass);
+		OnUseItemRequest.Broadcast(*ItemDataPtr);
 	}
+	UpdateVisualData();
 }
 
 void UItemTile::InspectItem()
 {
 	if (OnInspectItemRequest.IsBound())
 	{
-		OnInspectItemRequest.Broadcast(ItemData.ItemClass);
+		OnInspectItemRequest.Broadcast(*ItemDataPtr);
 	}
+	UpdateVisualData();
 }
 
 void UItemTile::DropItem()
 {
 	if (OnDropItemRequest.IsBound())
 	{
-		OnDropItemRequest.Broadcast(ItemData.ItemClass);
+		OnDropItemRequest.Broadcast(*ItemDataPtr);
 	}
+	UpdateVisualData();
 }
 
 void UItemTile::ResetUseItemTapCounter()

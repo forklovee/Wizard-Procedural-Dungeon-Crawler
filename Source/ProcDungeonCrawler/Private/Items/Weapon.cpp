@@ -34,17 +34,12 @@ void AWeapon::Equip(AHuman* HumanPawn, USceneComponent* EquipTargetComponent, FN
 	{
 		return;
 	}
-
+	
 	WeaponOwner = HumanPawn;
 
 	ItemMesh->SetSimulatePhysics(false);
 	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttachToComponent(EquipTargetComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SocketName);
-
-	if (OnWeaponEquipped.IsBound())
-	{
-		OnWeaponEquipped.Broadcast();
-	}
 }
 
 void AWeapon::UnEquip()
@@ -58,11 +53,6 @@ void AWeapon::UnEquip()
 	ItemMesh->SetSimulatePhysics(true);
 	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	WeaponOwner = nullptr;
-	
-	if (OnWeaponUnequipped.IsBound())
-	{
-		OnWeaponUnequipped.Broadcast();
-	}
 }
 
 void AWeapon::ResetCanAttack()

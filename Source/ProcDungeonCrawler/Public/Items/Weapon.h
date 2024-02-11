@@ -10,9 +10,6 @@ class AHuman;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttack);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponEquipped);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponUnequipped);
-
 UCLASS()
 class PROCDUNGEONCRAWLER_API AWeapon : public APickupItem
 {
@@ -21,11 +18,6 @@ class PROCDUNGEONCRAWLER_API AWeapon : public APickupItem
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnAttack OnAttack;
-	
-	UPROPERTY(BlueprintAssignable)
-	FOnAttack OnWeaponEquipped;
-	UPROPERTY(BlueprintAssignable)
-	FOnAttack OnWeaponUnequipped;
 	
 	AWeapon();
 

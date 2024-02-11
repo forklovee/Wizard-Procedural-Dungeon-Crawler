@@ -3,20 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/Character/InventoryComponent.h"
 #include "GameFramework/Character.h"
+#include "Items/Weapon.h"
 
 #include "Human.generated.h"
 
+struct FInventorySlot;
 class UPhysicalAnimationComponent;
-
-UENUM(Blueprintable, BlueprintType)
-enum class EArmorTarget: uint8
-{
-	Head,
-	Chest,
-	Feet,
-	Hands
-};
 
 class AClothes;
 class AWeapon;
@@ -28,6 +22,7 @@ class AItem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAttack, int, AttackNumber);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSecondWeaponAttack);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrouchStateChanged, bool, bCrouchState);
 
 UCLASS(Blueprintable, BlueprintType)
@@ -45,11 +40,6 @@ public:
 	FOnCrouchStateChanged OnCrouchStateChanged;
 	
 	AHuman();
-	
-	UFUNCTION()
-	void UseItem(TSubclassOf<AItem> ItemClass);
-	UFUNCTION()
-	void DropItem(TSubclassOf<AItem> ItemClass);
 
 	// Movement
 	UFUNCTION(BlueprintCallable)
@@ -79,20 +69,11 @@ protected:
 	void PrimaryAction();
 	UFUNCTION()
 	void SecondaryAction();
-	
-	UFUNCTION()
-	virtual void Interact();
-	UFUNCTION()
-	void Grab();
-	UFUNCTION()
-	void Release();
 
 	virtual void SetItemGrab(AItem* NewGrabItem);
+	
 	UFUNCTION()
-	virtual void SetWeapon(AWeapon* NewWeapon);
-
-	UFUNCTION(BlueprintCallable)
-	AWeapon* GetWeapon() const { return Weapon.Get(); }
+	virtual void SetWeaponActor(AWeapon* NewWeapon, FInventorySlot& InventorySlot);
 	
 	UFUNCTION()
 	virtual void SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget);
@@ -116,14 +97,6 @@ public:
 	UPawnStats* Stats;
 
 protected:
-	// Equipment
-	TWeakObjectPtr<AItem> GrabbedItem;
-	TWeakObjectPtr<AWeapon> Weapon;
-
-	TWeakObjectPtr<AClothes> HeadArmor;
-	TWeakObjectPtr<AClothes> ChestArmor;
-	TWeakObjectPtr<AClothes> FeetArmor;
-	TArray<TWeakObjectPtr<AClothes>> Rings;
 
 	// Combat
 	// Animation controlled Attack Lock

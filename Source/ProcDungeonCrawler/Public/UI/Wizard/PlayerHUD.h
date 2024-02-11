@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerHUD.generated.h"
 
+struct FInventorySlot;
 class UInventoryTabButton;
 class UWidgetSwitcher;
 class UItemTileContextMenu;
@@ -62,7 +63,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetInventoryVisible(bool bNewIsVisible);
 	UFUNCTION()
-	void UpdateInventorySlot(int SlotIndex, FInventorySlot InventorySlot);
+	void UpdateInventorySlot(FInventorySlot& InventorySlot);
 	
 	UFUNCTION(BlueprintCallable)
 	void OnNewInteractionTarget(FText ActorName, FName InteractionType, bool bCanBeGrabbed);
@@ -87,14 +88,6 @@ protected:
 
 	void UpdateInventoryData();
 	UItemTile* GetItemTileAtPosition(FVector2D TilePos) const;
-
-	UFUNCTION()
-	void ToggleContextMenuForFocusedItemTile();
-	
-	UFUNCTION()
-	void ChangeFocusedItemTile(UItemTile* NewFocusedItemTile);
-	UFUNCTION()
-	void ClearFocusedItemTile(UItemTile* NewUnFocusedItemTile);
 
 	UFUNCTION()
 	void EnableAllItemTiles();

@@ -60,6 +60,8 @@ void AHuman::PrimaryAction()
 		return;
 	}
 
+	if (!Inventory->HasEquippedWeapon()) return;
+	
 	bIsAttacking = true;
 	AttackNumber++;
 	if (OnWeaponAttack.IsBound())
@@ -82,87 +84,43 @@ void AHuman::SecondaryAction()
 	}
 }
 
-void AHuman::UseItem(TSubclassOf<AItem> ItemClass)
-{
-	if (ItemClass == nullptr) return;
-
-	const FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 21372137.f;
-	AActor* ItemActor = GetWorld()->SpawnActor(ItemClass, &SpawnLocation);
-	if (AConsumableItem* ConsumableItem = Cast<AConsumableItem>(ItemActor))
-	{
-		ConsumableItem->Use(this);
-		Inventory->RemoveItem(ItemClass, 1);
-	}
-	else
-	{
-		ItemActor->Destroy();
-	}
-}
-
-void AHuman::DropItem(TSubclassOf<AItem> ItemClass)
-{
-	if (ItemClass == nullptr) return;
-
-	const FVector SpawnLocation = GetActorLocation() + FVector::UpVector*50.f + GetActorForwardVector() * 25.f + GetActorRightVector() * 25.f;
-	if (const APickupItem* ItemActor = Cast<APickupItem>(GetWorld()->SpawnActor(ItemClass, &SpawnLocation)))
-	{
-		ItemActor->ItemMesh->AddImpulse((GetActorForwardVector() + FVector::DownVector).GetSafeNormal() * 100.f);
-	}
-	
-	Inventory->RemoveItem(ItemClass, 1);
-}
-
-void AHuman::Interact()
-{
-}
-
-void AHuman::Grab()
-{
-	
-}
-
-void AHuman::Release()
-{
-	SetItemGrab(nullptr);
-}
-
 void AHuman::SetItemGrab(AItem* Item)
 {
 	
 }
 
-void AHuman::SetWeapon(AWeapon* NewWeapon)
+void AHuman::SetWeaponActor(AWeapon* NewWeapon, FInventorySlot& InventorySlot)
 {
+	UE_LOG(LogTemp, Display, TEXT("Dupa dupa dupa dupa "))	
 	if (NewWeapon == nullptr)
 	{
 		return;
 	}
-	
-	if (Weapon.IsValid())
-	{
-		Weapon->UnEquip();
-		Weapon = nullptr;
-	}
-	
-	Weapon = NewWeapon;
-	Weapon->Equip(this, GetMesh(), FName("WeaponSocket"));
+	UE_LOG(LogTemp, Display, TEXT("Set new weapon Dupa"))
+	//TODO: IDK if it's necessary here
+	// if (AWeapon* Weapon = Cast<AWeapon>(WeaponInventorySlot->SpawnedActor.Get()))
+	// {
+	// 	Weapon->UnEquip();
+	// }
+
+	NewWeapon->Equip(this, GetMesh(), FName("WeaponSocket"));
 }
 
 void AHuman::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
 {
-	switch (ArmorTarget)
-	{
-		default:
-		case EArmorTarget::Head:
-			HeadArmor = NewClothes;
-			break;
-		case EArmorTarget::Chest:
-			ChestArmor = NewClothes;
-			break;
-		case EArmorTarget::Feet:
-			FeetArmor = NewClothes;
-			break;
-	}
+	// switch (ArmorTarget)
+	// {
+	// 	default:
+	// 	case EArmorTarget::Head:
+	// 		HeadArmor = NewClothes;
+	// 		break;
+	// 	case EArmorTarget::Chest:
+	// 		ChestArmor = NewClothes;
+	// 		break;
+	// 	case EArmorTarget::Feet:
+	// 		FeetArmor = NewClothes;
+	// 		break;
+	// }
 }
 
 void AHuman::ResetCanAttack()

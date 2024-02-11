@@ -5,8 +5,13 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Items/Item.h"
+#include "Items/Weapon.h"
+#include "Items/Clothes/Clothes.h"
 #include "InventoryComponent.generated.h"
 
+enum class EArmorTarget : uint8;
+class AClothes;
+class APickupItem;
 class AWeapon;
 class AWizardPlayer;
 
@@ -21,8 +26,9 @@ struct FInventorySlot
 		Amount = 0;
 	}
 
-	FInventorySlot(const int Row, const int Column)
+	FInventorySlot(const uint8 NewIndex, const int Row, const int Column)
 	{
+		Index = NewIndex;
 		ItemClass = nullptr;
 		Amount = 0;
 		TilePos = FVector2D(Row, Column);
@@ -52,7 +58,10 @@ struct FInventorySlot
 	{
 		return Amount <= 0;
 	}
+
+	static FInventorySlot EmptySlot;
 	
+	uint8 Index;
 	FText ItemNameText;
 	TSubclassOf<AItem> ItemClass;
 	TSoftObjectPtr<UTexture2D> ItemIcon = nullptr;
@@ -61,10 +70,18 @@ struct FInventorySlot
 	FVector2D TilePos;
 	uint8 MaxStackSize = 1;
 	uint8 Amount = 0;
+
+	TWeakObjectPtr<AActor> SpawnedActor;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemAdded, int, SlotIndex, FInventorySlot, InventorySlot);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemRemoved, int, SlotIndex, FInventorySlot, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemAdded, FInventorySlot&, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, FInventorySlot&, InventorySlot);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponEquipped, AWeapon*, WeaponActor, FInventorySlot&, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponUnEquipped, AWeapon*, WeaponActor, FInventorySlot&, InventorySlot);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnClothEquipped, AClothes*, ClothActor, FInventorySlot&, InventorySlot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnClothUnEquipped, AClothes*, ClothActor, FInventorySlot&, InventorySlot);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCDUNGEONCRAWLER_API UInventoryComponent : public UActorComponent
@@ -74,28 +91,60 @@ class PROCDUNGEONCRAWLER_API UInventoryComponent : public UActorComponent
 public:
 	FOnItemAdded OnItemAdded;
 	FOnItemRemoved OnItemRemoved;
+
+	FOnWeaponEquipped OnWeaponEquipped;
+	FOnWeaponUnEquipped OnWeaponUnEquipped;
+
+	FOnClothEquipped OnClothEquipped;
+	FOnClothUnEquipped OnClothUnEquipped;
 	
 	UInventoryComponent();
+
+	// Equipment
+	UFUNCTION(BlueprintCallable)
+	bool HasEquippedWeapon() const { return WeaponSlot != nullptr; }
+	UFUNCTION(BlueprintCallable)
+	AWeapon* GetEquippedWeapon() const { return WeaponSlot != nullptr ? Cast<AWeapon>(WeaponSlot->SpawnedActor.Get()) : nullptr; }
+	
+	UFUNCTION(BlueprintCallable)
+	bool HasEquippedArmor(EArmorTarget ArmorTarget) const { return EquippedArmorSlots.Contains(ArmorTarget); }
+
+	// Inventory
+	UFUNCTION(BlueprintCallable)
+	TArray<FInventorySlot>& GetItemSlots();
+	
+	UFUNCTION(BlueprintCallable)
+	void UseItem(FInventorySlot& InventorySlot);
+
+	UFUNCTION(BlueprintCallable)
+	void DropItem(FInventorySlot& InventorySlot);
+	
+	UFUNCTION(BlueprintCallable)
+	FInventorySlot GetItemSlotByIndex(const uint8 SlotIdx);
+	UFUNCTION(BlueprintCallable)
+	FInventorySlot GetItemSlotByGridPosition(const FVector2D TilePos);
 	
 	UFUNCTION(BlueprintCallable)
 	void AddItem(AItem* ItemActor, int32 Amount = 1);
 	
 	UFUNCTION(BlueprintCallable)
-	void RemoveItem(TSubclassOf<AItem> ItemClass, int32 Amount = 1);
-	
+	void RemoveItemByClass(TSubclassOf<AItem> ItemClass, int32 Amount = 1);
 	UFUNCTION(BlueprintCallable)
-	bool HasItem(TSubclassOf<AItem> ItemClass);
-	UFUNCTION(BlueprintCallable)
-	int GetItemAmount(TSubclassOf<AItem> ItemClass);
+	void RemoveItemBySlotIndex(uint8 SlotIdx, int32 Amount = 1);
 
 	UFUNCTION(BlueprintCallable)
-	bool IsTileFree(FVector2D TilePos);
+	void MarkInventorySlotAsEquipped(APickupItem* EquippedActor, FInventorySlot& InventorySlot);
 
 	FVector2D GetInventorySize() const { return InventorySize; }
 	
 protected:
 	virtual void BeginPlay() override;
-
+	
+	void EquipItem(FInventorySlot& InventorySlot);
+	void UnEquipItem(FInventorySlot& InventorySlot);
+	
+	void RemoveItem(FInventorySlot& InventorySlot, int32 Amount);
+	
 	int GetFirstFreeInventorySlotId() const;
 	
 protected:
@@ -104,4 +153,7 @@ protected:
 	
 private:
 	TArray<FInventorySlot> ItemSlots;
+
+	FInventorySlot* WeaponSlot;
+	TMap<EArmorTarget, FInventorySlot*> EquippedArmorSlots;
 };

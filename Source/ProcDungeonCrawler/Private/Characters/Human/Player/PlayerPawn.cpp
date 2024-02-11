@@ -95,10 +95,11 @@ void APlayerPawn::BeginPlay()
 	// Interaction context
 	PlayerController->OnPrimaryAction.AddDynamic(this, &APlayerPawn::PrimaryAction);
 	PlayerController->OnSecondaryAction.AddDynamic(this, &APlayerPawn::SecondaryAction);
-	PlayerController->OnInteractAction.AddDynamic(this, &APlayerPawn::Interact);
-	PlayerController->OnGrabbedAction.AddDynamic(this, &APlayerPawn::Grab);
-	PlayerController->OnReleasedAction.AddDynamic(this, &APlayerPawn::Release);
+	PlayerController->OnInteractAction.AddDynamic(PlayerInteraction, &UPlayerInteractionRaycast::Interact);
 
+	Inventory->OnWeaponEquipped.AddDynamic(this, &APlayerPawn::SetWeaponActor);
+	Inventory->OnWeaponUnEquipped.AddDynamic(this, &APlayerPawn::SetWeaponActor);
+	
 	// Setup HUD
 	PlayerHUD = PlayerController->AddHudToViewport();
 	if (PlayerHUD.IsValid())
@@ -111,7 +112,6 @@ void APlayerPawn::BeginPlay()
 		PlayerHUD->OnInventoryVisibilityChanged.AddDynamic(this, &APlayerPawn::UpdateInventoryInputContext);
 		
 		PlayerInteraction->OnNewInteractionTarget.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::OnNewInteractionTarget);
-		PlayerInteraction->OnWeaponPickedUp.AddDynamic(this, &APlayerPawn::SetWeapon);
 		
 		PlayerInteraction->OnItemPickedUp.AddDynamic(Inventory, &UInventoryComponent::AddItem);
 		Inventory->OnItemAdded.AddDynamic(PlayerHUD.Get(), &UPlayerHUD::UpdateInventorySlot);
@@ -130,15 +130,6 @@ void APlayerPawn::BeginPlay()
 		// SpellBook->OnRuneAdded.AddDynamic(WizardHUD, &UWizardHUD::BindRuneToSlot);
 		// SpellBook->OnRuneCasted.AddDynamic(WizardHUD, &UWizardHUD::OnRuneCasted);
 	}
-	
-	UE_LOG(LogTemp, Display, TEXT("Begin/!!!"))
-}
-
-void APlayerPawn::Interact()
-{
-	Super::Interact();
-
-	PlayerInteraction->Interact();
 }
 
 void APlayerPawn::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
@@ -156,10 +147,12 @@ void APlayerPawn::SetArmor(AClothes* NewClothes, EArmorTarget ArmorTarget)
 	Super::SetArmor(NewClothes, ArmorTarget);
 }
 
-void APlayerPawn::SetWeapon(AWeapon* NewWeapon)
+void APlayerPawn::SetWeaponActor(AWeapon* NewWeapon, FInventorySlot& InventorySlot)
 {
-	Super::SetWeapon(NewWeapon);
-	Weapon->Equip(this, ArmsMeshComponent, FName("WeaponSocket"));
+	UE_LOG(LogTemp, Display, TEXT("Set new weapon Dupa"))
+	if (NewWeapon == nullptr) return;
+	
+	NewWeapon->Equip(this, ArmsMeshComponent, FName("WeaponSocket"));
 }
 
 void APlayerPawn::UpdateInventoryInputContext(bool bIsInventoryOpen)
