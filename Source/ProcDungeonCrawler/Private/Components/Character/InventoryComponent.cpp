@@ -106,6 +106,19 @@ FInventorySlot UInventoryComponent::GetItemSlotByGridPosition(const FVector2D Ti
 	return FInventorySlot();
 }
 
+bool UInventoryComponent::HasItemOfClass(TSubclassOf<AItem> ItemClass, int32& OutAmount) const
+{
+	const int32 ItemSlotIndex = ItemSlots.IndexOfByPredicate([=](const FInventorySlot& Slot) {
+		return Slot.ItemClass == ItemClass;
+	});
+	if (ItemSlotIndex != -1)
+	{
+		OutAmount = ItemSlots[ItemSlotIndex].Amount;
+		return true;
+	}
+	return false;
+}
+
 void UInventoryComponent::EquipItem(FInventorySlot& InventorySlot)
 {
 	UE_LOG(LogTemp, Display, TEXT("Equip! %i %i"), InventorySlot.ItemClass == nullptr, InventorySlot.SpawnedActor == nullptr)

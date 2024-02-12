@@ -123,6 +123,9 @@ public:
 	FInventorySlot GetItemSlotByIndex(const uint8 SlotIdx);
 	UFUNCTION(BlueprintCallable)
 	FInventorySlot GetItemSlotByGridPosition(const FVector2D TilePos);
+
+	UFUNCTION(BlueprintCallable)
+	bool HasItemOfClass(TSubclassOf<AItem> ItemClass, int32& OutAmount) const;
 	
 	UFUNCTION(BlueprintCallable)
 	void AddItem(AItem* ItemActor, int32 Amount = 1);
