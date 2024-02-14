@@ -12,6 +12,7 @@
 
 #include "World/DungeonGenerator/Actors/Obstacles/Obstacle.h"
 #include "World/DungeonGenerator/Path/WalkthroughPath.h"
+#include "World/DungeonGenerator/Rooms/CorridorRoom.h"
 
 ADungeonGenerator::ADungeonGenerator()
 {
@@ -75,16 +76,8 @@ void ADungeonGenerator::BeginPlay()
 	Super::BeginPlay();
 }
 
-bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
+bool ADungeonGenerator::GenerateDungeon()
 {
-	if (Player == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("GameMode: Failed to fetch player pawn"));
-		return false;
-	}
-	PlayerBag = Player->Inventory;
-	PlayerSpellBook = Player->SpellBook;
-	
 	if (!LoadAndSetDungeonData())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to load Dungeon Data!"));
@@ -115,6 +108,7 @@ bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
 	{
 		FloorData.MaxRoomAmount = DungeonConfig->MaxRoomAmountOnFloor[FloorId];
 	}
+	FloorData.MainBranchDirection = DefaultBranchDirection;
 	
 	if (!DungeonRuleDictionary->HasFloorRoomStructures(FloorId))
 	{
@@ -127,7 +121,7 @@ bool ADungeonGenerator::GenerateDungeon(APlayerPawn* Player)
 
 	// If this is a first floor, do not connect first room to parent, because it's not existent!
 	int FloorStartRoomId = FloorId == 0 ? -1 : Rooms.Num()-1;
-	FloorData.Rooms = ConnectRuleCollectionToRooms(FloorStartRoomId, FloorId, FloorStructure, true);
+	FloorData.Rooms = ConnectRuleCollectionToRooms(FloorStartRoomId, FloorStructure, true);
 	
 	const int FloorLastRoomId = FloorStartRoomId + FloorStructure.Rules.Num();
 
@@ -164,10 +158,9 @@ bool ADungeonGenerator::BuildDungeon(float NewGridTileSize, float NewMeshTileSiz
 	// const AWalkthroughPath* SplineGlobalWalkthough = GetWorld()->SpawnActor<AWalkthroughPath>(WalkthroughPathClass);
 
 	FRoomData& StartRoomData = Rooms[0];
-	FVector BranchDirection = FVector(1.f, -1.f, 0.f);
 	for (int RoomIdx = 0; RoomIdx < Rooms.Num(); RoomIdx++)
 	{
-		if (ADungeonRoom* NewRoom = BuildRoom(Rooms[RoomIdx], BranchDirection))
+		if (ADungeonRoom* NewRoom = BuildRoom(Rooms[RoomIdx]))
 		{
 			FString ActorName = FString::Printf(TEXT("Room_%i"), RoomIdx);
 			NewRoom->SetActorLabel(ActorName);
@@ -182,7 +175,7 @@ void ADungeonGenerator::BuildRoomById(int Id)
 	// BuildRoom(Rooms[Id]);
 }
 
-ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchDirection)
+ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Room %i: %s"), RoomData.Id, *UEnum::GetValueAsString(RoomData.RoomRules.RoomType));
 
@@ -196,6 +189,10 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 
 	//Spawn Room Actor
 	RoomData.RoomActor = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomResource.RoomClass.Get()));
+	if (ACorridorRoom* CorridorRoom = Cast<ACorridorRoom>(RoomData.RoomActor))
+	{
+		CorridorRoom->GenerateRoomSpline(RoomData.BranchDirection);
+	}
 	if (!RoomData.RoomActor.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
@@ -223,7 +220,7 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 	for (FRoomWall* RoomWall: RoomData.RoomActor->GetValidRoomWalls())
 	{
 		const FVector WallNormal = RoomWall->GetWallNormal();
-		const float DotToDesired = FVector::DotProduct(WallNormal, -BranchDirection.GetSafeNormal());
+		const float DotToDesired = FVector::DotProduct(WallNormal, RoomData.BranchDirection.GetSafeNormal());
 		CurrentRoomWallsMap.Add(WallNormal, RoomWall);
 		
 		if (SortedRoomWallNormals.Num() == 0)
@@ -232,7 +229,7 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 		}
 		else
 		{
-			const float FirstNormalDot = FVector::DotProduct(SortedRoomWallNormals[0], -BranchDirection.GetSafeNormal());
+			const float FirstNormalDot = FVector::DotProduct(SortedRoomWallNormals[0], RoomData.BranchDirection.GetSafeNormal());
 			if (DotToDesired > FirstNormalDot)
 			{
 				SortedRoomWallNormals.Insert(WallNormal, 0);
@@ -278,20 +275,15 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 			FVector ThisRoomEndLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->EndPoint - ThisWallEnd;
 
 			bool bIsOverlapping = false;
-			for (float CurrentLerpAlpha = 0.f; CurrentLerpAlpha <= 1.f; CurrentLerpAlpha += 0.25f)
+			RoomData.RoomActor->SetActorLocation(ThisRoomStartLocation);
+			for (ADungeonRoom* OtherRoom: RoomActors)
 			{
-				FVector ThisRoomLocationCheck = FMath::Lerp(ThisRoomStartLocation, ThisRoomEndLocation, CurrentLerpAlpha);
-				RoomData.RoomActor->SetActorLocation(ThisRoomLocationCheck);
-				
-				for (ADungeonRoom* OtherRoom: RoomActors)
-				{
-					if (OtherRoom == RoomData.RoomActor.Get()) continue;
+				if (OtherRoom == RoomData.RoomActor.Get()) continue;
 
-					bIsOverlapping = RoomData.RoomActor->IsOverlappingWithRoom(OtherRoom);
-					if (bIsOverlapping)
-					{
-						break;
-					}
+				bIsOverlapping = RoomData.RoomActor->IsOverlappingWithRoom(OtherRoom);
+				if (bIsOverlapping)
+				{
+					break;
 				}
 			}
 			
@@ -302,6 +294,11 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData, FVector& BranchD
 			
 			// good!
 			bCorrectLocationFound = true;
+
+			// Set Room Wall Connection
+			ParentRoomWall->SetConnectedRoom(RoomData.RoomActor, ThisRoomWall, FVector::ZeroVector); //todo: set door position
+			ThisRoomWall->SetConnectedRoom(ParentRoomData.RoomActor, ParentRoomWall, FVector::ZeroVector); //todo: set door position
+			
 			break;
 		}
 	}
@@ -408,7 +405,7 @@ bool ADungeonGenerator::ExtendFloorRoomTree(FFloorData& FloorData, const int Flo
 		}
 		
 		FRuleCollection RuleCollection = DungeonRuleDictionary->GetRandomRoomExtensionOfType(RoomType).Rules;
-		TArray<FRoomData*> NewRooms = ConnectRuleCollectionToRooms(RoomId, FloorData.Id, RuleCollection);
+		TArray<FRoomData*> NewRooms = ConnectRuleCollectionToRooms(RoomId, RuleCollection);
 		// Merge New Rooms to Floor Data Rooms
 		for (FRoomData* NewRoom: NewRooms)
 		{
@@ -419,10 +416,27 @@ bool ADungeonGenerator::ExtendFloorRoomTree(FFloorData& FloorData, const int Flo
 	return true;
 }
 
-TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection,
+TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(int ParentRoomId, FRuleCollection& RuleCollection,
 	 const bool bIsMainWalkthroughPath)
 {
 	UE_LOG(LogTemp, Display, TEXT("\t - Creating Branch with Id: %i as Root!"), ParentRoomId)
+
+	const int FloorId = ParentRoomId == -1 ? 0 : Rooms[ParentRoomId].FloorId;
+	FVector BranchDirection = Floors[FloorId].MainBranchDirection;
+	if (ParentRoomId != -1){
+		BranchDirection = Rooms[ParentRoomId].BranchDirection;
+		uint8 BranchDirectionChange = FMath::Sign(FMath::RandRange(-10, 10));
+		if (BranchDirectionChange == 0)
+		{
+			BranchDirectionChange = 1;
+		}
+		BranchDirection = BranchDirection.RotateAngleAxis(90.f * BranchDirectionChange, FVector::UpVector).GetSafeNormal();
+	}
+	
+	if (Floors[FloorId].Rooms.Num() == 0)
+	{
+		Floors[FloorId].MainBranchDirection = (FloorId % 2 == 0) ? DefaultBranchDirection: -DefaultBranchDirection;
+	}
 	
 	TArray<FRoomData*> NewRooms;
 	for (int RuleIdx = 0; RuleIdx < RuleCollection.Rules.Num(); RuleIdx++)
@@ -431,9 +445,10 @@ TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(int ParentRoo
 
 		// Create room data
 		const int NewRoomId = Rooms.Add(
-			FRoomData(FloorId, Rooms.Num(), RuleProperties)
+			FRoomData(0, Rooms.Num(), RuleProperties)
 			);
 		FRoomData& RoomData = Rooms[NewRoomId];
+		RoomData.BranchDirection = BranchDirection;
 		NewRooms.Add(&RoomData);
 		
 		// Add to Main Walkthrough path if marked
@@ -453,7 +468,6 @@ TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(int ParentRoo
 		
 		// Create a Parent-Child relation
 		RoomData.ParentId = ParentRoomId;
-		// Todo: Why it disappears on original parent room?
 		Rooms[ParentRoomId].Children.Add(&RoomData);
 		
 		// ParentRoomId Changes with each iteration
@@ -462,7 +476,7 @@ TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(int ParentRoo
 		// If first room of the branch, add to branch roots
 		if (RuleIdx == 0 && !bIsMainWalkthroughPath)
 		{
-			Floors[FloorId].BranchRoots.Add(&RoomData);
+			Floors[0].BranchRoots.Add(&RoomData);
 		}
 	}
 	return NewRooms;

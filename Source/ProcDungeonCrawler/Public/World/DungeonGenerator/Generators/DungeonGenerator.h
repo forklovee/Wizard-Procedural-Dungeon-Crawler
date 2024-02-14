@@ -46,22 +46,22 @@ struct FRoomData
 		Obstacle_FromParent_Class = nullptr;
 	}
 
-	bool bIsExit = false;
-	bool bIsOnMainWalkthroughPath = false;
 	int FloorId = 0;
 	int Id = 0;
+	int ParentId = -1;
+	TArray<FRoomData*> Children;
 	
 	FRuleProperties RoomRules;
+	
+	bool bIsExit = false;
+	bool bIsOnMainWalkthroughPath = false;
 
+	FVector BranchDirection = FVector::ZeroVector;
+	
 	TSubclassOf<AObstacle> Obstacle_FromParent_Class = nullptr;
 	int HasSolutionToObstacleInRoomIdx = -1;
 
 	TArray<TSubclassOf<AActor>> RequiredAssetsToSpawn;
-	
-	int ParentId = -1;
-	TArray<FRoomData*> Children;
-	
-	TMap<FVector, TArray<FWallRange>> OccupiedWallsRanges;
 	
 	TWeakObjectPtr<ADungeonRoom> RoomActor;
 };
@@ -82,6 +82,8 @@ struct FFloorData
 	
 	int Id = 0;
 	int MaxRoomAmount = 0;
+	FVector MainBranchDirection = FVector::ZeroVector;
+	
 	TArray<FRoomData*> Rooms;
 
 	TArray<FRoomData*> BranchRoots;
@@ -129,7 +131,7 @@ public:
 	void PrintDungeonStructure();
 	
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
-	bool GenerateDungeon(APlayerPawn* Player);
+	bool GenerateDungeon();
 
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
 	bool BuildDungeon(float NewGridTileSize, float NewMeshTileSize);
@@ -140,11 +142,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
-	ADungeonRoom* BuildRoom(FRoomData& RoomData, FVector& BranchDirection);
+	ADungeonRoom* BuildRoom(FRoomData& RoomData);
 	
 	bool LoadAndSetDungeonData();
 	bool ExtendFloorRoomTree(FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
-	TArray<FRoomData*> ConnectRuleCollectionToRooms(int ParentRoomId, const int FloorId, FRuleCollection& RuleCollection, const bool bIsMainWalkthroughPath = false);
+	TArray<FRoomData*> ConnectRuleCollectionToRooms(int ParentRoomId, FRuleCollection& RuleCollection, const bool bIsMainWalkthroughPath = false);
 	FRoomData* SetSolverAndObstacleRoom(FRoomData& ObstacleRoom, TArray<FRoomData*>& FloorRoomBranch);
 
 	FObstacleData* GetRandomObstacleData();
@@ -182,8 +184,9 @@ protected:
 	TWeakObjectPtr<USpellBookComponent> PlayerSpellBook;
 
 private:
+	FVector DefaultBranchDirection = FVector::ForwardVector;
+	
 	int CurrentGeneratedLevel = 0;
-
 	int LastBuiltRoomId = -1;
 
 	FTimerHandle BuildRoomTimerHandle;

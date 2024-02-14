@@ -12,8 +12,6 @@ ACorridorRoom::ACorridorRoom()
 // Called when the game starts or when spawned
 void ACorridorRoom::BeginPlay()
 {
-	GenerateRoomSpline(FVector::ForwardVector);
-	
 	Super::BeginPlay();
 }
 

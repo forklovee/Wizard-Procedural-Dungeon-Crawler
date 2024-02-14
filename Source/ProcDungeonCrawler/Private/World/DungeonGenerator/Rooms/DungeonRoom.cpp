@@ -139,21 +139,34 @@ TArray<FRoomWall*> ADungeonRoom::GetValidRoomWalls()
 	TArray<FRoomWall*> ValidRoomWalls;
 	for (FRoomWall& RoomWall: RoomWalls)
 	{
-		//todo: implement wall range check
+		// check if wall is connected
+		if (RoomWall.ConnectedRoom.IsValid())
+		{
+			continue;
+		}
+		
+		// check if wall is straight
+		// const float DotToForward = RoomWall.GetWallDotToForward();
+		// if (DotToForward < 1.f && DotToForward > 0.f || DotToForward > -1.f && DotToForward < 0.f)
+		// {
+		// 	continue;
+		// }
 		ValidRoomWalls.Add(&RoomWall);
 	}
+	UE_LOG(LogTemp, Display, TEXT("Room %s has %d valid walls."), *GetName(), ValidRoomWalls.Num())
+	
 	return ValidRoomWalls;
 }
 
 TArray<FRoomWall*> ADungeonRoom::GetRoomWallsOfNormal(const FVector& WallNormal)
 {
+	TArray<FRoomWall*> ValidRoomWalls = GetValidRoomWalls();
 	TArray<FRoomWall*> RoomWallsOfNormal;
-	for (FRoomWall& RoomWall: RoomWalls)
+	for (FRoomWall* RoomWall: ValidRoomWalls)
 	{
-		FVector RoomWallNormal = RoomWall.GetWallNormal();
-		if (RoomWallNormal.Equals(WallNormal, 0.1f))
+		if (RoomWall->GetWallNormal().Equals(WallNormal, 0.1f))
 		{
-			RoomWallsOfNormal.Add(&RoomWall);
+			RoomWallsOfNormal.Add(RoomWall);
 		}
 	}
 	return RoomWallsOfNormal;

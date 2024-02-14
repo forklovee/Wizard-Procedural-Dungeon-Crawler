@@ -6,6 +6,7 @@
 
 #include "DungeonRoom.generated.h"
 
+class ADungeonRoom;
 class USplineComponent;
 class UPCGComponent;
 
@@ -45,56 +46,25 @@ USTRUCT()
 struct FRoomWall
 {
 	GENERATED_BODY()
-
-	bool bHasDoor = false;
 	
 	// Local Space
 	FVector StartPoint;
 	FVector EndPoint;
 	
-	TArray<FWallRange> FreeRanges;
+	TWeakObjectPtr<class ADungeonRoom> ConnectedRoom;
+	FRoomWall* ConnectedWall = nullptr;
+	FVector DoorPosition;
 
 	FRoomWall()
 	{
 		StartPoint = FVector::ZeroVector;
 		EndPoint = FVector::ZeroVector;
-		FreeRanges = {};
 	}
 	
-	FRoomWall(FVector NewStartPoint, FVector NewEndPoint)
+	FRoomWall(const FVector NewStartPoint, const FVector NewEndPoint)
 	{
-		StartPoint = NewStartPoint;
-		EndPoint = NewEndPoint;
-		FreeRanges.Add(FWallRange(0.0, FVector::Dist(StartPoint, EndPoint)));
-	}
-
-	void UseWallRange(FWallRange& WallRange, const float RangeUsageStart, const float RangeUsageDistance)
-	{
-		float& WallRangeStartPoint = WallRange.StartLerpAlpha;
-		float& WallRangeEndPoint = WallRange.EndLerpAlpha;
-		const float WallRangeDistance = WallRangeEndPoint - WallRangeStartPoint; 
-		
-		if (RangeUsageDistance < WallRangeDistance) //Split!
-		{
-			if (RangeUsageStart == WallRangeStartPoint)
-			{
-				WallRangeStartPoint += RangeUsageDistance;
-			}
-			else if (WallRangeStartPoint + RangeUsageDistance == WallRangeEndPoint)
-			{
-				WallRangeEndPoint = RangeUsageStart;
-			}
-			else
-			{
-				FreeRanges.Add(FWallRange(WallRangeStartPoint, RangeUsageStart));
-				FreeRanges.Add(FWallRange(RangeUsageStart + RangeUsageDistance, WallRangeEndPoint));
-				FreeRanges.Remove(WallRange);
-			}
-		}
-		else //Remove
-		{
-			FreeRanges.Remove(WallRange);
-		}
+		this->StartPoint = NewStartPoint;
+		this->EndPoint = NewEndPoint;
 	}
 
 	FORCEINLINE bool operator == (const FRoomWall& OtherRoomWall) const
@@ -118,6 +88,10 @@ struct FRoomWall
 	{
 		return (EndPoint - StartPoint).GetSafeNormal();
 	}
+	float GetWallDotToForward() const
+	{
+		return FVector::DotProduct(GetWallNormal(), FVector::ForwardVector);
+	}
 	FVector GetWallCenter() const
 	{
 		return (StartPoint + EndPoint) / 2.f;
@@ -133,6 +107,13 @@ struct FRoomWall
 	FVector GetPointFromDistance(const float& Distance) const
 	{
 		return StartPoint + GetWallDirection() * Distance;
+	}
+
+	void SetConnectedRoom(TWeakObjectPtr<ADungeonRoom> NewConnectedRoom, FRoomWall* NewConnectedWall, const FVector NewDoorPosition)
+	{
+		this->ConnectedRoom = NewConnectedRoom;
+		this->ConnectedWall = NewConnectedWall;
+		this->DoorPosition = NewDoorPosition;
 	}
 };
 
