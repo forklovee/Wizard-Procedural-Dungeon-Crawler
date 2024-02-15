@@ -5,7 +5,9 @@
 #include "Components/SplineComponent.h"
 #include "Tools/SplineTools.h"
 
+#include "StructUtils/Public/PropertyBag.h"
 #include "PCG/Public/PCGComponent.h"
+#include "PCG/Public/PCGGraph.h"
 
 ADungeonRoom::ADungeonRoom()
 {
@@ -36,8 +38,6 @@ void ADungeonRoom::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	GenerateRoomWalls();
-	
 	Tags.Add(TargetRoomPCGTag);
 }
 
@@ -63,6 +63,27 @@ void ADungeonRoom::DrawDebugShapes()
 			GetActorLocation() + RoomWall.GetWallCenter() + RoomWall.GetWallNormal() * 100.f,
 			100.f, FColor::Blue, true, 100.f, 4, 15.f);
 	}
+}
+
+void ADungeonRoom::SetPCGParameters(const float NewGridSize, const float NewMeshSize)
+{
+	GridSize = NewGridSize;
+	MeshSize = NewMeshSize;
+	
+	RoomHeightSpline->ClearSplinePoints();
+	RoomHeightSpline->AddSplineLocalPoint(FVector::ZeroVector);
+	RoomHeightSpline->AddSplineLocalPoint(FVector::UpVector * (RoomHeight - 1) * GridSize);
+
+	UPCGGraphInstance* GraphInstance = RoomWallsPCGComponent->GetGraphInstance();
+	const FInstancedPropertyBag ParentPropertyBag = GraphInstance->ParametersOverrides.Parameters;
+	FInstancedPropertyBag* PropertyBag = &GraphInstance->ParametersOverrides.Parameters;
+	PropertyBag->SetValueFloat(FName("GridSize"), GridSize);
+	PropertyBag->SetValueFloat(FName("MeshSize"), MeshSize);
+	
+	const bool GridChangeState = GraphInstance->ParametersOverrides.RefreshParameters(&ParentPropertyBag, EPCGGraphParameterEvent::PropertyModified, FName("GridSize"));
+	const bool MeshChangeState = GraphInstance->ParametersOverrides.RefreshParameters(&ParentPropertyBag, EPCGGraphParameterEvent::PropertyModified, FName("MeshSize"));
+
+	UE_LOG(LogTemp, Display, TEXT("Parameter change state: Grid:%i Mesh:%i"), GridChangeState, MeshChangeState);
 }
 
 void ADungeonRoom::GenerateRoomWalls()
@@ -94,8 +115,7 @@ void ADungeonRoom::GenerateRoomWalls()
 		BuildSplineWallNormals.Add(FRoomWall(BuildSplinePoints[1], BuildSplinePoints[2]).GetWallNormal());
 
 		const float WallNormalsDot = FVector::DotProduct(BuildSplineWallNormals[0], BuildSplineWallNormals[1]);
-		UE_LOG(LogTemp, Display, TEXT("v1(%f, %f) v2(%f, %f) Dot: %f"), BuildSplineWallNormals[0].X, BuildSplineWallNormals[0].Y, BuildSplineWallNormals[1].X, BuildSplineWallNormals[1].Y, WallNormalsDot);
-		FVector WallsAddNormal = (BuildSplineWallNormals[0] + BuildSplineWallNormals[1]) * 100.f * (-0.5f * WallNormalsDot + 1.f);
+		FVector WallsAddNormal = (BuildSplineWallNormals[0] + BuildSplineWallNormals[1]) * GridSize*.5f * (-0.5f * WallNormalsDot + 1.f);
 		const FVector BoundsSplinePointLocation = BuildSplinePoints[1] + WallsAddNormal;
 		RoomBoundsSpline->AddSplinePoint(BoundsSplinePointLocation, ESplineCoordinateSpace::Local, false);
 		RoomBoundsSpline->SetTangentsAtSplinePoint(PointId, FVector::ZeroVector, FVector::ZeroVector, ESplineCoordinateSpace::Local, false);

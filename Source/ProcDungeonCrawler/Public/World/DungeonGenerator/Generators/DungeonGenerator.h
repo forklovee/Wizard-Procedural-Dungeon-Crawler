@@ -9,6 +9,7 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 #include "DungeonGenerator.generated.h"
 
+class ADoor;
 class UInventoryComponent;
 class UBagComponent;
 class USpellBookComponent;
@@ -21,6 +22,19 @@ class UDungeonRoomDictionary;
 class UDungeonConfig;
 enum class ERoomType : uint8;
 class ADungeonRoom;
+
+USTRUCT()
+struct FDoorData
+{
+	GENERATED_BODY()
+
+	TWeakObjectPtr<ADoor> DoorActor;
+	FVector DoorLocation;
+	float DoorRotationYaw = 0.f;
+	
+	TWeakObjectPtr<ADungeonRoom> RoomA;
+	TWeakObjectPtr<ADungeonRoom> RoomB;
+};
 
 USTRUCT()
 struct FRoomData
@@ -143,6 +157,8 @@ protected:
 	virtual void BeginPlay() override;
 	
 	ADungeonRoom* BuildRoom(FRoomData& RoomData);
+	bool SetValidRoomLocation(FRoomData& RoomData, TArray<FVector>& PositionChecks);
+	TArray<FVector> GetPositionCheckPoints(const FRoomWall* ThisRoomWall, const FRoomData& ParentRoomData, const FRoomWall* ParentRoomWall) const;
 	
 	bool LoadAndSetDungeonData();
 	bool ExtendFloorRoomTree(FFloorData& FloorData, const int FloorStartRoomId, const int FloorEndRoomId);
@@ -155,7 +171,9 @@ protected:
 	FObstacleData* GetObstacleData(TArray<FObstacleData*> PossibleObstacleData) const;
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float GridTileSize = 200.f;
+	float GridSize = 400.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MeshSize = 600.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
@@ -165,6 +183,7 @@ public:
 	
 protected:
 	TArray<FRoomData> Rooms;
+	TArray<FDoorData> Doors;
 
 	TArray<ADungeonRoom*> RoomActors;
 	
@@ -191,3 +210,5 @@ private:
 
 	FTimerHandle BuildRoomTimerHandle;
 };
+
+

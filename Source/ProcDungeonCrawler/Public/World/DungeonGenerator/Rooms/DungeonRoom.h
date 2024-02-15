@@ -94,16 +94,12 @@ struct FRoomWall
 	}
 	FVector GetWallCenter() const
 	{
-		FVector WallCenter = (StartPoint + EndPoint) / 2.f;
-		if (static_cast<int>(WallCenter.X) % 200 != 0)
-		{
-			WallCenter.X -= 100.f;
-		}
-		if (static_cast<int>(WallCenter.Y) % 200 != 0)
-		{
-			WallCenter.Y -= 100.f;
-		}
-		return WallCenter;
+		const FVector WallCenter = StartPoint;
+		const float WallHalfLength = GetWallLength()*.5f;
+		const int OffsetValue = static_cast<int>(WallHalfLength) % 400;
+		const float WallCenterDistance = WallHalfLength - OffsetValue;
+		
+		return WallCenter + GetWallDirection() * WallCenterDistance;
 	}
 	TArray<FVector> GetPointDirectionsFromWallCenter() const
 	{
@@ -118,11 +114,10 @@ struct FRoomWall
 		return StartPoint + GetWallDirection() * Distance;
 	}
 
-	void SetConnectedRoom(TWeakObjectPtr<ADungeonRoom> NewConnectedRoom, FRoomWall* NewConnectedWall, const FVector NewDoorPosition)
+	void SetConnectedRoom(TWeakObjectPtr<ADungeonRoom> NewConnectedRoom, FRoomWall* NewConnectedWall)
 	{
 		this->ConnectedRoom = NewConnectedRoom;
 		this->ConnectedWall = NewConnectedWall;
-		this->DoorPosition = NewDoorPosition;
 	}
 };
 
@@ -135,6 +130,9 @@ public:
 	ADungeonRoom();
 
 	void DrawDebugShapes();
+	
+	void SetPCGParameters(const float NewGridSize, const float NewMeshSize);
+	void GenerateRoomWalls();
 	
 	FVector GetRoomCenter() const;
 	
@@ -149,7 +147,6 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
-	void GenerateRoomWalls();
 
 	void RotatePointAroundCenter(FVector& Point, const FVector& Center, const float AngleDeg) const;
 	void ScaleWallByPoint(FRoomWall& RoomWall, FVector Point, float SizeChange) const;
@@ -158,8 +155,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Room")
 	FName TargetRoomPCGTag = FName("Basic");
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Room")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PCG")
 	uint8 RoomHeight = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PCG")
+	float MeshSize = 600.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="PCG")
+	float GridSize = 200.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Components")
 	USplineComponent* RoomBoundsSpline;
@@ -180,7 +183,4 @@ private:
 	FTimerHandle BuildTimerHandle;
 
 	TArray<FRoomWall> RoomWalls;
-
-	float GridTileSize = 200.f;
-	float MeshTileSize = 600.f;
 };

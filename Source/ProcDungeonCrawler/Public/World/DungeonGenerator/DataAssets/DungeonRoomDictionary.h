@@ -7,6 +7,8 @@
 #include "Engine/DataAsset.h"
 #include "DungeonRoomDictionary.generated.h"
 
+class ADoor;
+class ACorridorRoom;
 class ARoomPCGGlobalVolume;
 class UPCGGraph;
 class ADungeonRoom;
@@ -57,6 +59,10 @@ private:
 	int GetRandomRoomClassIndexByWeight(TArray<int>& Weights) const;
 	
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ADoor> DoorActorClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ACorridorRoom> SupportCorridorClass;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<ERoomType, FRoomRepositoryEntry> RoomRepository;
 };

@@ -4,6 +4,7 @@
 #include "Characters/Human/Player/PlayerPawn.h"
 #include "Components/Character/InventoryComponent.h"
 #include "Components/Character/SpellbookComponent.h"
+#include "Props/Door.h"
 #include "Spell/Rune.h"
 #include "Spell/Spell.h"
 #include "World/DungeonGenerator/DataAssets/DungeonConfig.h"
@@ -166,6 +167,17 @@ bool ADungeonGenerator::BuildDungeon(float NewGridTileSize, float NewMeshTileSiz
 			NewRoom->SetActorLabel(ActorName);
 		}
 	}
+
+	if (DungeonRoomDictionary->DoorActorClass != nullptr)
+	{
+		for (FDoorData& DoorData : Doors)
+		{
+			ADoor* DoorActor = Cast<ADoor>(GetWorld()->SpawnActor(DungeonRoomDictionary->DoorActorClass));
+			DoorData.DoorActor = DoorActor;
+			DoorActor->SetActorLocation(DoorData.DoorLocation);
+			DoorActor->SetActorRotation(FRotator(0.f, DoorData.DoorRotationYaw, 0.f));
+		}
+	}
 	
 	return true;
 }
@@ -189,16 +201,20 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 
 	//Spawn Room Actor
 	RoomData.RoomActor = Cast<ADungeonRoom>(GetWorld()->SpawnActor(RoomResource.RoomClass.Get()));
-	if (ACorridorRoom* CorridorRoom = Cast<ACorridorRoom>(RoomData.RoomActor))
-	{
-		CorridorRoom->GenerateRoomSpline(RoomData.BranchDirection);
-	}
 	if (!RoomData.RoomActor.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to spawn Dungeon room!"));
 		return nullptr;
 	}
 
+	// Set RoomActor PCG parameters and generate room walls
+	RoomData.RoomActor->SetPCGParameters(GridSize, MeshSize);
+	if (ACorridorRoom* CorridorRoom = Cast<ACorridorRoom>(RoomData.RoomActor))
+	{
+		CorridorRoom->GenerateRoomSpline(RoomData.BranchDirection);
+	}
+	RoomData.RoomActor->GenerateRoomWalls();
+	
 	//Add to Dungeon Room Actors
 	RoomActors.Add(RoomData.RoomActor.Get());
 	if (RoomData.ParentId == -1){
@@ -258,35 +274,19 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 		
 		for (FRoomWall* ParentRoomWall: ParentRoomWalls)
 		{
-			FVector ThisWallStart = ThisRoomWall->StartPoint;
-			FVector ThisWallEnd = ThisRoomWall->EndPoint;
-			FVector ThisWallCenter = ThisRoomWall->GetWallCenter();
+			TArray<FVector> ThisRoomPositionChecks = GetPositionCheckPoints(ThisRoomWall, ParentRoomData, ParentRoomWall);
 			
-			// Check point directions from center to determine which point starts the wall - to the left
-			TArray<FVector> LastWallPointDirections = ParentRoomWall->GetPointDirectionsFromWallCenter();
-			TArray<FVector> ThisWallPointDirections = ThisRoomWall->GetPointDirectionsFromWallCenter();
-			if (!LastWallPointDirections[0].Equals(ThisWallPointDirections[0], 0.1))
-			{
-				// invert wall start point
-				ThisWallStart = ThisRoomWall->EndPoint;
-				ThisWallEnd = ThisRoomWall->StartPoint;
-			}
+			bool bIsOverlapping = SetValidRoomLocation(RoomData, ThisRoomPositionChecks);
 
-			FVector ParentWallCenter = ParentRoomWall->GetWallCenter();
-			FVector ThisRoomStartLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->StartPoint - ThisWallStart;
-			FVector ThisRoomEndLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentWallCenter - ThisWallCenter;
-			UE_LOG(LogTemp, Display, TEXT("ParentCenter: %s, ThisCenter: %s"), *ParentWallCenter.ToString(), *ThisWallCenter.ToString());
-			bool bIsOverlapping = false;
-			RoomData.RoomActor->SetActorLocation(ThisRoomEndLocation);
-			for (ADungeonRoom* OtherRoom: RoomActors)
+			if (bIsOverlapping) // try helper corridor
 			{
-				if (OtherRoom == RoomData.RoomActor.Get()) continue;
-
-				bIsOverlapping = RoomData.RoomActor->IsOverlappingWithRoom(OtherRoom);
-				if (bIsOverlapping)
-				{
-					break;
-				}
+				ACorridorRoom* HelperCorridorRoom = Cast<ACorridorRoom>(DungeonRoomDictionary->SupportCorridorClass);
+				HelperCorridorRoom->CorridorWidth = 400.f;
+				HelperCorridorRoom->MinCorridorLength = 600.f;
+				HelperCorridorRoom->GenerateRoomSpline(RoomData.BranchDirection);
+				TArray<FRoomWall*> CorridorValidWalls = HelperCorridorRoom->GetRoomWallsOfNormal(ThisWallNormal);
+				UE_LOG(LogTemp, Display, TEXT("CRITICAL OVERLAP! %i corridor walls to try!"), CorridorValidWalls.Num());
+				HelperCorridorRoom->Destroy();
 			}
 			
 			if (bIsOverlapping)
@@ -298,8 +298,24 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 			bCorrectLocationFound = true;
 
 			// Set Room Wall Connection
-			ParentRoomWall->SetConnectedRoom(RoomData.RoomActor, ThisRoomWall, FVector::ZeroVector); //todo: set door position
-			ThisRoomWall->SetConnectedRoom(ParentRoomData.RoomActor, ParentRoomWall, FVector::ZeroVector); //todo: set door position
+			ParentRoomWall->SetConnectedRoom(RoomData.RoomActor, ThisRoomWall);
+			ThisRoomWall->SetConnectedRoom(ParentRoomData.RoomActor, ParentRoomWall);
+			FDoorData DoorData = FDoorData();
+			UE_LOG(LogTemp, Display, TEXT("DoorNormal %s"), *ThisWallNormal.ToString());
+			DoorData.DoorRotationYaw = FMath::Abs(ThisWallNormal.X) == 1.f ? 90.f : 0.f;
+			
+			if (ParentRoomWall->GetWallLength() < ThisRoomWall->GetWallLength())
+			{
+				DoorData.DoorLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->GetWallCenter() + ParentRoomWall->GetWallDirection() * GridSize * .5;
+			}
+			else
+			{
+				DoorData.DoorLocation = RoomData.RoomActor->GetActorLocation() + ThisRoomWall->GetWallCenter() + ThisRoomWall->GetWallDirection() * GridSize * .5;
+			}
+			DoorData.DoorLocation.Z = 64.f;
+			DoorData.RoomA = ParentRoomData.RoomActor;
+			DoorData.RoomB = RoomData.RoomActor;
+			Doors.Add(DoorData);
 			
 			break;
 		}
@@ -311,6 +327,53 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 	}
 
 	return RoomData.RoomActor.Get();
+}
+
+bool ADungeonGenerator::SetValidRoomLocation(FRoomData& RoomData, TArray<FVector>& PositionChecks)
+{
+	bool bIsOverlapping = false;
+	for (FVector& PositionCheck: PositionChecks)
+	{
+		RoomData.RoomActor->SetActorLocation(PositionCheck);
+		for (ADungeonRoom* OtherRoom: RoomActors)
+		{
+			if (OtherRoom == RoomData.RoomActor.Get()) continue;
+			
+			bIsOverlapping = RoomData.RoomActor->IsOverlappingWithRoom(OtherRoom);
+			if (bIsOverlapping){
+				break;
+			}
+		}
+		if (!bIsOverlapping)
+		{
+			break;
+		}
+	}
+	return !bIsOverlapping;
+}
+
+TArray<FVector> ADungeonGenerator::GetPositionCheckPoints(const FRoomWall* ThisRoomWall, const FRoomData& ParentRoomData,
+	const FRoomWall* ParentRoomWall) const
+{
+	FVector ThisWallStart = ThisRoomWall->StartPoint;
+	FVector ThisWallEnd = ThisRoomWall->EndPoint;
+	const FVector ThisWallCenter = ThisRoomWall->GetWallCenter();
+			
+	// Check point directions from center to determine which point starts the wall - to the left
+	TArray<FVector> LastWallPointDirections = ParentRoomWall->GetPointDirectionsFromWallCenter();
+	TArray<FVector> ThisWallPointDirections = ThisRoomWall->GetPointDirectionsFromWallCenter();
+	if (!LastWallPointDirections[0].Equals(ThisWallPointDirections[0], 0.1))
+	{
+		// invert wall start point
+		ThisWallStart = ThisRoomWall->EndPoint;
+		ThisWallEnd = ThisRoomWall->StartPoint;
+	}
+			
+	return {
+		ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->GetWallCenter() - ThisWallCenter,
+		ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->StartPoint - ThisWallStart,
+		ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->EndPoint - ThisWallEnd
+	};
 }
 
 bool ADungeonGenerator::LoadAndSetDungeonData()
