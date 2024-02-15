@@ -72,6 +72,14 @@ void ADungeonGenerator::PrintDungeonStructure()
 	}
 }
 
+void ADungeonGenerator::DrawDungeonDebugShapes()
+{
+	for (ADungeonRoom* RoomActor: RoomActors)
+	{
+		RoomActor->DrawDebugShapes();
+	}
+}
+
 void ADungeonGenerator::BeginPlay()
 {
 	Super::BeginPlay();
@@ -150,13 +158,6 @@ bool ADungeonGenerator::BuildDungeon(float NewGridTileSize, float NewMeshTileSiz
 		UE_LOG(LogTemp, Error, TEXT("Failed to load Dungeon Data!"));
 		return false;
 	}
-	// if (WalkthroughPathClass == nullptr)
-	// {
-	// 	UE_LOG(LogTemp, Error, TEXT("WalkthroughPathClass is null!"));
-	// 	return false;
-	// }
-	//
-	// const AWalkthroughPath* SplineGlobalWalkthough = GetWorld()->SpawnActor<AWalkthroughPath>(WalkthroughPathClass);
 
 	FRoomData& StartRoomData = Rooms[0];
 	for (int RoomIdx = 0; RoomIdx < Rooms.Num(); RoomIdx++)
@@ -180,6 +181,19 @@ bool ADungeonGenerator::BuildDungeon(float NewGridTileSize, float NewMeshTileSiz
 	}
 	
 	return true;
+}
+
+FTransform ADungeonGenerator::GetPlayerStartingTransform() const
+{
+	if (Rooms.Num() == 0) return FTransform::Identity;
+	const TWeakObjectPtr<ADungeonRoom> StartRoom = Rooms[0].RoomActor;
+	
+	const FVector Location = StartRoom->GetActorLocation() + StartRoom->GetRoomCenter() + FVector::UpVector * GridSize * .5f;
+	const FRotator Rotation = (-Rooms[0].BranchDirection).Rotation();
+
+	UE_LOG(LogTemp, Display, TEXT("Rotation: %s"), *Rotation.ToString());
+	
+	return FTransform(Rotation, Location);
 }
 
 void ADungeonGenerator::BuildRoomById(int Id)
@@ -319,11 +333,6 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 			
 			break;
 		}
-	}
-
-	for (ADungeonRoom* RoomActor: RoomActors)
-	{
-		RoomActor->DrawDebugShapes();
 	}
 
 	return RoomData.RoomActor.Get();

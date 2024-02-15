@@ -141,15 +141,21 @@ class PROCDUNGEONCRAWLER_API ADungeonGenerator : public AActor
 public:	
 	ADungeonGenerator();
 
-	UFUNCTION(BlueprintCallable, Category="Debug")
+	UFUNCTION(BlueprintCallable, Category="Dungeon|Debug")
 	void PrintDungeonStructure();
+
+	UFUNCTION(BlueprintCallable, Category="Dungeon|Debug")
+	void DrawDungeonDebugShapes();
 	
-	UFUNCTION(BlueprintCallable, Category="Dungeon")
+	UFUNCTION(BlueprintCallable, Category="Dungeon|Generation")
 	bool GenerateDungeon();
 
-	UFUNCTION(BlueprintCallable, Category="Dungeon")
+	UFUNCTION(BlueprintCallable, Category="Dungeon|Generation")
 	bool BuildDungeon(float NewGridTileSize, float NewMeshTileSize);
 
+	UFUNCTION(BlueprintCallable, Category="Dungeon|Gameplay")
+	FTransform GetPlayerStartingTransform() const;
+	
 	UFUNCTION(BlueprintCallable, Category="Dungeon")
 	void BuildRoomById(int Id);
 	
