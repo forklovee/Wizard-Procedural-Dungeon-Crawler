@@ -260,6 +260,7 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 		{
 			FVector ThisWallStart = ThisRoomWall->StartPoint;
 			FVector ThisWallEnd = ThisRoomWall->EndPoint;
+			FVector ThisWallCenter = ThisRoomWall->GetWallCenter();
 			
 			// Check point directions from center to determine which point starts the wall - to the left
 			TArray<FVector> LastWallPointDirections = ParentRoomWall->GetPointDirectionsFromWallCenter();
@@ -270,12 +271,13 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 				ThisWallStart = ThisRoomWall->EndPoint;
 				ThisWallEnd = ThisRoomWall->StartPoint;
 			}
-			
-			FVector ThisRoomStartLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->StartPoint - ThisWallStart;
-			FVector ThisRoomEndLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->EndPoint - ThisWallEnd;
 
+			FVector ParentWallCenter = ParentRoomWall->GetWallCenter();
+			FVector ThisRoomStartLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->StartPoint - ThisWallStart;
+			FVector ThisRoomEndLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentWallCenter - ThisWallCenter;
+			UE_LOG(LogTemp, Display, TEXT("ParentCenter: %s, ThisCenter: %s"), *ParentWallCenter.ToString(), *ThisWallCenter.ToString());
 			bool bIsOverlapping = false;
-			RoomData.RoomActor->SetActorLocation(ThisRoomStartLocation);
+			RoomData.RoomActor->SetActorLocation(ThisRoomEndLocation);
 			for (ADungeonRoom* OtherRoom: RoomActors)
 			{
 				if (OtherRoom == RoomData.RoomActor.Get()) continue;

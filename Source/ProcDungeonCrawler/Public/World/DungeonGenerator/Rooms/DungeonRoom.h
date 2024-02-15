@@ -94,7 +94,16 @@ struct FRoomWall
 	}
 	FVector GetWallCenter() const
 	{
-		return (StartPoint + EndPoint) / 2.f;
+		FVector WallCenter = (StartPoint + EndPoint) / 2.f;
+		if (static_cast<int>(WallCenter.X) % 200 != 0)
+		{
+			WallCenter.X -= 100.f;
+		}
+		if (static_cast<int>(WallCenter.Y) % 200 != 0)
+		{
+			WallCenter.Y -= 100.f;
+		}
+		return WallCenter;
 	}
 	TArray<FVector> GetPointDirectionsFromWallCenter() const
 	{
