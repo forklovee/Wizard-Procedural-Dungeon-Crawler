@@ -2,7 +2,6 @@
 
 
 #include "World/DungeonGenerator/DataAssets/DungeonRoomDictionary.h"
-#include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 
 bool UDungeonRoomDictionary::HasRoomClassOfType(const ERoomType RoomType) const
 {

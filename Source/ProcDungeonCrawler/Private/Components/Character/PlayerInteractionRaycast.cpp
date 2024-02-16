@@ -1,5 +1,7 @@
 
 #include "Components/Character/PlayerInteractionRaycast.h"
+
+#include "Characters/Human/Human.h"
 #include "Components/Props/InteractionShapeComponent.h"
 #include "Items/PickupItem.h"
 #include "Items/Clothes/Clothes.h"
@@ -7,6 +9,7 @@
 #include "Spell/Rune.h"
 #include "Items/Weapon.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Props/InteractiveObject.h"
 
 UPlayerInteractionRaycast::UPlayerInteractionRaycast()
 {
@@ -33,28 +36,29 @@ void UPlayerInteractionRaycast::UpdateInteractionTarget(FVector NewForwardVector
 	
 	if (AItem* NewItem = Cast<AItem>(NewInteractionTarget.GetActor())) // new target is an item
 	{
-		UE_LOG(LogTemp, Display, TEXT("New Interaction Target! %s"), *NewItem->GetName())
-
 		if (OnNewInteractionTarget.IsBound())
 		{
-			OnNewInteractionTarget.Broadcast(FText::FromString(NewInteractionTarget.GetActor()->GetName()), FName("Interact"), Cast<AClothes>(NewItem) == nullptr);
+			OnNewInteractionTarget.Broadcast(FText::FromString(NewItem->GetName()), FName("Interact"), Cast<AClothes>(NewItem) == nullptr);
 		}
 		
 		return;
 	}
 	
-	if (Cast<UInteractionShapeComponent>(NewInteractionTarget.GetComponent()) != nullptr) // new interaction target
+	if (AInteractiveObject* NewInteractionObject = Cast<AInteractiveObject>(NewInteractionTarget.GetActor())) // new interaction target
 	{
+		if (!NewInteractionTarget.GetComponent()->ComponentTags.Contains("InteractiveObject"))
+		{
+			return;
+		}
 		if (OnNewInteractionTarget.IsBound())
 		{
-			OnNewInteractionTarget.Broadcast(FText::FromString(NewInteractionTarget.GetActor()->GetName()), FName("Interact"), false);
+			OnNewInteractionTarget.Broadcast(FText::FromString(NewInteractionObject->GetName()), FName("Interact"), false);
 		}
 		
 		return;
 	}
 	
 	NewInteractionTarget = FHitResult();
-	UE_LOG(LogTemp, Display, TEXT("Clear Interaction Target!"))
 	if (OnNewInteractionTarget.IsBound())
 	{
 		OnNewInteractionTarget.Broadcast(FText::FromString(""), FName(), false);
@@ -84,9 +88,9 @@ void UPlayerInteractionRaycast::Interact()
 		return;
 	}
 
-	if (UInteractionShapeComponent* InteractionShapeComponent = Cast<UInteractionShapeComponent>(TargetComponent))
+	if (AInteractiveObject* InteractiveObject = Cast<AInteractiveObject>(Target))
 	{
-		InteractionShapeComponent->Interact(Cast<APawn>(GetOwner()));
+		InteractiveObject->Interact(Cast<AHuman>(GetOwner()));
 	}
 }
 

@@ -62,6 +62,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<ADoor> DoorActorClass;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ADoor> LockedDoorActorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<ACorridorRoom> SupportCorridorClass;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<ERoomType, FRoomRepositoryEntry> RoomRepository;

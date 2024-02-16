@@ -12,7 +12,6 @@
 #include "World/DungeonGenerator/Rooms/DungeonRoom.h"
 
 #include "World/DungeonGenerator/Actors/Obstacles/Obstacle.h"
-#include "World/DungeonGenerator/Path/WalkthroughPath.h"
 #include "World/DungeonGenerator/Rooms/CorridorRoom.h"
 
 ADungeonGenerator::ADungeonGenerator()
@@ -173,7 +172,11 @@ bool ADungeonGenerator::BuildDungeon(float NewGridTileSize, float NewMeshTileSiz
 	{
 		for (FDoorData& DoorData : Doors)
 		{
-			ADoor* DoorActor = Cast<ADoor>(GetWorld()->SpawnActor(DungeonRoomDictionary->DoorActorClass));
+			ADoor* DoorActor = Cast<ADoor>(GetWorld()->SpawnActor(
+				(DoorData.bIsLocked) ? DungeonRoomDictionary->LockedDoorActorClass
+				: DungeonRoomDictionary->DoorActorClass
+				));
+			
 			DoorData.DoorActor = DoorActor;
 			DoorActor->SetActorLocation(DoorData.DoorLocation);
 			DoorActor->SetActorRotation(FRotator(0.f, DoorData.DoorRotationYaw, 0.f));
@@ -314,10 +317,10 @@ ADungeonRoom* ADungeonGenerator::BuildRoom(FRoomData& RoomData)
 			// Set Room Wall Connection
 			ParentRoomWall->SetConnectedRoom(RoomData.RoomActor, ThisRoomWall);
 			ThisRoomWall->SetConnectedRoom(ParentRoomData.RoomActor, ParentRoomWall);
-			FDoorData DoorData = FDoorData();
-			UE_LOG(LogTemp, Display, TEXT("DoorNormal %s"), *ThisWallNormal.ToString());
-			DoorData.DoorRotationYaw = FMath::Abs(ThisWallNormal.X) == 1.f ? 90.f : 0.f;
 			
+			FDoorData DoorData = FDoorData();
+			DoorData.DoorRotationYaw = FMath::Abs(ThisWallNormal.X) == 1.f ? 90.f : 0.f;
+			DoorData.bIsLocked = RoomData.bHasObstacle;
 			if (ParentRoomWall->GetWallLength() < ThisRoomWall->GetWallLength())
 			{
 				DoorData.DoorLocation = ParentRoomData.RoomActor->GetActorLocation() + ParentRoomWall->GetWallCenter() + ParentRoomWall->GetWallDirection() * GridSize * .5;
@@ -522,6 +525,9 @@ TArray<FRoomData*> ADungeonGenerator::ConnectRuleCollectionToRooms(int ParentRoo
 			FRoomData(0, Rooms.Num(), RuleProperties)
 			);
 		FRoomData& RoomData = Rooms[NewRoomId];
+		RoomData.bHasObstacle = RuleProperties.bHasObstacle;
+		RoomData.Obstacle_FromParent_Class = RuleProperties.PreferredObstacle;
+		
 		RoomData.BranchDirection = BranchDirection;
 		NewRooms.Add(&RoomData);
 		

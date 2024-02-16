@@ -7,9 +7,11 @@
 #include "GameFramework/Actor.h"
 #include "Door.generated.h"
 
+class UInteractionShapeComponent;
 class AKeyItem;
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDoorOpened);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDoorClosed);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDoorOpened, AHuman*, HumanCharacter);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDoorClosed, AHuman*, HumanCharacter);
 
 UCLASS()
 class PROCDUNGEONCRAWLER_API ADoor : public AInteractiveObject
@@ -23,18 +25,21 @@ public:
 	FOnDoorClosed OnDoorClosed;
 	
 	ADoor();
-	
-	virtual void Interact(AHuman* HumanCharacter);
+
+	virtual bool Interact(AHuman* HumanCharacter) override;
 	
 protected:
 	virtual void BeginPlay() override;
+
+	virtual void InteractionSuccess(AHuman* HumanCharacter) override;
+	virtual void InteractionFailed(AHuman* HumanCharacter) override;
 
 public:
 	UFUNCTION()
 	bool IsOpen() const { return bIsOpen; }
 
 	UFUNCTION()
-	void SetOpen(bool bNewIsOpen);
+	void SetOpen(bool bNewIsOpen, AHuman* HumanCharacter);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
@@ -44,13 +49,12 @@ public:
 	USceneComponent* DoorRoot;	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
-	UStaticMeshComponent* DoorMesh;	
+	UStaticMeshComponent* DoorMesh;
 	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door", meta=(AllowPrivateAccess = "true"))
 	bool bIsOpen = false;
-	
-	
 
-	bool bIsLocked = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door", meta=(AllowPrivateAccess = "true"))
+	TSubclassOf<AKeyItem> RequiredKeyClass = nullptr;
 };

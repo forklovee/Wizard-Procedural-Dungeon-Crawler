@@ -31,6 +31,8 @@ struct FDoorData
 	TWeakObjectPtr<ADoor> DoorActor;
 	FVector DoorLocation;
 	float DoorRotationYaw = 0.f;
+
+	bool bIsLocked = false;
 	
 	TWeakObjectPtr<ADungeonRoom> RoomA;
 	TWeakObjectPtr<ADungeonRoom> RoomB;
@@ -71,7 +73,8 @@ struct FRoomData
 	bool bIsOnMainWalkthroughPath = false;
 
 	FVector BranchDirection = FVector::ZeroVector;
-	
+
+	bool bHasObstacle = false;
 	TSubclassOf<AObstacle> Obstacle_FromParent_Class = nullptr;
 	int HasSolutionToObstacleInRoomIdx = -1;
 

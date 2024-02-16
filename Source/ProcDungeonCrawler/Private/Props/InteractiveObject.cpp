@@ -5,35 +5,32 @@ AInteractiveObject::AInteractiveObject()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
+bool AInteractiveObject::Interact(AHuman* HumanCharacter)
+{
+	return true;
+}
+
 void AInteractiveObject::BeginPlay()
 {
 	Super::BeginPlay();
-
-	OnInteractionSuccess.AddDynamic(this, &AInteractiveObject::OnInteractionSuccessEvent);
-	OnInteractionFail.AddDynamic(this, &AInteractiveObject::OnInteractionFailEvent);
 	
 	OnTakeAnyDamage.AddDynamic(this, &AInteractiveObject::OnDamageTaken);
 }
 
-void AInteractiveObject::Interact(AHuman* HumanCharacter)
+void AInteractiveObject::InteractionSuccess(AHuman* HumanCharacter)
 {
-	EInteractionFailReason FailReason;
-	if (CanInteract(HumanCharacter, FailReason))
+	if (OnInteractionSuccess.IsBound())
 	{
-		if (OnInteractionSuccess.IsBound())
-		{
-			OnInteractionSuccess.Broadcast(HumanCharacter);
-		}
+		OnInteractionSuccess.Broadcast(HumanCharacter);
 	}
-	else
-	{
-		if (OnInteractionFail.IsBound())
-		{
-			OnInteractionFail.Broadcast(HumanCharacter, FailReason);
-		}
-	}
-	
+}
 
+void AInteractiveObject::InteractionFailed(AHuman* HumanCharacter)
+{
+	if (OnInteractionFail.IsBound())
+	{
+		OnInteractionFail.Broadcast(HumanCharacter);
+	}
 }
 
 void AInteractiveObject::OnDamageTaken(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
@@ -61,14 +58,4 @@ void AInteractiveObject::OnDestroyed_Implementation()
 bool AInteractiveObject::CanInteract(AHuman* HumanCharacter, EInteractionFailReason& OutFailReason) const
 {
 	return true;
-}
-
-void AInteractiveObject::OnInteractionSuccessEvent_Implementation(AHuman* HumanCharacter)
-{
-	
-}
-
-void AInteractiveObject::OnInteractionFailEvent_Implementation(AHuman* HumanCharacter, EInteractionFailReason FailReason)
-{
-	
 }

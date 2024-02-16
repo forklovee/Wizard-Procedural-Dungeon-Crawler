@@ -6,7 +6,10 @@
 #include "Components/ShapeComponent.h"
 #include "InteractionShapeComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteract, APawn*, Pawn);
+class AItem;
+class AHuman;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractionSuccessful, AHuman*, Pawn);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractionFailed, AHuman*, Pawn);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PROCDUNGEONCRAWLER_API UInteractionShapeComponent : public UShapeComponent
@@ -15,12 +18,21 @@ class PROCDUNGEONCRAWLER_API UInteractionShapeComponent : public UShapeComponent
 
 public:
 	UPROPERTY(BlueprintAssignable)
-	FOnInteract OnInteract;
+	FOnInteractionSuccessful OnInteractionSuccessful;
+	UPROPERTY(BlueprintAssignable)
+	FOnInteractionFailed OnInteractionFailed;
 	
 	UInteractionShapeComponent();
 
-	bool Interact(APawn* Pawn);
+	bool Interact(AHuman* Pawn);
 	
 protected:
 	virtual void BeginPlay() override;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Interaction")
+	TArray<TSubclassOf<AItem>> RequiredItems;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Interaction")
+	bool bConsumeRequiredItems = false;
 };
