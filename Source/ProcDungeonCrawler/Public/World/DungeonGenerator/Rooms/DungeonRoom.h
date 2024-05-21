@@ -129,6 +129,8 @@ class PROCDUNGEONCRAWLER_API ADungeonRoom : public AActor
 public:
 	ADungeonRoom();
 
+	void BuildRoom();
+
 	void DrawDebugShapes();
 	
 	void SetPCGParameters(const float NewGridSize, const float NewMeshSize);

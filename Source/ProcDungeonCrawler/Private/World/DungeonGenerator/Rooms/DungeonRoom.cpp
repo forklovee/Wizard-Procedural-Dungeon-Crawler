@@ -28,10 +28,15 @@ ADungeonRoom::ADungeonRoom()
 	RoomBuildSpline->SetupAttachment(RootComponent);
 
 	RoomWallsPCGComponent = CreateDefaultSubobject<UPCGComponent>(FName("RoomWallsPCG"));
-	RoomWallsPCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnLoad;
+	RoomWallsPCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
 	
 	AssetPlacerPCGComponent = CreateDefaultSubobject<UPCGComponent>(FName("AssetPlacerPCG"));
 	AssetPlacerPCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
+}
+
+void ADungeonRoom::BuildRoom()
+{
+	RoomWallsPCGComponent->Generate();
 }
 
 void ADungeonRoom::BeginPlay()
