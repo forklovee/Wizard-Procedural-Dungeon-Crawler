@@ -164,7 +164,7 @@ bool ADungeonGenerator::BuildDungeon(float NewGridTileSize, float NewMeshTileSiz
 		if (ADungeonRoom* NewRoom = BuildRoom(Rooms[RoomIdx]))
 		{
 			FString ActorName = FString::Printf(TEXT("Room_%i"), RoomIdx);
-			NewRoom->SetActorLabel(ActorName);
+			//NewRoom->SetActorLabel(ActorName);
 			NewRoom->BuildRoom();
 		}
 	}

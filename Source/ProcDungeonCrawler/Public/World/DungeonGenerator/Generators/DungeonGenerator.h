@@ -14,7 +14,6 @@ class UInventoryComponent;
 class UBagComponent;
 class USpellBookComponent;
 class ADungeonObstacle;
-class AWalkthroughPath;
 class ARoomPCGGlobalVolume;
 // class UPCGGraph;
 struct FWallRange;
@@ -183,9 +182,6 @@ public:
 	float GridSize = 400.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MeshSize = 600.f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<AWalkthroughPath> WalkthroughPathClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UDungeonConfig> DungeonConfigDataAsset;

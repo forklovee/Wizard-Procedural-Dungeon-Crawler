@@ -6,6 +6,6 @@
 /NAME:"UnrealEditor-RiderLC.dll"
 /IGNORE:4221
 /NODEFAULTLIB
-"C:\Users\porlo\Documents\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLC\Module.RiderLC.cpp.obj"
-"C:\Users\porlo\Documents\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLC\Default.rc2.res"
-/OUT:"C:\Users\porlo\Documents\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLC\UnrealEditor-RiderLC.lib"
+"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLC\Module.RiderLC.cpp.obj"
+"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLC\Default.rc2.res"
+/OUT:"C:\Users\porlo\Documents\Unreal Projects\Wizard-Procedural-Dungeon-Crawler\Plugins\Developer\RiderLink\Intermediate\Build\Win64\x64\UnrealEditor\Development\RiderLC\UnrealEditor-RiderLC.lib"
